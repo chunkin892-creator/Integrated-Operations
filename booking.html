@@ -107,7 +107,6 @@
   .booking-item.empty { border-left-color: #334155; opacity: 0.4; }
   .booking-name { font-size: 15px; font-weight: 600; }
   .booking-phone { font-size: 12px; color: #64748b; }
-  .booking-status { font-size: 20px; }
   .stats { display: flex; gap: 8px; margin-bottom: 16px; }
   .stat {
     flex: 1; background: #1e293b; border-radius: 10px; padding: 12px;
@@ -145,6 +144,12 @@
   .timer { font-size: 13px; color: #f59e0b; font-weight: 600; }
   .empty { text-align: center; padding: 40px 20px; color: #475569; }
   .empty .icon { font-size: 48px; margin-bottom: 12px; }
+  .success-big {
+    text-align: center; padding: 24px 16px;
+  }
+  .success-big .check { font-size: 72px; line-height: 1; margin-bottom: 12px; }
+  .success-big h2 { font-size: 24px; color: #22c55e; margin-bottom: 8px; }
+  .success-big p { font-size: 14px; color: #94a3b8; }
 </style>
 </head>
 <body>
@@ -216,9 +221,9 @@
 
 <script>
 // ============================================================
-// 浚鍵管理有限公司 · 小巴留座系統
+// 浚鍵管理有限公司 · 小巴留座系統 v1.1
 // Firebase: triple-login-version（同西鐵小巴共用）
-// 支援：自動識別西鐵小巴登入狀態
+// 新增：司機自動識別 + 司機端實時更新 + 預約錯誤處理
 // ============================================================
 
 const firebaseConfig = {
@@ -242,11 +247,12 @@ const SHIFTS_EVENING = ['18:15', '18:30', '18:45', '19:00', '19:15', '19:30', '1
 const GPS_RADIUS = 80;
 const ARRIVE_WINDOW = 15 * 60 * 1000;
 
-function toast(msg, duration = 2500) {
+function toast(msg, duration = 3000) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), duration);
+  clearTimeout(el._tm);
+  el._tm = setTimeout(() => el.classList.remove('show'), duration);
 }
 function now() { return Date.now(); }
 function getToday() {
@@ -337,6 +343,8 @@ const DataLayer = {
 let currentDriver = null;
 let currentPassenger = null;
 let currentScreen = 'home';
+let driverBookingListener = null;
+let driverListenerDate = null;
 
 function saveDriverSession(driver) {
   try { localStorage.setItem('booking_driver', JSON.stringify(driver)); } catch(e) {}
@@ -477,7 +485,7 @@ async function renderPassengerHome() {
       }[b.status] || b.status;
 
       html += `
-        <div class="card" style="padding:12px;">
+        <div class="card" style="padding:12px; border-color:#22c55e;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <div style="font-size:15px; font-weight:600;">${b.time} 班次</div>
@@ -579,25 +587,30 @@ async function passengerLogin() {
   if (!/^\d{8}$/.test(phone)) { toast('請輸入 8 位數字電話號碼'); return; }
   if (!name || name.length > 20) { toast('請輸入姓名（20 字內）'); return; }
 
-  const existing = await DataLayer.getPassenger(phone) || {};
-  if (existing.suspendedUntil && existing.suspendedUntil > now()) {
-    const remaining = Math.ceil((existing.suspendedUntil - now()) / (24*60*60*1000));
-    toast(`預約資格暫停中，剩餘 ${remaining} 日`);
-    return;
+  try {
+    const existing = await DataLayer.getPassenger(phone) || {};
+    if (existing.suspendedUntil && existing.suspendedUntil > now()) {
+      const remaining = Math.ceil((existing.suspendedUntil - now()) / (24*60*60*1000));
+      toast(`預約資格暫停中，剩餘 ${remaining} 日`);
+      return;
+    }
+
+    await DataLayer.savePassenger(phone, {
+      name: name, phone: phone,
+      creditScore: existing.creditScore != null ? existing.creditScore : 100,
+      totalBookings: existing.totalBookings || 0,
+      totalNoShows: existing.totalNoShows || 0,
+      lastLogin: now()
+    });
+
+    currentPassenger = { phone, name };
+    savePassengerSession(currentPassenger);
+    toast('✅ 登入成功');
+    renderPassengerHome();
+  } catch(e) {
+    console.error('登入失敗：', e);
+    toast('❌ 登入失敗：' + e.message, 5000);
   }
-
-  await DataLayer.savePassenger(phone, {
-    name: name, phone: phone,
-    creditScore: existing.creditScore != null ? existing.creditScore : 100,
-    totalBookings: existing.totalBookings || 0,
-    totalNoShows: existing.totalNoShows || 0,
-    lastLogin: now()
-  });
-
-  currentPassenger = { phone, name };
-  savePassengerSession(currentPassenger);
-  toast('登入成功');
-  renderPassengerHome();
 }
 
 function passengerLogout() {
@@ -651,65 +664,105 @@ async function selectShift(date, time) {
           <option value="2">2 人</option>
         </select>
       </div>
-      <button class="btn btn-primary" onclick="confirmBooking('${date}','${time}')">確認預約</button>
+      <button class="btn btn-primary" id="confirm-booking-btn" onclick="confirmBooking('${date}','${time}')">確認預約</button>
     </div>
   `;
 }
 
 async function confirmBooking(date, time) {
+  const btn = document.getElementById('confirm-booking-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '處理中...'; }
+
   const name = document.getElementById('book-name').value.trim();
   const seats = parseInt(document.getElementById('book-seats').value);
-  if (!name || name.length > 20) { toast('請輸入姓名（20 字內）'); return; }
 
-  const seatConfig = await DataLayer.getSeatConfig(date, time);
-  if (!seatConfig || !seatConfig.seats) { toast('此班次未開放'); return; }
+  if (!name || name.length > 20) {
+    toast('請輸入姓名（20 字內）');
+    if (btn) { btn.disabled = false; btn.textContent = '確認預約'; }
+    return;
+  }
 
-  const todayBookings = await DataLayer.getBookings(date);
-  const scheduleId = getScheduleId(date, time);
+  try {
+    console.log('🔵 開始預約：', { date, time, name, seats, phone: currentPassenger.phone });
 
-  const bookedSeats = Object.values(todayBookings)
-    .filter(b => b.scheduleId === scheduleId && ['reserved','arrived','boarded'].includes(b.status))
-    .reduce((sum, b) => sum + (b.seats || 0), 0);
+    const seatConfig = await DataLayer.getSeatConfig(date, time);
+    if (!seatConfig || !seatConfig.seats) { throw new Error('此班次未開放'); }
 
-  if (bookedSeats + seats > seatConfig.seats) { toast('座位不足，請重新選擇'); return; }
+    const todayBookings = await DataLayer.getBookings(date);
+    const scheduleId = getScheduleId(date, time);
+    const bookedSeats = Object.values(todayBookings)
+      .filter(b => b.scheduleId === scheduleId && ['reserved','arrived','boarded'].includes(b.status))
+      .reduce((sum, b) => sum + (b.seats || 0), 0);
 
-  const booking = {
-    scheduleId: scheduleId, date: date, time: time,
-    passengerName: name, passengerPhone: currentPassenger.phone,
-    seats: seats, status: 'reserved', direction: getShiftDirection(time)
-  };
+    if (bookedSeats + seats > seatConfig.seats) { throw new Error('座位不足，請重新選擇'); }
 
-  await DataLayer.addBooking(date, booking);
+    const booking = {
+      scheduleId: scheduleId, date: date, time: time,
+      passengerName: name, passengerPhone: currentPassenger.phone,
+      seats: seats, status: 'reserved', direction: getShiftDirection(time)
+    };
 
-  const passengerData = await DataLayer.getPassenger(currentPassenger.phone) || {};
-  await DataLayer.savePassenger(currentPassenger.phone, {
-    totalBookings: (passengerData.totalBookings || 0) + 1,
-    lastBooking: now()
-  });
+    console.log('🔵 寫入 Firebase...');
+    const savedBooking = await DataLayer.addBooking(date, booking);
+    console.log('✅ 寫入成功：', savedBooking);
 
-  toast('✅ 預約成功');
-  renderWaitingRoom(booking.id, date, time);
+    // 更新乘客統計（唔影響主流程）
+    try {
+      const passengerData = await DataLayer.getPassenger(currentPassenger.phone) || {};
+      await DataLayer.savePassenger(currentPassenger.phone, {
+        totalBookings: (passengerData.totalBookings || 0) + 1,
+        lastBooking: now()
+      });
+    } catch(e) {
+      console.warn('乘客統計更新失敗（不影響預約）：', e);
+    }
+
+    toast('✅ 預約成功！', 3000);
+    console.log('🔵 顯示等待房間：', savedBooking.id);
+    renderWaitingRoom(savedBooking.id, date, time);
+
+  } catch(e) {
+    console.error('❌ 預約失敗：', e);
+    toast('❌ 預約失敗：' + e.message, 5000);
+    if (btn) { btn.disabled = false; btn.textContent = '確認預約'; }
+  }
 }
 
 async function renderWaitingRoom(bookingId, date, time) {
   const content = document.getElementById('booking-content');
+  console.log('🔵 renderWaitingRoom 開始：', bookingId);
+
   const bookings = await DataLayer.getBookings(date);
+  console.log('🔵 讀取預約列表，數量：', Object.keys(bookings).length);
+
   const b = bookings[bookingId];
-  if (!b) { renderPassengerHome(); return; }
+  console.log('🔵 搵到預約：', b);
+
+  if (!b) {
+    console.warn('❌ 搵唔到預約記錄，返回主頁');
+    toast('⚠️ 預約已寫入，但讀取失敗，請返回主頁查看');
+    renderPassengerHome();
+    return;
+  }
 
   const shiftTime = getShiftTime(b.date, b.time);
   const timeUntil = shiftTime - now();
 
   let html = `
-    <div style="display:flex; align-items:center; margin-bottom:16px;">
-      <button class="btn btn-outline btn-sm" onclick="renderPassengerHome()">← 返回</button>
+    <div class="success-big card" style="border-color:#22c55e; background:#052e16;">
+      <div class="check">✅</div>
+      <h2>預約成功！</h2>
+      <p>你嘅預約已確認</p>
     </div>
+
     <div class="card" style="text-align:center;">
       <div style="font-size:14px; color:#64748b;">預約編號</div>
       <div style="font-size:20px; font-weight:700; color:#38bdf8; letter-spacing:2px; margin:8px 0;">${b.id.substring(0,8).toUpperCase()}</div>
       <div style="font-size:13px; color:#94a3b8;">${b.time} 班次 · ${b.seats} 人</div>
       <div style="font-size:12px; color:#64748b; margin-top:4px;">${getShiftOrigin(b.time)}</div>
+      <div style="font-size:12px; color:#64748b; margin-top:4px;">乘客：${b.passengerName}</div>
     </div>
+
     <div class="gps-box waiting" id="gps-box">
       <div class="gps-icon">📍</div>
       <div class="gps-text" id="gps-text">等待開始定位...</div>
@@ -722,24 +775,12 @@ async function renderWaitingRoom(bookingId, date, time) {
 
   if (b.status === 'reserved') {
     html += `<button class="btn btn-outline" onclick="cancelBooking('${b.id}')">取消預約</button>`;
-  } else if (b.status === 'arrived') {
-    html += `<div class="card" style="text-align:center; border-color:#22c55e; background:#052e16;">
-      <div style="font-size:16px; font-weight:600; color:#4ade80;">✅ 已確認到站</div>
-      <div style="font-size:12px; color:#86efac; margin-top:6px;">請在總站等候上車</div>
-    </div>`;
-  } else if (b.status === 'boarded') {
-    html += `<div class="card" style="text-align:center; border-color:#38bdf8; background:#082f49;">
-      <div style="font-size:16px; font-weight:600; color:#7dd3fc;">🚐 已上車</div>
-    </div>`;
-  } else if (b.status === 'cancelled') {
-    html += `<div class="card" style="text-align:center; color:#94a3b8;">已取消</div>`;
-  } else if (b.status === 'no-show') {
-    html += `<div class="card" style="text-align:center; border-color:#ef4444; background:#450a0a;">
-      <div style="font-size:16px; font-weight:600; color:#f87171;">❌ 未到站</div>
-    </div>`;
+    html += `<button class="btn btn-primary" style="margin-top:10px;" onclick="renderPassengerHome()">返回主頁</button>`;
   }
 
   content.innerHTML = html;
+  console.log('✅ renderWaitingRoom 完成');
+
   updateCountdown(b.date, b.time);
 
   if (b.status === 'reserved') {
@@ -779,11 +820,16 @@ function updateCountdown(date, time) {
 
 async function cancelBooking(bookingId) {
   if (!confirm('確定取消預約？')) return;
-  const today = getToday();
-  await DataLayer.cancelBooking(today, bookingId);
-  stopGPS();
-  toast('已取消預約');
-  renderPassengerHome();
+  try {
+    const today = getToday();
+    await DataLayer.cancelBooking(today, bookingId);
+    stopGPS();
+    toast('已取消預約');
+    renderPassengerHome();
+  } catch(e) {
+    console.error('取消失敗：', e);
+    toast('取消失敗：' + e.message);
+  }
 }
 
 let gpsWatchId = null;
@@ -841,19 +887,22 @@ function stopGPS() {
 }
 
 async function markArrived(bookingId, date) {
-  const bookings = await DataLayer.getBookings(date);
-  const b = bookings[bookingId];
-  if (!b || b.status !== 'reserved') return;
-  await DataLayer.updateBooking(date, bookingId, { status: 'arrived', arrivedAt: now() });
-  stopGPS();
-  toast('✅ 已確認到站！');
+  try {
+    const bookings = await DataLayer.getBookings(date);
+    const b = bookings[bookingId];
+    if (!b || b.status !== 'reserved') return;
+    await DataLayer.updateBooking(date, bookingId, { status: 'arrived', arrivedAt: now() });
+    stopGPS();
+    toast('✅ 已確認到站！');
+  } catch(e) {
+    console.error('到站確認失敗：', e);
+  }
 }
 
 // ============================================================
 // 司機端
 // ============================================================
 
-// 嘗試從 Firebase Auth 自動識別司機（同西鐵小巴共用登入）
 async function tryAutoDetectDriver() {
   const firebaseUser = auth.currentUser;
   if (!firebaseUser) return null;
@@ -877,7 +926,6 @@ async function tryAutoDetectDriver() {
 async function renderDriverHome() {
   const content = document.getElementById('driver-content');
 
-  // 1. 先試 Firebase Auth 自動識別（同西鐵小巴共用）
   if (!currentDriver) {
     const autoDriver = await tryAutoDetectDriver();
     if (autoDriver) {
@@ -887,10 +935,7 @@ async function renderDriverHome() {
     }
   }
 
-  // 2. Fallback：localStorage
   if (!currentDriver) currentDriver = loadDriverSession();
-
-  // 3. 都冇 → 顯示登入頁
   if (!currentDriver) { renderDriverLogin(content); return; }
 
   const driverInDB = await DataLayer.getDriverByIdentifier(currentDriver.identifier);
@@ -955,43 +1000,70 @@ async function renderDriverHome() {
         <button class="btn btn-danger btn-sm" onclick="driverStopDuty()">停止當值</button>
       </div>
     </div>
-    <div class="card-title" style="margin:16px 0 10px;">📋 今日班次名單</div>
+    <div class="card-title" style="margin:16px 0 10px;">📋 今日班次名單（實時更新）</div>
   `;
 
   const today = getToday();
-  const todayBookings = await DataLayer.getBookings(today);
+  content.innerHTML = html;
 
-  const allShifts = [...SHIFTS_MORNING, ...SHIFTS_EVENING];
-  for (const time of allShifts) {
-    const scheduleId = getScheduleId(today, time);
-    const shiftBookings = Object.values(todayBookings).filter(b =>
-      b.scheduleId === scheduleId && b.status !== 'cancelled'
-    );
-    const arrived = shiftBookings.filter(b => b.status === 'arrived' || b.status === 'boarded').length;
-    const reserved = shiftBookings.filter(b => b.status === 'reserved').length;
-    const bookedSeats = shiftBookings
-      .filter(b => ['reserved','arrived','boarded'].includes(b.status))
-      .reduce((s,b) => s + (b.seats||0), 0);
+  // 實時監聽：bookings + seats
+  if (driverBookingListener && driverListenerDate) {
+    try { db.ref('booking/' + driverListenerDate).off('value', driverBookingListener); } catch(e) {}
+  }
+  driverListenerDate = today;
 
-    html += `
-      <div class="shift-card" onclick="renderDriverShift('${today}','${time}')">
-        <div>
-          <div class="shift-time">${time}</div>
-          <div class="shift-info">${getShiftOrigin(time)}</div>
-          <div class="shift-info" style="margin-top:4px;">
-            <span style="color:#22c55e;">🔴 ${arrived} 已到</span> ·
-            <span style="color:#f59e0b;">🟡 ${reserved} 未到</span>
+  const renderList = async (todayBookings) => {
+    const activeBusNow = await DataLayer.getActiveBus(currentDriver.plate);
+    const seats = (activeBusNow && activeBusNow.carSeats) || 16;
+
+    let listHtml = '';
+    const allShifts = [...SHIFTS_MORNING, ...SHIFTS_EVENING];
+    for (const time of allShifts) {
+      const scheduleId = getScheduleId(today, time);
+      const shiftBookings = Object.values(todayBookings).filter(b =>
+        b.scheduleId === scheduleId && b.status !== 'cancelled'
+      );
+      const arrived = shiftBookings.filter(b => b.status === 'arrived' || b.status === 'boarded').length;
+      const reserved = shiftBookings.filter(b => b.status === 'reserved').length;
+      const bookedSeats = shiftBookings
+        .filter(b => ['reserved','arrived','boarded'].includes(b.status))
+        .reduce((s,b) => s + (b.seats||0), 0);
+
+      listHtml += `
+        <div class="shift-card" onclick="renderDriverShift('${today}','${time}')">
+          <div>
+            <div class="shift-time">${time}</div>
+            <div class="shift-info">${getShiftOrigin(time)}</div>
+            <div class="shift-info" style="margin-top:4px;">
+              <span style="color:#22c55e;">🔴 ${arrived} 已到</span> ·
+              <span style="color:#f59e0b;">🟡 ${reserved} 未到</span>
+            </div>
+          </div>
+          <div class="shift-seats">
+            <div class="num ${bookedSeats >= seats ? 'zero' : bookedSeats >= seats - 4 ? 'low' : ''}">${bookedSeats}/${seats}</div>
+            <div class="label">已預約</div>
           </div>
         </div>
-        <div class="shift-seats">
-          <div class="num ${bookedSeats >= (activeBus.carSeats||16) ? 'zero' : bookedSeats >= (activeBus.carSeats||16) - 4 ? 'low' : ''}">${bookedSeats}/${activeBus.carSeats || 16}</div>
-          <div class="label">已預約</div>
-        </div>
-      </div>
-    `;
-  }
+      `;
+    }
 
-  content.innerHTML = html;
+    const oldList = content.querySelector('.shift-list-container');
+    if (oldList) oldList.remove();
+    const listContainer = document.createElement('div');
+    listContainer.className = 'shift-list-container';
+    listContainer.innerHTML = listHtml;
+    content.appendChild(listContainer);
+  };
+
+  const todaySnap = await DataLayer.getBookings(today);
+  await renderList(todaySnap);
+
+  driverBookingListener = (snap) => {
+    console.log('🔔 司機端收到預約更新');
+    const data = snap.val() || {};
+    renderList(data).catch(e => console.warn('更新列表失敗：', e));
+  };
+  db.ref('booking/' + today).on('value', driverBookingListener);
 }
 
 function renderDriverLogin(content) {
@@ -1014,17 +1086,27 @@ async function driverLogin() {
   const id = document.getElementById('driver-login-id').value.trim();
   if (!id) { toast('請輸入電話號碼或電郵'); return; }
 
-  const driver = await DataLayer.getDriverByIdentifier(id);
-  if (!driver) { toast('❌ 此帳戶不是司機'); return; }
+  try {
+    const driver = await DataLayer.getDriverByIdentifier(id);
+    if (!driver) { toast('❌ 此帳戶不是司機'); return; }
 
-  currentDriver = { identifier: id, plate: driver.plate || loadDriverPlate(id) };
-  saveDriverSession(currentDriver);
-  toast('✅ 司機登入成功');
-  renderDriverHome();
+    currentDriver = { identifier: id, plate: driver.plate || loadDriverPlate(id) };
+    saveDriverSession(currentDriver);
+    toast('✅ 司機登入成功');
+    renderDriverHome();
+  } catch(e) {
+    console.error('登入失敗：', e);
+    toast('登入失敗：' + e.message);
+  }
 }
 
 function driverLogout() {
   if (!confirm('確定登出？')) return;
+  if (driverBookingListener && driverListenerDate) {
+    try { db.ref('booking/' + driverListenerDate).off('value', driverBookingListener); } catch(e) {}
+    driverBookingListener = null;
+    driverListenerDate = null;
+  }
   currentDriver = null;
   clearDriverSession();
   renderDriverLogin(document.getElementById('driver-content'));
@@ -1043,34 +1125,43 @@ async function driverStartDuty() {
 
   if (!plate) { toast('請輸入車牌'); return; }
 
-  currentDriver.plate = plate;
-  saveDriverPlate(currentDriver.identifier, plate);
-  saveDriverSession(currentDriver);
+  try {
+    currentDriver.plate = plate;
+    saveDriverPlate(currentDriver.identifier, plate);
+    saveDriverSession(currentDriver);
 
-  await db.ref('van/active_buses/' + plate).update({
-    plate: plate, driverIdentifier: currentDriver.identifier,
-    carSeats: seats, isActive: true, mode: 'booking', lastUpdate: now()
-  });
+    await db.ref('van/active_buses/' + plate).update({
+      plate: plate, driverIdentifier: currentDriver.identifier,
+      carSeats: seats, isActive: true, mode: 'booking', lastUpdate: now()
+    });
 
-  const today = getToday();
-  if (isWeekday()) {
-    const allShifts = [...SHIFTS_MORNING, ...SHIFTS_EVENING];
-    for (const time of allShifts) {
-      await DataLayer.setSeatConfig(today, time, seats, plate);
+    const today = getToday();
+    if (isWeekday()) {
+      const allShifts = [...SHIFTS_MORNING, ...SHIFTS_EVENING];
+      for (const time of allShifts) {
+        await DataLayer.setSeatConfig(today, time, seats, plate);
+      }
     }
-  }
 
-  toast('🟢 已開始當值');
-  renderDriverHome();
+    toast('🟢 已開始當值');
+    renderDriverHome();
+  } catch(e) {
+    console.error('開始當值失敗：', e);
+    toast('開始當值失敗：' + e.message);
+  }
 }
 
 async function driverStopDuty() {
   if (!confirm('確定停止當值？停止後乘客將無法預約今日班次。')) return;
-  if (currentDriver.plate) {
-    await db.ref('van/active_buses/' + currentDriver.plate).remove();
+  try {
+    if (currentDriver.plate) {
+      await db.ref('van/active_buses/' + currentDriver.plate).remove();
+    }
+    toast('🔴 已停止當值');
+    renderDriverHome();
+  } catch(e) {
+    console.error('停止當值失敗：', e);
   }
-  toast('🔴 已停止當值');
-  renderDriverHome();
 }
 
 async function renderDriverShift(date, time) {
@@ -1163,40 +1254,48 @@ async function renderDriverShift(date, time) {
 }
 
 async function markBoarded(date, bookingId) {
-  await DataLayer.updateBooking(date, bookingId, { status: 'boarded', boardedAt: now() });
-  toast('✅ 已確認上車');
-  const todayBookings = await DataLayer.getBookings(date);
-  const b = todayBookings[bookingId];
-  if (b) renderDriverShift(date, b.time);
+  try {
+    await DataLayer.updateBooking(date, bookingId, { status: 'boarded', boardedAt: now() });
+    toast('✅ 已確認上車');
+    const todayBookings = await DataLayer.getBookings(date);
+    const b = todayBookings[bookingId];
+    if (b) renderDriverShift(date, b.time);
+  } catch(e) {
+    console.error('上車確認失敗：', e);
+  }
 }
 
 async function confirmDeparture(date, time) {
-  const todayBookings = await DataLayer.getBookings(date);
-  const scheduleId = getScheduleId(date, time);
-  const shiftBookings = Object.entries(todayBookings).filter(([k, b]) =>
-    b.scheduleId === scheduleId && b.status === 'reserved'
-  );
+  try {
+    const todayBookings = await DataLayer.getBookings(date);
+    const scheduleId = getScheduleId(date, time);
+    const shiftBookings = Object.entries(todayBookings).filter(([k, b]) =>
+      b.scheduleId === scheduleId && b.status === 'reserved'
+    );
 
-  if (shiftBookings.length === 0) { toast('冇未到站嘅乘客'); return; }
-  if (!confirm(`確定發車？有 ${shiftBookings.length} 位乘客未到站，將被記錄為未到站。`)) return;
+    if (shiftBookings.length === 0) { toast('冇未到站嘅乘客'); return; }
+    if (!confirm(`確定發車？有 ${shiftBookings.length} 位乘客未到站，將被記錄為未到站。`)) return;
 
-  let noShowCount = 0;
-  for (const [id, b] of shiftBookings) {
-    await DataLayer.updateBooking(date, id, { status: 'no-show', noShowAt: now() });
-    const passengerData = await DataLayer.getPassenger(b.passengerPhone) || {};
-    const newScore = Math.max(0, (passengerData.creditScore != null ? passengerData.creditScore : 100) - 20);
-    const patch = {
-      creditScore: newScore,
-      totalNoShows: (passengerData.totalNoShows || 0) + 1
-    };
-    if (newScore < 30) patch.suspendedUntil = now() + 30 * 24 * 60 * 60 * 1000;
-    else if (newScore < 60) patch.suspendedUntil = now() + 7 * 24 * 60 * 60 * 1000;
-    await DataLayer.savePassenger(b.passengerPhone, patch);
-    noShowCount++;
+    let noShowCount = 0;
+    for (const [id, b] of shiftBookings) {
+      await DataLayer.updateBooking(date, id, { status: 'no-show', noShowAt: now() });
+      const passengerData = await DataLayer.getPassenger(b.passengerPhone) || {};
+      const newScore = Math.max(0, (passengerData.creditScore != null ? passengerData.creditScore : 100) - 20);
+      const patch = {
+        creditScore: newScore,
+        totalNoShows: (passengerData.totalNoShows || 0) + 1
+      };
+      if (newScore < 30) patch.suspendedUntil = now() + 30 * 24 * 60 * 60 * 1000;
+      else if (newScore < 60) patch.suspendedUntil = now() + 7 * 24 * 60 * 60 * 1000;
+      await DataLayer.savePassenger(b.passengerPhone, patch);
+      noShowCount++;
+    }
+
+    toast(`已發車，${noShowCount} 人未到站`);
+    renderDriverShift(date, time);
+  } catch(e) {
+    console.error('發車失敗：', e);
   }
-
-  toast(`已發車，${noShowCount} 人未到站`);
-  renderDriverShift(date, time);
 }
 
 // ============================================================
@@ -1274,63 +1373,41 @@ function renderInfo() {
         <strong style="color:#38bdf8;">路線：</strong>大棠黃泥墩 ↔ 元朗西鐵站（途經大棠路）
       </div>
     </div>
-
     <div class="card">
       <div class="card-title">🕐 星期一至五</div>
       <div style="font-size:13px; color:#e2e8f0; line-height:1.9;">
         <strong style="color:#22c55e;">早上固定班次（黃泥墩開出）：</strong><br>
         06:20 ｜ 06:30 ｜ 06:40 ｜ 06:50<br><br>
-        <strong style="color:#f59e0b;">日間非繁忙時間：</strong><br>
-        循環線模式，站頭不設停泊等客<br><br>
+        <strong style="color:#f59e0b;">日間非繁忙時間：</strong>循環線模式<br><br>
         <strong style="color:#38bdf8;">傍晚固定班次（元朗西鐵站開出）：</strong><br>
         18:15 ｜ 18:30 ｜ 18:45 ｜ 19:00 ｜ 19:15<br>
         19:30 ｜ 19:45 ｜ 20:00 ｜ 20:20（尾班車）
       </div>
     </div>
-
     <div class="card">
-      <div class="card-title">🕐 星期六</div>
+      <div class="card-title">🕐 星期六 / 日及公眾假期</div>
       <div style="font-size:13px; color:#e2e8f0; line-height:1.9;">
-        <strong>服務時間：</strong>07:30（頭班車）至 19:00（尾班車）<br>
-        <strong>運作模式：</strong>全日循環行走
+        全日循環行走，不設留座
       </div>
     </div>
-
-    <div class="card">
-      <div class="card-title">🕐 星期日及公眾假期</div>
-      <div style="font-size:13px; color:#e2e8f0; line-height:1.9;">
-        <strong>服務時間：</strong>08:30（頭班車）至 19:00（尾班車）<br>
-        <strong>運作模式：</strong>全日循環行走
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">📞 班次查詢</div>
-      <div style="font-size:13px; color:#e2e8f0; line-height:1.8;">
-        乘客可使用小巴行車查詢系統或 WhatsApp 查詢即時車務情況。
-      </div>
-    </div>
-
     <div class="card">
       <div class="card-title">ℹ️ 留座須知</div>
       <div style="font-size:13px; color:#e2e8f0; line-height:1.9;">
         • 留座只適用於平日固定班次<br>
         • 發車前 15 分鐘開始接受 GPS 到站確認<br>
         • 需進入總站 80 米範圍內方可確認到站<br>
-        • 未到站會扣信用分，嚴重者暫停預約資格<br>
-        • 如需取消預約，請於發車前取消
+        • 未到站會扣信用分，嚴重者暫停預約資格
       </div>
     </div>
-
     <div class="card" style="text-align:center; font-size:12px; color:#64748b;">
       © ${COMPANY}<br>
-      小巴留座系統 v1.0
+      小巴留座系統 v1.1
     </div>
   `;
 }
 
 // ============================================================
-// 事件綁定 + 初始化
+// 初始化
 // ============================================================
 
 document.addEventListener('keydown', function(e) {
@@ -1351,19 +1428,15 @@ db.ref('.info/connected').on('value', snap => {
   else console.log('⚠️ Firebase 離線');
 });
 
-// 監聽 Firebase Auth 狀態變化（同西鐵小巴共用登入）
 auth.onAuthStateChanged(async (user) => {
   console.log('🔐 Auth 狀態變化：', user ? (user.uid + ' / ' + (user.email || 'anonymous')) : '未登入');
-  if (user && !currentDriver) {
-    // 如果用戶已經喺司機端頁面，嘗試自動識別
-    if (currentScreen === 'driver') {
-      const autoDriver = await tryAutoDetectDriver();
-      if (autoDriver) {
-        currentDriver = autoDriver;
-        saveDriverSession(currentDriver);
-        renderDriverHome();
-        toast('✅ 已自動識別西鐵小巴登入身份');
-      }
+  if (user && !currentDriver && currentScreen === 'driver') {
+    const autoDriver = await tryAutoDetectDriver();
+    if (autoDriver) {
+      currentDriver = autoDriver;
+      saveDriverSession(currentDriver);
+      renderDriverHome();
+      toast('✅ 已自動識別西鐵小巴登入身份');
     }
   }
 });
@@ -1392,7 +1465,7 @@ async function autoCleanExpiredBookings() {
 }
 
 (function init() {
-  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v1.0 啟動');
+  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v1.1 啟動');
   currentPassenger = loadPassengerSession();
   currentDriver = loadDriverSession();
   updateHomeStats();
