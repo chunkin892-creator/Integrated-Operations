@@ -359,4 +359,736 @@ body.dark .export-panel{background:#1e293b;}
     <div class="card-title">📜 歷史月份存檔</div>
     <div id="historyList"></div>
   </div>
-</div>
+</div><script>
+const firebaseConfig={apiKey:"AIzaSyANWLqV5bIFfMX_-byunnEBQ-gZmSn1cj4",authDomain:"driver-s-shift-report.firebaseapp.com",databaseURL:"https://driver-s-shift-report-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"driver-s-shift-report",storageBucket:"driver-s-shift-report.firebasestorage.app",messagingSenderId:"790331468274",appId:"1:790331468274:web:a0cecd6a8d5f8e157ba36b",measurementId:"G-JZSZKCSS27"};
+let app,auth,db,analytics;
+let firebaseReady=false;
+function safeGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function safeSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function escapeHtml(str){if(str===null||str===undefined)return'';return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function showLoading(t){const el=document.getElementById('loadingOverlay');if(!el)return;document.getElementById('loadingText').textContent=t||'處理中...';el.classList.add('active');}
+function hideLoading(){const el=document.getElementById('loadingOverlay');if(el)el.classList.remove('active');}
+
+/* ============ 通用每日格初始化 ============ */
+function initDailyGrid(gridId,inputId,dayStart=1,dayEnd=31,prefix=''){
+  const grid=document.getElementById(gridId);if(!grid)return;grid.innerHTML='';
+  for(let day=dayStart;day<=dayEnd;day++){
+    const div=document.createElement('div');div.className='daily-item';
+    div.innerHTML=`<label>${day} 號</label><input type="number" min="0" id="${prefix}day_${day}" placeholder="0" oninput="calcDailySum('${gridId}','${inputId}','${prefix}',${dayStart},${dayEnd})">`;
+    grid.appendChild(div);
+  }
+}
+function calcDailySum(gridId,inputId,prefix,dayStart,dayEnd){
+  let total=0;
+  for(let day=dayStart;day<=dayEnd;day++){
+    const el=document.getElementById(`${prefix}day_${day}`);
+    if(el)total+=Number(el.value||0);
+  }
+  const mainInput=document.getElementById(inputId);
+  if(mainInput)mainInput.value=total>0?total:'';
+  calcAll();
+}
+function toggleDailyBox(boxId,btn){
+  const box=document.getElementById(boxId);if(!box)return;
+  const isHidden=box.style.display==='none'||box.style.display==='';
+  box.style.display=isHidden?'block':'none';
+  if(btn)btn.textContent=isHidden?'📅 收起明細':'📅 展開明細';
+}
+
+/* ============ 初始化所有每日格 ============ */
+(function initAllGrids(){
+  // 收入類
+  initDailyGrid('octopusGrid','inOctopus',1,31,'oct_');
+  initDailyGrid('cashGrid','inCash',1,31,'cash_');
+  initDailyGrid('charterCashGrid','inCharterCash',1,31,'chCash_');
+  initDailyGrid('charterElecGrid','inCharterElec',1,31,'chElec_');
+  initDailyGrid('monthlyGrid','inMonthly',1,31,'monthly_');
+  initDailyGrid('adsGrid','inAds',1,31,'ads_');
+  initDailyGrid('otherIncomeGrid','inOtherIncome',1,31,'othInc_');
+  // 支出類
+  initDailyGrid('rentGrid','outRent',1,31,'rent_');
+  initDailyGrid('repairGrid','outRepair',1,31,'repair_');
+  initDailyGrid('insGrid','outInsLicense',1,31,'ins_');
+  initDailyGrid('ticketGrid','outTicket',1,31,'ticket_');
+  initDailyGrid('otherGrid','outOther',1,31,'other_');
+  initDailyGrid('salaryEarlyGrid','outSalaryEarly',1,15,'salaryEarly_');
+  initDailyGrid('salaryLateGrid','outSalaryLate',16,31,'salaryLate_');
+  initFuelGrid();
+})();
+
+function initFuelGrid(){
+  const grid=document.getElementById('fuelGrid');if(!grid)return;grid.innerHTML='';
+  for(let day=1;day<=31;day++){
+    const div=document.createElement('div');div.className='daily-item';
+    div.innerHTML=`<label>${day}號 早更</label><input type="number" min="0" id="fuel_early_${day}" placeholder="0" oninput="calcFuelDaily()"><label>${day}號 夜間</label><input type="number" min="0" id="fuel_night_${day}" placeholder="0" oninput="calcFuelDaily()">`;
+    grid.appendChild(div);
+  }
+}
+function calcFuelDaily(){
+  let total=0;
+  for(let day=1;day<=31;day++){
+    const early=document.getElementById(`fuel_early_${day}`);
+    const night=document.getElementById(`fuel_night_${day}`);
+    if(early)total+=Number(early.value||0);
+    if(night)total+=Number(night.value||0);
+  }
+  const outFuel=document.getElementById('outFuel');
+  if(outFuel)outFuel.value=total>0?total:'';
+  calcAll();
+}
+
+/* ============ 主題 ============ */
+function applyTheme(isDark){isDark?document.body.classList.add("dark"):document.body.classList.remove("dark");safeSet("minibusTheme",isDark?"dark":"light");}
+function toggleTheme(){applyTheme(!document.body.classList.contains("dark"));}
+(function loadTheme(){const saved=safeGet("minibusTheme");applyTheme(saved==="dark");})();
+const nowDate=new Date();
+document.getElementById('selMonth').value=`${nowDate.getFullYear()}-${String(nowDate.getMonth()+1).padStart(2,'0')}`;
+
+/* ============ 司機出糧名冊 ============ */
+function addDriverRow(data={name:'',shift:'早更',period:'early',base:'',bonus:'',deduct:'',status:'已出糧(轉賬)'}){
+  const tbody=document.getElementById('driverPayrollBody');const tr=document.createElement('tr');
+  const safeName=escapeHtml(data.name||'');
+  tr.innerHTML=`<td><input type="text" class="dp-name" value="${safeName}" placeholder="例: 陳大文" style="width:90px;"></td><td><select class="dp-shift" style="width:80px;"><option value="早更" ${data.shift==='早更'?'selected':''}>早更</option><option value="夜更" ${data.shift==='夜更'?'selected':''}>夜更</option><option value="特更" ${data.shift==='特更'?'selected':''}>特更</option><option value="替更" ${data.shift==='替更'?'selected':''}>替更</option></select></td><td><select class="dp-period" style="width:130px;" onchange="updateRowCalculations()"><option value="early" ${data.period==='early'?'selected':''}>上半月 (1-15日)</option><option value="late" ${data.period==='late'?'selected':''}>下半月 (16-31日)</option></select></td><td><input type="number" min="0" class="dp-base" value="${data.base||''}" placeholder="0" style="width:85px;text-align:right;" oninput="updateRowCalculations()"></td><td><input type="number" min="0" class="dp-bonus" value="${data.bonus||''}" placeholder="0" style="width:80px;text-align:right;" oninput="updateRowCalculations()"></td><td><input type="number" min="0" class="dp-deduct" value="${data.deduct||''}" placeholder="0" style="width:80px;text-align:right;" oninput="updateRowCalculations()"></td><td><strong class="dp-net" style="color:#059669;">0.00</strong></td><td><select class="dp-status" style="width:115px;"><option value="已出糧(轉賬)" ${data.status==='已出糧(轉賬)'?'selected':''}>✅ 已出(轉賬)</option><option value="已出糧(現金)" ${data.status==='已出糧(現金)'?'selected':''}>💵 已出(現金)</option><option value="待發放" ${data.status==='待發放'?'selected':''}>⏳ 待發放</option></select></td><td><button class="btn btn-danger" style="padding:4px 8px;font-size:12px;" onclick="this.closest('tr').remove();updateRowCalculations();">刪除</button></td>`;
+  tbody.appendChild(tr);updateRowCalculations();
+}
+function updateRowCalculations(){
+  const rows=document.querySelectorAll('#driverPayrollBody tr');let earlySum=0,lateSum=0;
+  rows.forEach(tr=>{
+    const baseEl=tr.querySelector('.dp-base');const bonusEl=tr.querySelector('.dp-bonus');const deductEl=tr.querySelector('.dp-deduct');
+    if(!baseEl||!bonusEl||!deductEl)return;
+    const base=Number(baseEl.value||0);const bonus=Number(bonusEl.value||0);const deduct=Number(deductEl.value||0);
+    const net=base+bonus-deduct;
+    const netEl=tr.querySelector('.dp-net');if(netEl)netEl.textContent=net.toFixed(2);
+    const periodEl=tr.querySelector('.dp-period');const period=periodEl?periodEl.value:'early';
+    if(period==='early')earlySum+=net;else lateSum+=net;
+  });
+  document.getElementById('secSumEarly').textContent=earlySum.toFixed(2);
+  document.getElementById('secSumLate').textContent=lateSum.toFixed(2);
+}
+function getPayrollTableData(){
+  const rows=document.querySelectorAll('#driverPayrollBody tr');const list=[];
+  rows.forEach(tr=>{
+    const baseEl=tr.querySelector('.dp-base');const bonusEl=tr.querySelector('.dp-bonus');const deductEl=tr.querySelector('.dp-deduct');
+    if(!baseEl||!bonusEl||!deductEl)return;
+    const base=Number(baseEl.value||0);const bonus=Number(bonusEl.value||0);const deduct=Number(deductEl.value||0);
+    const net=base+bonus-deduct;
+    list.push({name:tr.querySelector('.dp-name').value.trim(),shift:tr.querySelector('.dp-shift').value,period:tr.querySelector('.dp-period').value,base:base,bonus:bonus,deduct:deduct,net:net,status:tr.querySelector('.dp-status').value});
+  });
+  return list;
+}
+function syncPayrollToInputs(){
+  updateRowCalculations();
+  const early=Number(document.getElementById('secSumEarly').textContent||0);
+  const late=Number(document.getElementById('secSumLate').textContent||0);
+  if(early>0||late>0){
+    if(!confirm(`確定要將名冊工資同步至營運支出？\n• 上半月：HK$ ${early.toFixed(2)}\n• 下半月：HK$ ${late.toFixed(2)}\n\n注意：會覆蓋上方手動輸入嘅金額。`))return;
+    document.getElementById('outSalaryEarly').value=early>0?early:'';
+    document.getElementById('outSalaryLate').value=late>0?late:'';
+    calcAll();
+    alert(`✅ 已同步：\n• 上半月：HK$ ${early.toFixed(2)}\n• 下半月：HK$ ${late.toFixed(2)}`);
+  }else{alert("⚠️ 名冊中暫無有效工資金額！");}
+}
+
+/* ============ 包車服務記錄表 ============ */
+function addCharterRow(data={date:'',customer:'',phone:'',route:'',amount:'',payMethod:'現金',status:'已收款',remark:''}){
+  const tbody=document.getElementById('charterBody');if(!tbody)return;
+  const tr=document.createElement('tr');
+  const safeCustomer=escapeHtml(data.customer||'');
+  const safePhone=escapeHtml(data.phone||'');
+  const safeRoute=escapeHtml(data.route||'');
+  const safeRemark=escapeHtml(data.remark||'');
+  tr.innerHTML=`
+    <td><input type="date" class="ch-date" value="${data.date||''}" style="width:125px;" onchange="updateCharterCalculations()"></td>
+    <td><input type="text" class="ch-customer" value="${safeCustomer}" placeholder="客戶" style="width:80px;"></td>
+    <td><input type="tel" class="ch-phone" value="${safePhone}" placeholder="電話" style="width:95px;"></td>
+    <td><input type="text" class="ch-route" value="${safeRoute}" placeholder="路線/用途" style="width:120px;"></td>
+    <td><input type="number" min="0" class="ch-amount" value="${data.amount||''}" placeholder="0" style="width:80px;text-align:right;" oninput="updateCharterCalculations()"></td>
+    <td><select class="ch-pay" style="width:95px;" onchange="updateCharterCalculations()">
+      <option value="現金" ${data.payMethod==='現金'?'selected':''}>💵 現金</option>
+      <option value="電子" ${data.payMethod==='電子'?'selected':''}>💳 電子</option>
+    </select></td>
+    <td><select class="ch-status" style="width:90px;">
+      <option value="已收款" ${data.status==='已收款'?'selected':''}>✅ 已收款</option>
+      <option value="待收款" ${data.status==='待收款'?'selected':''}>⏳ 待收款</option>
+    </select></td>
+    <td><input type="text" class="ch-remark" value="${safeRemark}" placeholder="備註" style="width:100px;"></td>
+    <td><button class="btn btn-danger" style="padding:4px 8px;font-size:12px;" onclick="this.closest('tr').remove();updateCharterCalculations();">刪除</button></td>`;
+  tbody.appendChild(tr);
+  updateCharterCalculations();
+}
+function updateCharterCalculations(){
+  const rows=document.querySelectorAll('#charterBody tr');
+  let cashSum=0,elecSum=0,totalSum=0;
+  rows.forEach(tr=>{
+    const amountEl=tr.querySelector('.ch-amount');
+    const payEl=tr.querySelector('.ch-pay');
+    const statusEl=tr.querySelector('.ch-status');
+    if(!amountEl||!payEl)return;
+    const amount=Number(amountEl.value||0);
+    const pay=payEl.value;
+    const status=statusEl?statusEl.value:'已收款';
+    // 只計算已收款
+    if(status==='已收款'){
+      if(pay==='現金')cashSum+=amount;
+      else elecSum+=amount;
+    }
+    totalSum+=amount;
+  });
+  const cashEl=document.getElementById('charterCashSum');
+  const elecEl=document.getElementById('charterElecSum');
+  const totalEl=document.getElementById('charterTotalSum');
+  if(cashEl)cashEl.textContent=cashSum.toFixed(2);
+  if(elecEl)elecEl.textContent=elecSum.toFixed(2);
+  if(totalEl)totalEl.textContent=totalSum.toFixed(2);
+}
+function getCharterTableData(){
+  const rows=document.querySelectorAll('#charterBody tr');const list=[];
+  rows.forEach(tr=>{
+    const amountEl=tr.querySelector('.ch-amount');
+    if(!amountEl)return;
+    list.push({
+      date:tr.querySelector('.ch-date')?.value||'',
+      customer:tr.querySelector('.ch-customer')?.value.trim()||'',
+      phone:tr.querySelector('.ch-phone')?.value.trim()||'',
+      route:tr.querySelector('.ch-route')?.value.trim()||'',
+      amount:Number(amountEl.value||0),
+      payMethod:tr.querySelector('.ch-pay')?.value||'現金',
+      status:tr.querySelector('.ch-status')?.value||'已收款',
+      remark:tr.querySelector('.ch-remark')?.value.trim()||''
+    });
+  });
+  return list;
+}
+function syncCharterToInputs(){
+  updateCharterCalculations();
+  const cashSum=Number(document.getElementById('charterCashSum').textContent||0);
+  const elecSum=Number(document.getElementById('charterElecSum').textContent||0);
+  if(cashSum===0&&elecSum===0){alert("⚠️ 包車記錄中暫無已收款金額！");return;}
+  if(!confirm(`確定要將包車記錄同步至上方包車收入欄？\n• 現金：HK$ ${cashSum.toFixed(2)}\n• 電子：HK$ ${elecSum.toFixed(2)}\n\n注意：會覆蓋上方手動輸入嘅金額。`))return;
+  document.getElementById('inCharterCash').value=cashSum>0?cashSum:'';
+  document.getElementById('inCharterElec').value=elecSum>0?elecSum:'';
+  calcAll();
+  alert(`✅ 已同步：\n• 包車現金：HK$ ${cashSum.toFixed(2)}\n• 包車電子：HK$ ${elecSum.toFixed(2)}`);
+}
+
+/* ============ 自動同步功能 ============ */
+async function syncIncomeFromRecords(){
+  const monthKey=document.getElementById('selMonth').value;
+  if(!monthKey){alert('請先選擇月份');return;}
+  if(!db){alert('Firebase 未連線');return;}
+  if(!confirm(`從行車記錄自動同步 ${monthKey} 收入？\n會覆蓋上方八達通/現金欄位。`))return;
+  showLoading('讀取行車記錄...');
+  try{
+    const rg=U.range(monthKey,'month');
+    const snap=await db.ref('records').orderByKey().startAt(rg.start).endAt(rg.end+'\uf8ff').once('value');
+    const all=snap.val()||{};
+    let elec=0,cash=0,count=0;
+    Object.values(all).forEach(day=>{
+      if(!day||!day.trips)return;
+      const trips=Array.isArray(day.trips)?day.trips.filter(Boolean):Object.values(day.trips);
+      trips.forEach(t=>{
+        elec+=(t.c9Elec||0)*9+(t.c6Elec||0)*6;
+        cash+=(t.c9Cash||0)*9+(t.c6Cash||0)*6;
+        count++;
+      });
+    });
+    if(count===0){alert('該月無行車記錄');hideLoading();return;}
+    document.getElementById('inOctopus').value=elec.toFixed(2);
+    document.getElementById('inCash').value=cash.toFixed(2);
+    calcAll();
+    alert(`✅ 已從 ${count} 班車自動同步：\n• 八達通：HK$ ${elec.toFixed(2)}\n• 現金：HK$ ${cash.toFixed(2)}`);
+  }catch(e){console.error(e);alert('同步失敗：'+e.message);}
+  finally{hideLoading();}
+}
+async function syncSalaryFromAttendance(){
+  const monthKey=document.getElementById('selMonth').value;
+  if(!monthKey){alert('請先選擇月份');return;}
+  if(!db){alert('Firebase 未連線');return;}
+  if(!confirm(`從考勤記錄自動同步 ${monthKey} 司機工資？\n會覆蓋上方工資欄位。`))return;
+  showLoading('讀取考勤記錄...');
+  try{
+    const rg=U.range(monthKey,'month');
+    const snap=await db.ref('attendance').orderByKey().startAt(rg.start).endAt(rg.end+'\uf8ff').once('value');
+    const all=snap.val()||{};
+    let eH=0,eS=0,lH=0,lS=0,count=0;
+    Object.keys(all).forEach(d=>{
+      const dayNum=parseInt(d.split('-')[2]);
+      const day=all[d];
+      Object.values(day).forEach(r=>{
+        const sal=r.salary||0;const hrs=r.hours||0;
+        if(dayNum<=15){eH+=hrs;eS+=sal;}else{lH+=hrs;lS+=sal;}
+        count++;
+      });
+    });
+    if(count===0){alert('該月無考勤記錄');hideLoading();return;}
+    document.getElementById('outSalaryEarly').value=eS.toFixed(2);
+    document.getElementById('outSalaryLate').value=lS.toFixed(2);
+    calcAll();
+    alert(`✅ 已從 ${count} 筆考勤自動同步：\n• 上半月：HK$ ${eS.toFixed(2)} (${eH.toFixed(1)}h)\n• 下半月：HK$ ${lS.toFixed(2)} (${lH.toFixed(1)}h)`);
+  }catch(e){console.error(e);alert('同步失敗：'+e.message);}
+  finally{hideLoading();}
+}
+async function syncFuelFromReceipts(){
+  const monthKey=document.getElementById('selMonth').value;
+  if(!monthKey){alert('請先選擇月份');return;}
+  if(!db){alert('Firebase 未連線');return;}
+  if(!confirm(`從燃料費收據自動同步 ${monthKey} 資料？\n會覆蓋上方燃料費欄位。`))return;
+  showLoading('讀取燃料費收據...');
+  try{
+    const rg=U.range(monthKey,'month');
+    const snap=await db.ref('fuel').orderByKey().startAt(rg.start).endAt(rg.end+'\uf8ff').once('value');
+    const all=snap.val()||{};
+    let total=0,count=0;
+    const dailyByDay={};
+    Object.keys(all).forEach(d=>{
+      const dayNum=parseInt(d.split('-')[2]);
+      let dayTotal=0;
+      Object.values(all[d]).forEach(f=>{dayTotal+=f.amount||0;total+=f.amount||0;count++;});
+      if(dayTotal>0)dailyByDay[dayNum]=dayTotal;
+    });
+    if(count===0){alert('該月無燃料費收據紀錄');hideLoading();return;}
+    document.getElementById('outFuel').value=total.toFixed(2);
+    for(let day=1;day<=31;day++){
+      const el=document.getElementById('fuel_early_'+day);
+      const el2=document.getElementById('fuel_night_'+day);
+      if(dailyByDay[day]){if(el)el.value=dailyByDay[day].toFixed(2);if(el2)el2.value='';}
+      else{if(el)el.value='';if(el2)el2.value='';}
+    }
+    calcAll();
+    alert(`✅ 已從 ${count} 張收據同步燃料費：HK$ ${total.toFixed(2)}`);
+  }catch(e){console.error(e);alert('同步失敗：'+e.message);}
+  finally{hideLoading();}
+}
+
+/* ============ 收集頁面數據 ============ */
+function getPageValues(){
+  function getDailySum(prefix,dayStart=1,dayEnd=31){
+    const obj={};
+    for(let day=dayStart;day<=dayEnd;day++){
+      const el=document.getElementById(`${prefix}day_${day}`);
+      obj[`day_${day}`]=el?Number(el.value||0):0;
+    }
+    return obj;
+  }
+  const fuelDaily={};
+  for(let day=1;day<=31;day++){
+    const earlyEl=document.getElementById(`fuel_early_${day}`);
+    const nightEl=document.getElementById(`fuel_night_${day}`);
+    fuelDaily[`day_${day}_early`]=earlyEl?Number(earlyEl.value||0):0;
+    fuelDaily[`day_${day}_night`]=nightEl?Number(nightEl.value||0):0;
+  }
+  return{
+    inOctopus:Number(document.getElementById('inOctopus').value||0),
+    inCash:Number(document.getElementById('inCash').value||0),
+    inCharterCash:Number(document.getElementById('inCharterCash').value||0),
+    inCharterElec:Number(document.getElementById('inCharterElec').value||0),
+    inMonthly:Number(document.getElementById('inMonthly').value||0),
+    inAds:Number(document.getElementById('inAds').value||0),
+    inOtherIncome:Number(document.getElementById('inOtherIncome').value||0),
+    incomeNotes:document.getElementById('incomeNotes').value,
+    outSalaryEarly:Number(document.getElementById('outSalaryEarly').value||0),
+    outSalaryLate:Number(document.getElementById('outSalaryLate').value||0),
+    outFuel:Number(document.getElementById('outFuel').value||0),
+    outRent:Number(document.getElementById('outRent').value||0),
+    outRepair:Number(document.getElementById('outRepair').value||0),
+    outInsLicense:Number(document.getElementById('outInsLicense').value||0),
+    outTicket:Number(document.getElementById('outTicket').value||0),
+    outOther:Number(document.getElementById('outOther').value||0),
+    secNotes:document.getElementById('secNotes').value,
+    payrollList:getPayrollTableData(),
+    charterList:getCharterTableData(),
+    octDaily:getDailySum('oct_'),
+    cashDaily:getDailySum('cash_'),
+    charterCashDaily:getDailySum('chCash_'),
+    charterElecDaily:getDailySum('chElec_'),
+    monthlyDaily:getDailySum('monthly_'),
+    adsDaily:getDailySum('ads_'),
+    otherIncomeDaily:getDailySum('othInc_'),
+    rentDaily:getDailySum('rent_'),
+    repairDaily:getDailySum('repair_'),
+    insDaily:getDailySum('ins_'),
+    ticketDaily:getDailySum('ticket_'),
+    otherDaily:getDailySum('other_'),
+    salaryEarlyDaily:getDailySum('salaryEarly_',1,15),
+    salaryLateDaily:getDailySum('salaryLate_',16,31),
+    fuelDaily:fuelDaily
+  };
+}
+
+/* ============ 計算總覽 ============ */
+function calcAll(){
+  const d=getPageValues();
+  const salarySum=d.outSalaryEarly+d.outSalaryLate;
+  document.getElementById('outSalarySumShow').textContent=salarySum.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  const subIncome=d.inOctopus+d.inCash+d.inCharterCash+d.inCharterElec+d.inMonthly+d.inAds+d.inOtherIncome;
+  const totalCharter=d.inCharterCash+d.inCharterElec;
+  const subExpense=salarySum+d.outFuel+d.outRent+d.outRepair+d.outInsLicense+d.outTicket+d.outOther;
+  const net=subIncome-subExpense;
+
+  document.getElementById('subIncome').textContent=subIncome.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('subExpense').textContent=subExpense.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('totalIncome').textContent=subIncome.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('totalCharter').textContent=totalCharter.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('totalExpense').textContent=subExpense.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('netProfit').textContent=net.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  const kpiProfit=document.getElementById('kpiProfitBox');
+  if(net>=0){
+    kpiProfit.style.background="var(--income-bg)";
+    kpiProfit.style.color="var(--income-text)";
+    kpiProfit.style.borderColor="var(--income-border)";
+  }else{
+    kpiProfit.style.background="var(--exp-bg)";
+    kpiProfit.style.color="var(--exp-text)";
+    kpiProfit.style.borderColor="var(--exp-border)";
+  }
+}
+
+/* ============ 本機儲存 ============ */
+const LOCAL_KEY="minibusAccountsLocal_v3";
+function localGetAll(){const raw=safeGet(LOCAL_KEY);try{return raw?JSON.parse(raw):{};}catch(e){return{};}}
+function localSaveMonth(monthKey,data){const all=localGetAll();all[monthKey]=data;safeSet(LOCAL_KEY,JSON.stringify(all));}
+function localLoadMonth(monthKey){const all=localGetAll();return all[monthKey]||{};}
+
+/* ============ Firebase 初始化 ============ */
+window.addEventListener('load',function(){
+  if(typeof firebase==="undefined"){document.getElementById("fbLoginStatus").textContent="⚠️ Firebase SDK 載入失敗，請檢查網絡";return;}
+  try{
+    app=firebase.initializeApp(firebaseConfig);
+    auth=firebase.auth(app);db=firebase.database(app);
+    try{analytics=firebase.analytics(app);}catch(e){}
+    auth.onAuthStateChanged(user=>{
+      if(user){
+        document.getElementById("loginWrap").style.display="none";
+        document.getElementById("mainApp").style.display="block";
+        document.getElementById("userInfo").textContent=`👤 ${user.displayName||'管理員/秘書'} (${user.email||''})`;
+        firebaseReady=true;
+        document.getElementById("fbStatus").textContent="✅ Firebase 連接正常";
+        loadMonthData();
+      }else{
+        document.getElementById("loginWrap").style.display="block";
+        document.getElementById("mainApp").style.display="none";
+        firebaseReady=false;
+        document.getElementById("fbLoginStatus").textContent="⚠️ 請使用 Google 帳號登入系統";
+      }
+    },err=>{console.error('Auth 錯誤：',err);document.getElementById("fbLoginStatus").textContent="⚠️ Auth 錯誤："+err.message;});
+  }catch(e){console.error('Firebase 初始化失敗：',e);document.getElementById("fbLoginStatus").textContent="⚠️ Firebase 初始化失敗："+e.message;}
+});
+async function signInGoogle(){if(!auth){alert('Firebase Auth 未初始化');return;}const provider=new firebase.auth.GoogleAuthProvider();try{await auth.signInWithPopup(provider);}catch(err){alert("登入失敗："+err.message);}}
+async function signOut(){if(!auth){alert('Firebase Auth 未初始化');return;}try{await auth.signOut();}catch(e){alert("登出異常："+e.message);}}
+
+/* ============ 載入月份數據 ============ */
+async function loadMonthData(){
+  const monthKey=document.getElementById('selMonth').value;
+  if(!monthKey){alert('請先選擇月份');return;}
+  showLoading('正在載入月份數據...');
+  let d;
+  if(firebaseReady){
+    try{
+      const snapshot=await db.ref("finance").child(monthKey).once('value');
+      if(snapshot.exists()){d=snapshot.val();}
+      else{
+        const oldSnap=await db.ref("minibusAccounts").child(monthKey).once('value');
+        d=oldSnap.exists()?oldSnap.val():localLoadMonth(monthKey);
+      }
+    }catch(e){d=localLoadMonth(monthKey);}
+  }else{d=localLoadMonth(monthKey);}
+
+  // 收入欄
+  document.getElementById('inOctopus').value=d.inOctopus||'';
+  document.getElementById('inCash').value=d.inCash||'';
+  document.getElementById('inCharterCash').value=d.inCharterCash||'';
+  document.getElementById('inCharterElec').value=d.inCharterElec||'';
+  document.getElementById('inMonthly').value=d.inMonthly||'';
+  document.getElementById('inAds').value=d.inAds||'';
+  document.getElementById('inOtherIncome').value=d.inOtherIncome||'';
+  document.getElementById('incomeNotes').value=d.incomeNotes||'';
+
+  // 支出欄
+  document.getElementById('outSalaryEarly').value=d.outSalaryEarly??(d.outSalary?(d.outSalary/2).toFixed(0):'');
+  document.getElementById('outSalaryLate').value=d.outSalaryLate??(d.outSalary?(d.outSalary/2).toFixed(0):'');
+  document.getElementById('outFuel').value=d.outFuel||'';
+  document.getElementById('outRent').value=d.outRent||'';
+  document.getElementById('outRepair').value=d.outRepair||'';
+  document.getElementById('outInsLicense').value=d.outInsLicense||'';
+  document.getElementById('outTicket').value=d.outTicket||'';
+  document.getElementById('outOther').value=d.outOther||'';
+  document.getElementById('secNotes').value=d.secNotes||'';
+
+  // 司機名冊
+  const tbody=document.getElementById('driverPayrollBody');tbody.innerHTML='';
+  (d.payrollList||[]).forEach(item=>addDriverRow(item));
+
+  // 包車記錄
+  const charterBody=document.getElementById('charterBody');charterBody.innerHTML='';
+  (d.charterList||[]).forEach(item=>addCharterRow(item));
+
+  // 每日數據
+  function loadDaily(prefix,dayStart=1,dayEnd=31,dataObj){
+    for(let day=dayStart;day<=dayEnd;day++){
+      const el=document.getElementById(`${prefix}day_${day}`);
+      if(el)el.value=dataObj?.[`day_${day}`]??'';
+    }
+  }
+  loadDaily('oct_',1,31,d.octDaily);
+  loadDaily('cash_',1,31,d.cashDaily);
+  loadDaily('chCash_',1,31,d.charterCashDaily);
+  loadDaily('chElec_',1,31,d.charterElecDaily);
+  loadDaily('monthly_',1,31,d.monthlyDaily);
+  loadDaily('ads_',1,31,d.adsDaily);
+  loadDaily('othInc_',1,31,d.otherIncomeDaily);
+  loadDaily('rent_',1,31,d.rentDaily);
+  loadDaily('repair_',1,31,d.repairDaily);
+  loadDaily('ins_',1,31,d.insDaily);
+  loadDaily('ticket_',1,31,d.ticketDaily);
+  loadDaily('other_',1,31,d.otherDaily);
+  loadDaily('salaryEarly_',1,15,d.salaryEarlyDaily);
+  loadDaily('salaryLate_',16,31,d.salaryLateDaily);
+
+  const fuelDaily=d.fuelDaily||{};
+  for(let day=1;day<=31;day++){
+    const earlyEl=document.getElementById(`fuel_early_${day}`);
+    const nightEl=document.getElementById(`fuel_night_${day}`);
+    if(earlyEl)earlyEl.value=fuelDaily[`day_${day}_early`]||'';
+    if(nightEl)nightEl.value=fuelDaily[`day_${day}_night`]||'';
+  }
+
+  calcAll();
+  renderHistory();
+  hideLoading();
+}
+
+/* ============ 儲存至雲端 ============ */
+async function saveCurrent(){
+  const monthKey=document.getElementById('selMonth').value;
+  if(!monthKey){alert('請先選擇月份');return;}
+  const payload=getPageValues();
+  localSaveMonth(monthKey,payload);
+  if(firebaseReady){
+    try{
+      await db.ref("finance").child(monthKey).set(payload);
+      alert("✅ 已成功儲存本月營運與秘書數據至雲端！");
+    }catch(err){alert("⚠️ 雲端儲存失敗，已保存至本機："+err.message);}
+  }else{alert("✅ 已儲存至本機快取");}
+  renderHistory();
+}
+
+/* ============ 歷史紀錄 ============ */
+async function renderHistory(){
+  const listDom=document.getElementById('historyList');
+  listDom.innerHTML="<div style='color:var(--text-secondary);padding:8px;'>讀取中...</div>";
+  let cloudData={};
+  if(firebaseReady){
+    try{
+      const snap=await db.ref("finance").once('value');cloudData=snap.val()||{};
+      const oldSnap=await db.ref("minibusAccounts").once('value');const oldData=oldSnap.val()||{};
+      cloudData={...oldData,...cloudData};
+    }catch(e){}
+  }
+  const localData=localGetAll();
+  const merged={...localData,...cloudData};
+  listDom.innerHTML="";
+  const keys=Object.keys(merged).sort().reverse();
+  if(keys.length===0){listDom.innerHTML="<div style='color:var(--text-secondary);padding:8px;'>暫無記錄</div>";return;}
+  keys.forEach(k=>{
+    const d=merged[k];
+    const sal=(d.outSalaryEarly||0)+(d.outSalaryLate||0)||(d.outSalary||0);
+    const inc=(d.inOctopus||0)+(d.inCash||0)+(d.inCharterCash||0)+(d.inCharterElec||0)+(d.inMonthly||0)+(d.inAds||0)+(d.inOtherIncome||0);
+    const exp=sal+(d.outFuel||0)+(d.outRent||0)+(d.outRepair||0)+(d.outInsLicense||0)+(d.outTicket||0)+(d.outOther||0);
+    const net=inc-exp;
+    const div=document.createElement('div');div.className="history-item";
+    div.innerHTML=`<div><strong>${escapeHtml(k)}</strong></div><div>收入: $${inc.toFixed(0)} ｜ 支出: $${exp.toFixed(0)} ｜ <span style="font-weight:bold;color:${net>=0?'#059669':'#dc2626'}">淨額: $${net.toFixed(0)}</span></div>`;
+    div.onclick=()=>{document.getElementById('selMonth').value=k;loadMonthData();};
+    listDom.appendChild(div);
+  });
+}
+
+/* ============ Excel 匯出（當月） ============ */
+async function exportMonthlyStatementExcel(){
+  const curMonth=document.getElementById('selMonth').value;
+  if(!curMonth){alert('請先選擇月份');return;}
+  const buttons=document.querySelectorAll('.export-btn');buttons.forEach(b=>b.disabled=true);
+  showLoading('正在建立當月損益表...');
+  try{
+    const d=getPageValues();
+    const salEarly=d.outSalaryEarly;const salLate=d.outSalaryLate;const salTotal=salEarly+salLate;
+    const charterTotal=d.inCharterCash+d.inCharterElec;
+    const totIncome=d.inOctopus+d.inCash+charterTotal+d.inMonthly+d.inAds+d.inOtherIncome;
+    const totExpense=salTotal+d.outFuel+d.outRent+d.outRepair+d.outInsLicense+d.outTicket+d.outOther;
+    const netProfit=totIncome-totExpense;
+
+    const bThin={top:{style:'thin',color:{rgb:'CBD5E1'}},bottom:{style:'thin',color:{rgb:'CBD5E1'}},left:{style:'thin',color:{rgb:'CBD5E1'}},right:{style:'thin',color:{rgb:'CBD5E1'}}};
+    const bDouble={top:{style:'thin',color:{rgb:'64748B'}},bottom:{style:'double',color:{rgb:'0F172A'}},left:{style:'thin',color:{rgb:'CBD5E1'}},right:{style:'thin',color:{rgb:'CBD5E1'}}};
+
+    const ws1_data=[
+      [{v:"浚鍵管理有限公司 ｜ 西鐵小巴營運月結損益表",s:{font:{bold:true,sz:16,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"1E3A8A"}},alignment:{horizontal:"center",vertical:"center"}}},"","",""],
+      [{v:`結算月份：${curMonth} ｜ 幣別：港幣 (HKD)`,s:{font:{sz:11,italic:true},alignment:{horizontal:"center"}}},"","",""],
+      [],
+      [{v:"項目類別",s:{font:{bold:true,color:{rgb:"1E293B"}},fill:{fgColor:{rgb:"E2E8F0"}},alignment:{horizontal:"center"},border:bThin}},{v:"收支細項名稱",s:{font:{bold:true,color:{rgb:"1E293B"}},fill:{fgColor:{rgb:"E2E8F0"}},alignment:{horizontal:"center"},border:bThin}},{v:"金額 (HKD)",s:{font:{bold:true,color:{rgb:"1E293B"}},fill:{fgColor:{rgb:"E2E8F0"}},alignment:{horizontal:"center"},border:bThin}},{v:"備註說明",s:{font:{bold:true,color:{rgb:"1E293B"}},fill:{fgColor:{rgb:"E2E8F0"}},alignment:{horizontal:"center"},border:bThin}}],
+      // 收入
+      [{v:"一、營運收入",s:{font:{bold:true,color:{rgb:"065F46"}},fill:{fgColor:{rgb:"D1FAE5"}},border:bThin}},{v:"八達通營運收款",s:{border:bThin,font:{bold:true}}},{v:d.inOctopus,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00",font:{bold:true}}},{v:"見八達通每日明細",s:{border:bThin,alignment:{horizontal:"center"},font:{italic:true,sz:10}}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"F0FDF4"}}}},{v:"現金收款",s:{border:bThin}},{v:d.inCash,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"見現金每日明細",s:{border:bThin,alignment:{horizontal:"center"},font:{italic:true,sz:10}}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"F0FDF4"}}}},{v:"🚐 包車服務（現金）",s:{border:bThin,font:{color:{rgb:"0891B2"}}}},{v:d.inCharterCash,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00",font:{color:{rgb:"0891B2"}}}},{v:"見包車服務記錄",s:{border:bThin,alignment:{horizontal:"center"},font:{italic:true,sz:10}}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"F0FDF4"}}}},{v:"🚐 包車服務（電子）",s:{border:bThin,font:{color:{rgb:"0891B2"}}}},{v:d.inCharterElec,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00",font:{color:{rgb:"0891B2"}}}},{v:"見包車服務記錄",s:{border:bThin,alignment:{horizontal:"center"},font:{italic:true,sz:10}}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"F0FDF4"}}}},{v:"🎫 月票 / 套票收入",s:{border:bThin}},{v:d.inMonthly,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"",s:{border:bThin}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"F0FDF4"}}}},{v:"📢 廣告 / 贊助收入",s:{border:bThin}},{v:d.inAds,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"",s:{border:bThin}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"F0FDF4"}}}},{v:"💼 其他收入",s:{border:bThin}},{v:d.inOtherIncome,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"",s:{border:bThin}}],
+      [{v:"營運收入合計 (A)",s:{font:{bold:true,color:{rgb:"065F46"}},fill:{fgColor:{rgb:"A7F3D0"}},border:bDouble}},{v:"全月總營運收入",s:{font:{bold:true},fill:{fgColor:{rgb:"A7F3D0"}},border:bDouble}},{v:totIncome,s:{font:{bold:true,sz:12,color:{rgb:"065F46"}},fill:{fgColor:{rgb:"A7F3D0"}},border:bDouble,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"100%",s:{fill:{fgColor:{rgb:"A7F3D0"}},border:bDouble,alignment:{horizontal:"center"},font:{bold:true}}}],
+      [],
+      // 支出
+      [{v:"二、營運支出",s:{font:{bold:true,color:{rgb:"991B1B"}},fill:{fgColor:{rgb:"FEE2E2"}},border:bThin}},{v:"司機工資（上半月 1-15日）",s:{border:bThin,font:{bold:true,color:{rgb:"1D4ED8"}}}},{v:salEarly,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00",font:{bold:true,color:{rgb:"1D4ED8"}}}},{v:"見司機出糧名冊",s:{border:bThin,alignment:{horizontal:"center"},font:{sz:10,italic:true}}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"FEF2F2"}}}},{v:"司機工資（下半月 16-31日）",s:{border:bThin,font:{bold:true,color:{rgb:"6D28D9"}}}},{v:salLate,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00",font:{bold:true,color:{rgb:"6D28D9"}}}},{v:"見司機出糧名冊",s:{border:bThin,alignment:{horizontal:"center"},font:{sz:10,italic:true}}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"FEF2F2"}}}},{v:"燃料費（石油氣/油費）",s:{border:bThin}},{v:d.outFuel,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"見燃料費每日明細",s:{border:bThin,alignment:{horizontal:"center"},font:{italic:true,sz:10}}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"FEF2F2"}}}},{v:"小巴車租",s:{border:bThin}},{v:d.outRent,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"",s:{border:bThin}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"FEF2F2"}}}},{v:"車輛維修保養費",s:{border:bThin}},{v:d.outRepair,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"",s:{border:bThin}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"FEF2F2"}}}},{v:"保險及牌照費",s:{border:bThin}},{v:d.outInsLicense,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"",s:{border:bThin}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"FEF2F2"}}}},{v:"違例告票罰款",s:{border:bThin}},{v:d.outTicket,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"",s:{border:bThin}}],
+      [{v:"",s:{border:bThin,fill:{fgColor:{rgb:"FEF2F2"}}}},{v:"其他雜項支出",s:{border:bThin}},{v:d.outOther,s:{border:bThin,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:"",s:{border:bThin}}],
+      [{v:"營運支出合計 (B)",s:{font:{bold:true,color:{rgb:"991B1B"}},fill:{fgColor:{rgb:"FCA5A5"}},border:bDouble}},{v:"全月總營運支出",s:{font:{bold:true},fill:{fgColor:{rgb:"FCA5A5"}},border:bDouble}},{v:totExpense,s:{font:{bold:true,sz:12,color:{rgb:"991B1B"}},fill:{fgColor:{rgb:"FCA5A5"}},border:bDouble,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:totIncome>0?`${((totExpense/totIncome)*100).toFixed(1)}%`:"-",s:{fill:{fgColor:{rgb:"FCA5A5"}},border:bDouble,alignment:{horizontal:"center"},font:{bold:true}}}],
+      [],
+      [{v:"本月淨盈虧 (A - B)",s:{font:{bold:true,sz:12,color:{rgb:"1E3A8A"}},fill:{fgColor:{rgb:"BFDBFE"}},border:bDouble}},{v:netProfit>=0?"✅ 本月淨盈利":"⚠️ 本月淨虧損",s:{font:{bold:true,color:{rgb:netProfit>=0?"065F46":"991B1B"}},fill:{fgColor:{rgb:"BFDBFE"}},border:bDouble}},{v:netProfit,s:{font:{bold:true,sz:14,color:{rgb:netProfit>=0?"065F46":"991B1B"}},fill:{fgColor:{rgb:netProfit>=0?"D1FAE5":"FEE2E2"}},border:bDouble,alignment:{horizontal:"right"},numFmt:"$#,##0.00"}},{v:totIncome>0?`利潤率: ${((netProfit/totIncome)*100).toFixed(1)}%`:"-",s:{fill:{fgColor:{rgb:"BFDBFE"}},border:bDouble,alignment:{horizontal:"center"},font:{bold:true}}}],
+      [],
+      [{v:"📝 收入備註：",s:{font:{bold:true,color:{rgb:"065F46"}}}}],
+      [{v:d.incomeNotes||"（本月無特別收入備註）",s:{font:{italic:true},alignment:{wrapText:true}}},"","",""],
+      [],
+      [{v:"📝 秘書行政記事備忘：",s:{font:{bold:true,color:{rgb:"5B21B6"}}}}],
+      [{v:d.secNotes||"（本月暫無特殊行政備忘事項）",s:{font:{italic:true},alignment:{wrapText:true}}},"","",""]
+    ];
+    const ws1=XLSX.utils.aoa_to_sheet(ws1_data);
+    ws1['!merges']=[{s:{r:0,c:0},e:{r:0,c:3}},{s:{r:1,c:0},e:{r:1,c:3}}];
+    ws1['!cols']=[{wch:22},{wch:28},{wch:22},{wch:28}];
+
+    // Sheet 2：司機名冊
+    const ws2_data=[[{v:`浚鍵管理有限公司 ｜ ${curMonth} 司機出糧與扣減名冊`,s:{font:{bold:true,sz:14,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"7C3AED"}},alignment:{horizontal:"center",vertical:"center"}}},"","","","","","",""],["司機姓名","負責更別","出糧期數","底薪工資 (HKD)","獎金/津貼 (HKD)","預支/扣減 (HKD)","實發金額 (HKD)","狀態/方式"].map(t=>({v:t,s:{font:{bold:true,color:{rgb:"5B21B6"}},fill:{fgColor:{rgb:"EDE9FE"}},alignment:{horizontal:"center"},border:bThin}}))];
+    (d.payrollList||[]).forEach(p=>{
+      ws2_data.push([{v:p.name||'-',s:{font:{bold:true},alignment:{horizontal:"center"},border:bThin}},{v:p.shift||'-',s:{alignment:{horizontal:"center"},border:bThin}},{v:p.period==='early'?'上半月 (1-15日)':'下半月 (16-31日)',s:{alignment:{horizontal:"center"},border:bThin}},{v:p.base||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}},{v:p.bonus||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}},{v:p.deduct||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00",font:{color:{rgb:"991B1B"}}}},{v:p.net||0,s:{alignment:{horizontal:"right"},border:bThin,font:{bold:true,color:{rgb:"065F46"}},fill:{fgColor:{rgb:"ECFDF5"}},numFmt:"$#,##0.00"}},{v:p.status||'-',s:{alignment:{horizontal:"center"},border:bThin}}]);
+    });
+    const ws2=XLSX.utils.aoa_to_sheet(ws2_data);ws2['!merges']=[{s:{r:0,c:0},e:{r:0,c:7}}];ws2['!cols']=[{wch:16},{wch:12},{wch:18},{wch:16},{wch:16},{wch:16},{wch:18},{wch:18}];
+
+    // Sheet 3：包車服務記錄
+    const wsCharter_data=[[{v:`浚鍵管理有限公司 ｜ ${curMonth} 包車服務記錄`,s:{font:{bold:true,sz:14,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"0891B2"}},alignment:{horizontal:"center",vertical:"center"}}},"","","","","","",""],["日期","客戶姓名","聯絡電話","路線/用途","金額 (HKD)","付款方式","狀態","備註"].map(t=>({v:t,s:{font:{bold:true,color:{rgb:"155E75"}},fill:{fgColor:{rgb:"CFFAFE"}},alignment:{horizontal:"center"},border:bThin}}))];
+    let charterCashTotal=0,charterElecTotal=0;
+    (d.charterList||[]).forEach(c=>{
+      if(c.status==='已收款'){
+        if(c.payMethod==='現金')charterCashTotal+=c.amount;
+        else charterElecTotal+=c.amount;
+      }
+      wsCharter_data.push([{v:c.date||'-',s:{alignment:{horizontal:"center"},border:bThin}},{v:c.customer||'-',s:{alignment:{horizontal:"center"},border:bThin}},{v:c.phone||'-',s:{alignment:{horizontal:"center"},border:bThin}},{v:c.route||'-',s:{alignment:{horizontal:"left"},border:bThin}},{v:c.amount||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00",font:{bold:true}}},{v:c.payMethod||'-',s:{alignment:{horizontal:"center"},border:bThin}},{v:c.status||'-',s:{alignment:{horizontal:"center"},border:bThin}},{v:c.remark||'',s:{alignment:{horizontal:"left"},border:bThin}}]);
+    });
+    wsCharter_data.push([{v:"包車總計",s:{font:{bold:true},alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"A5F3FC"}}}},"","","",{v:charterCashTotal+charterElecTotal,s:{font:{bold:true,sz:12,color:{rgb:"155E75"}},alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"A5F3FC"}},numFmt:"$#,##0.00"}},{v:`現金 $${charterCashTotal.toFixed(2)} / 電子 $${charterElecTotal.toFixed(2)}`,s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"A5F3FC"}},font:{sz:10}}},"",""]);
+    const wsCharter=XLSX.utils.aoa_to_sheet(wsCharter_data);wsCharter['!merges']=[{s:{r:0,c:0},e:{r:0,c:7}}];wsCharter['!cols']=[{wch:14},{wch:14},{wch:14},{wch:24},{wch:16},{wch:14},{wch:12},{wch:24}];
+
+    // Sheet 4：八達通每日
+    const ws3_data=[[{v:`${curMonth} 八達通每日入賬`,s:{font:{bold:true,sz:14,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"059669"}},alignment:{horizontal:"center"}}},"",""],["日期","八達通入賬 (HKD)","核數"].map(t=>({v:t,s:{font:{bold:true,color:{rgb:"065F46"}},fill:{fgColor:{rgb:"D1FAE5"}},alignment:{horizontal:"center"},border:bThin}}))];
+    const octDaily=d.octDaily||{};let octSum=0;
+    for(let day=1;day<=31;day++){const val=Number(octDaily[`day_${day}`]||0);octSum+=val;ws3_data.push([{v:`${day} 號`,s:{font:{bold:true},alignment:{horizontal:"center"},border:bThin}},{v:val,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}},{v:val>0?"已入賬":"-",s:{alignment:{horizontal:"center"},border:bThin}}]);}
+    ws3_data.push([{v:"總額",s:{font:{bold:true},alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"A7F3D0"}}}},{v:octSum,s:{font:{bold:true,sz:12,color:{rgb:"065F46"}},alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"A7F3D0"}},numFmt:"$#,##0.00"}},{v:"核對無誤",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"A7F3D0"}}}}]);
+    const ws3=XLSX.utils.aoa_to_sheet(ws3_data);ws3['!merges']=[{s:{r:0,c:0},e:{r:0,c:2}}];ws3['!cols']=[{wch:15},{wch:25},{wch:18}];
+
+    // Sheet 5：現金每日
+    const ws5_data=[[{v:`${curMonth} 現金每日收款`,s:{font:{bold:true,sz:14,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"0D9488"}},alignment:{horizontal:"center"}}},"",""],["日期","現金收款 (HKD)","核數"].map(t=>({v:t,s:{font:{bold:true,color:{rgb:"0F766E"}},fill:{fgColor:{rgb:"CCFBF1"}},alignment:{horizontal:"center"},border:bThin}}))];
+    const cashDaily=d.cashDaily||{};let cashSum=0;
+    for(let day=1;day<=31;day++){const val=Number(cashDaily[`day_${day}`]||0);cashSum+=val;ws5_data.push([{v:`${day} 號`,s:{font:{bold:true},alignment:{horizontal:"center"},border:bThin}},{v:val,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}},{v:val>0?"已收款":"-",s:{alignment:{horizontal:"center"},border:bThin}}]);}
+    ws5_data.push([{v:"總額",s:{font:{bold:true},alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"99F6E4"}}}},{v:cashSum,s:{font:{bold:true,sz:12,color:{rgb:"0F766E"}},alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"99F6E4"}},numFmt:"$#,##0.00"}},{v:"核對無誤",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"99F6E4"}}}}]);
+    const ws5=XLSX.utils.aoa_to_sheet(ws5_data);ws5['!merges']=[{s:{r:0,c:0},e:{r:0,c:2}}];ws5['!cols']=[{wch:15},{wch:25},{wch:18}];
+
+    // Sheet 6：燃料費每日
+    const ws4_data=[[{v:`${curMonth} 燃料費每日明細`,s:{font:{bold:true,sz:14,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"D97706"}},alignment:{horizontal:"center"}}},"",""],["日期","早更 (HKD)","夜間 (HKD)"].map(t=>({v:t,s:{font:{bold:true,color:{rgb:"92400E"}},fill:{fgColor:{rgb:"FEF3C7"}},alignment:{horizontal:"center"},border:bThin}}))];
+    const fuelDaily=d.fuelDaily||{};let fuelSum=0;
+    for(let day=1;day<=31;day++){const early=Number(fuelDaily[`day_${day}_early`]||0);const night=Number(fuelDaily[`day_${day}_night`]||0);fuelSum+=early+night;ws4_data.push([{v:`${day} 號`,s:{font:{bold:true},alignment:{horizontal:"center"},border:bThin}},{v:early,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}},{v:night,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}}]);}
+    ws4_data.push([{v:"總額",s:{font:{bold:true},alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FDE68A"}}}},{v:fuelSum,s:{font:{bold:true,sz:12,color:{rgb:"92400E"}},alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"FDE68A"}},numFmt:"$#,##0.00"}},{v:"",s:{border:bDouble,fill:{fgColor:{rgb:"FDE68A"}}}}]);
+    const ws4=XLSX.utils.aoa_to_sheet(ws4_data);ws4['!merges']=[{s:{r:0,c:0},e:{r:0,c:2}}];ws4['!cols']=[{wch:15},{wch:25},{wch:25}];
+
+    // Sheet 7：其他支出每日
+    const ws7_data=[[{v:`${curMonth} 其他支出每日明細`,s:{font:{bold:true,sz:14,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"7C3AED"}},alignment:{horizontal:"center"}}},"","","","",""],["日期","車租","維修","保險","告票","其他"].map(t=>({v:t,s:{font:{bold:true,color:{rgb:"5B21B6"}},fill:{fgColor:{rgb:"EDE9FE"}},alignment:{horizontal:"center"},border:bThin}}))];
+    const rentDaily=d.rentDaily||{},repairDaily=d.repairDaily||{},insDaily=d.insDaily||{},ticketDaily=d.ticketDaily||{},otherDaily=d.otherDaily||{};
+    let rentSum=0,repairSum=0,insSum=0,ticketSum=0,otherSum=0;
+    for(let day=1;day<=31;day++){
+      const r=Number(rentDaily[`day_${day}`]||0),rp=Number(repairDaily[`day_${day}`]||0),i=Number(insDaily[`day_${day}`]||0),t=Number(ticketDaily[`day_${day}`]||0),o=Number(otherDaily[`day_${day}`]||0);
+      rentSum+=r;repairSum+=rp;insSum+=i;ticketSum+=t;otherSum+=o;
+      ws7_data.push([{v:`${day} 號`,s:{font:{bold:true},alignment:{horizontal:"center"},border:bThin}},{v:r,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}},{v:rp,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}},{v:i,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}},{v:t,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}},{v:o,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0.00"}}]);
+    }
+    ws7_data.push([{v:"總額",s:{font:{bold:true},alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"DDD6FE"}}}},{v:rentSum,s:{alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"DDD6FE"}},numFmt:"$#,##0.00"}},{v:repairSum,s:{alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"DDD6FE"}},numFmt:"$#,##0.00"}},{v:insSum,s:{alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"DDD6FE"}},numFmt:"$#,##0.00"}},{v:ticketSum,s:{alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"DDD6FE"}},numFmt:"$#,##0.00"}},{v:otherSum,s:{alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"DDD6FE"}},numFmt:"$#,##0.00"}}]);
+    const ws7=XLSX.utils.aoa_to_sheet(ws7_data);ws7['!merges']=[{s:{r:0,c:0},e:{r:0,c:5}}];ws7['!cols']=[{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];
+
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws1,"當月損益表(直式)");
+    XLSX.utils.book_append_sheet(wb,ws2,"司機出糧名冊");
+    XLSX.utils.book_append_sheet(wb,wsCharter,"包車服務記錄");
+    XLSX.utils.book_append_sheet(wb,ws3,"八達通每日明細");
+    XLSX.utils.book_append_sheet(wb,ws5,"現金每日明細");
+    XLSX.utils.book_append_sheet(wb,ws4,"燃料費每日明細");
+    XLSX.utils.book_append_sheet(wb,ws7,"其他支出每日明細");
+    XLSX.writeFile(wb,`西鐵小巴營運損益表_${curMonth}.xlsx`);
+  }catch(err){console.error(err);alert('匯出失敗：'+err.message);}
+  finally{hideLoading();buttons.forEach(b=>b.disabled=false);}
+}
+
+/* ============ Excel 匯出（全年） ============ */
+async function exportAnnualSummaryExcel(){
+  const curMonth=document.getElementById('selMonth').value;
+  if(!curMonth){alert('請先選擇月份');return;}
+  const curYear=curMonth.split('-')[0]||String(new Date().getFullYear());
+  const buttons=document.querySelectorAll('.export-btn');buttons.forEach(b=>b.disabled=true);
+  showLoading('正在建立全年營運總表...');
+  try{
+    let cloudData={};
+    if(firebaseReady){
+      try{
+        const snap=await db.ref("finance").orderByKey().startAt(`${curYear}-01`).endAt(`${curYear}-12\uf8ff`).once('value');cloudData=snap.val()||{};
+        const oldSnap=await db.ref("minibusAccounts").orderByKey().startAt(`${curYear}-01`).endAt(`${curYear}-12\uf8ff`).once('value');const oldData=oldSnap.val()||{};
+        cloudData={...oldData,...cloudData};
+      }catch(e){}
+    }
+    const localData=localGetAll();
+    const all={...localData,...cloudData};
+    const bThin={top:{style:'thin',color:{rgb:'CBD5E1'}},bottom:{style:'thin',color:{rgb:'CBD5E1'}},left:{style:'thin',color:{rgb:'CBD5E1'}},right:{style:'thin',color:{rgb:'CBD5E1'}}};
+    const bDouble={top:{style:'thin',color:{rgb:'64748B'}},bottom:{style:'double',color:{rgb:'0F172A'}},left:{style:'thin',color:{rgb:'CBD5E1'}},right:{style:'thin',color:{rgb:'CBD5E1'}}};
+    const ws_data=[[{v:`浚鍵管理有限公司 ｜ ${curYear} 年度西鐵小巴營運收支總結表 (1-12月)`,s:{font:{bold:true,sz:15,color:{rgb:"FFFFFF"}},fill:{fgColor:{rgb:"1E3A8A"}},alignment:{horizontal:"center",vertical:"center"}}}],["月份","八達通","現金","包車現金","包車電子","月票","廣告","其他","總收入 (A)","上工人","下工人","人工總額","燃料費","車租","維修","保險牌費","告票","其他支出","總支出 (B)","淨盈虧 (A-B)"].map(t=>({v:t,s:{font:{bold:true,sz:11,color:{rgb:"1E293B"}},fill:{fgColor:{rgb:"E2E8F0"}},alignment:{horizontal:"center"},border:bThin}}))];
+    let yInc=0,yExp=0,yNet=0;
+    for(let m=1;m<=12;m++){
+      const mKey=`${curYear}-${String(m).padStart(2,'0')}`;
+      const d=all[mKey]||{};
+      const salEarly=Number(d.outSalaryEarly||0);const salLate=Number(d.outSalaryLate||0);
+      const salTotal=(salEarly+salLate)||Number(d.outSalary||0);
+      const inc=(d.inOctopus||0)+(d.inCash||0)+(d.inCharterCash||0)+(d.inCharterElec||0)+(d.inMonthly||0)+(d.inAds||0)+(d.inOtherIncome||0);
+      const exp=salTotal+(d.outFuel||0)+(d.outRent||0)+(d.outRepair||0)+(d.outInsLicense||0)+(d.outTicket||0)+(d.outOther||0);
+      const net=inc-exp;
+      yInc+=inc;yExp+=exp;yNet+=net;
+      ws_data.push([
+        {v:`${m} 月`,s:{font:{bold:true},alignment:{horizontal:"center"},border:bThin}},
+        {v:d.inOctopus||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:d.inCash||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:d.inCharterCash||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0",font:{color:{rgb:"0891B2"}}}},
+        {v:d.inCharterElec||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0",font:{color:{rgb:"0891B2"}}}},
+        {v:d.inMonthly||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:d.inAds||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:d.inOtherIncome||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:inc,s:{font:{bold:true},fill:{fgColor:{rgb:"ECFDF5"}},alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:salEarly,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:salLate,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:salTotal,s:{font:{bold:true},fill:{fgColor:{rgb:"FEF2F2"}},alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:d.outFuel||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:d.outRent||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:d.outRepair||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:d.outInsLicense||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:d.outTicket||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:d.outOther||0,s:{alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:exp,s:{font:{bold:true},fill:{fgColor:{rgb:"FEF2F2"}},alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}},
+        {v:net,s:{font:{bold:true},fill:{fgColor:{rgb:net>=0?"D1FAE5":"FEE2E2"}},alignment:{horizontal:"right"},border:bThin,numFmt:"$#,##0"}}
+      ]);
+    }
+    ws_data.push([{v:`${curYear} 全年總累計`,s:{font:{bold:true,sz:12},alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:yInc,s:{font:{bold:true,sz:12,color:{rgb:"065F46"}},alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"A7F3D0"}},numFmt:"$#,##0"}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:"-",s:{alignment:{horizontal:"center"},border:bDouble,fill:{fgColor:{rgb:"FEF08A"}}}},{v:yExp,s:{font:{bold:true,sz:12,color:{rgb:"991B1B"}},alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"FCA5A5"}},numFmt:"$#,##0"}},{v:yNet,s:{font:{bold:true,sz:13,color:{rgb:yNet>=0?"065F46":"991B1B"}},alignment:{horizontal:"right"},border:bDouble,fill:{fgColor:{rgb:"BFDBFE"}},numFmt:"$#,##0"}}]);
+    const ws=XLSX.utils.aoa_to_sheet(ws_data);
+    ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:19}}];
+    ws['!cols']=Array(20).fill({wch:13});
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,`${curYear}年度總結表`);
+    XLSX.writeFile(wb,`西鐵小巴年度營運總表_${curYear}.xlsx`);
+  }catch(err){console.error(err);alert('匯出失敗：'+err.message);}
+  finally{hideLoading();buttons.forEach(b=>b.disabled=false);}
+}
+</script>
+</body>
+</html>
