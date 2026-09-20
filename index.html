@@ -44,6 +44,7 @@ body{margin:0;padding:16px;background:var(--bg);color:var(--text);font-size:15px
 .nav-card.fuel{border-top:4px solid #f59e0b;}
 .nav-card.tracking{border-top:4px solid #ec4899;}
 .nav-card.booking{border-top:4px solid #14b8a6;}
+.nav-card.report{border-top:4px solid #8b5cf6;}
 .footer{text-align:center;font-size:11px;color:var(--sub);margin-top:30px;padding:16px;line-height:1.6;}
 .login-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;}
 .login-screen.active{display:flex;}
@@ -61,7 +62,7 @@ body{margin:0;padding:16px;background:var(--bg);color:var(--text);font-size:15px
   <div class="login-card">
     <h2>浚鍵管理有限公司</h2>
     <p>綜合營運管理系統</p>
-    <p style="font-size:12px;">行車收入 · 月曆排更 · 司機考勤 · 財務秘書 · 即時追蹤 · 小巴留座</p>
+    <p style="font-size:12px;">行車收入 · 月曆排更 · 司機考勤 · 財務秘書 · 即時追蹤 · 小巴留座 · 行車報表</p>
     <button class="btn-google" id="btnGoogleLogin">🔐 使用 Google 帳號登入</button>
   </div>
 </div>
@@ -70,7 +71,7 @@ body{margin:0;padding:16px;background:var(--bg);color:var(--text);font-size:15px
   <div class="header">
     <h1>浚鍵管理有限公司</h1>
     <p>綜合營運管理系統</p>
-    <div class="sub">行車收入 · 月曆排更 · 司機考勤 · 財務秘書 · 即時追蹤 · 小巴留座</div>
+    <div class="sub">行車收入 · 月曆排更 · 司機考勤 · 財務秘書 · 即時追蹤 · 小巴留座 · 行車報表</div>
   </div>
 
   <div class="top-bar">
@@ -97,6 +98,11 @@ body{margin:0;padding:16px;background:var(--bg);color:var(--text);font-size:15px
       <div class="icon">⛽</div>
       <div class="name">燃料費 OCR</div>
       <div class="desc">影收據 · 自動辨識</div>
+    </a>
+    <a class="nav-card report" href="report.html">
+      <div class="icon">📊</div>
+      <div class="name">行車報表</div>
+      <div class="desc">日/週/半月 · Excel</div>
     </a>
   </div>
 
@@ -144,7 +150,7 @@ body{margin:0;padding:16px;background:var(--bg);color:var(--text);font-size:15px
 
   <div class="footer">
     <div>© 浚鍵管理有限公司</div>
-    <div style="margin-top:4px;">綜合營運管理系統 v1.0</div>
+    <div style="margin-top:4px;">綜合營運管理系統 v1.1</div>
   </div>
 </div>
 

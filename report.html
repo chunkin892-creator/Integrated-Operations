@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>浚鍵管理 - 小巴行車報表豪華轉檔系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <style>
+        :root {
+            --primary: #1F497D;
+            --primary-hover: #153258;
+            --green: #2E8540;
+            --orange: #B25900;
+            --firebase: #E67E22;
+            --bg: #F4F6F9;
+            --card: #FFFFFF;
+            --text: #2C3E50;
+            --text-muted: #6C7A89;
+            --border: #DCE2E6;
+            --stat-bg: #F8FAFD;
+            --input-bg: #FFFFFF;
+        }
+        [data-theme="dark"] {
+            --primary: #4D88D4;
+            --primary-hover: #3570BC;
+            --green: #48BB78;
+            --orange: #ED8936;
+            --firebase: #F6AD55;
+            --bg: #121824;
+            --card: #1A2234;
+            --text: #E2E8F0;
+            --text-muted: #94A3B8;
+            --border: #2D3748;
+            --stat-bg: #151D2C;
+            --input-bg: #0F172A;
+        }
+        * { box-sizing: border-box; transition: background-color 0.2s ease, color 0.2s ease; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 16px 8px;
+        }
+        .container {
+            max-width: 1050px;
+            margin: 0 auto;
+            background: var(--card);
+            padding: 24px;
+            border-radius: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            color: var(--primary);
+            margin: 0 0 4px 0;
+            font-size: 20px;
+        }
+        .theme-toggle-btn {
+            background: var(--stat-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .control-panel {
+            background: var(--stat-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        input, select, textarea {
+            background-color: var(--input-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: 2px solid var(--primary);
+        }
+        .btn-sync {
+            background: var(--firebase);
+            color: #FFFFFF;
+            font-size: 15px;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-sync:hover { opacity: 0.9; }
+        .stats-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin: 16px 0;
+        }
+        .stat-box {
+            background: var(--stat-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+        .stat-box .lbl {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        .stat-box .val {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .table-preview-wrap {
+            display: none;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        table.preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: center;
+        }
+        table.preview-table th {
+            background-color: var(--primary);
+            color: #ffffff;
+            padding: 8px 6px;
+            border: 1px solid var(--border);
+        }
+        table.preview-table td {
+            padding: 6px 4px;
+            border: 1px solid var(--border);
+        }
+        table.preview-table tr:nth-child(even) { background-color: rgba(0,0,0,0.02); }
+        table.preview-table tr.total-row { background-color: rgba(255, 235, 59, 0.2); font-weight: bold; }
+        .export-section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0 8px 0;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 4px;
+        }
+        .btn-grid {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .btn-export {
+            padding: 11px 14px;
+            font-size: 13px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #fff;
+            text-align: center;
+        }
+        .btn-exp-full { background: #1F497D; }
+        .btn-exp-split { background: #6B46C1; }
+        .btn-exp-half { background: #B25900; }
+        .btn-exp-week { background: #2B6CB0; }
+        .btn-exp-sum { background: #2E8540; }
+        .btn-export:hover { opacity: 0.9; }
+        .status-msg {
+            display: none;
+            margin-top: 14px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .status-info { background: rgba(13, 110, 253, 0.15); color: #0D6EFD; }
+        .status-success { background: rgba(25, 135, 84, 0.15); color: #198754; font-weight: bold; }
+        .status-error { background: rgba(220, 53, 69, 0.15); color: #DC3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="top-bar">
+        <div class="header">
+            <h1>🚌 浚鍵管理 - 小巴行車報表豪華整合轉檔系統</h1>
+            <p style="margin:2px 0 0 0; color:var(--text-muted); font-size:12px;">Firebase 原生直連・司機個人對數・多維度分拆列印</p>
+        </div>
+        <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn">🌓 深色模式</button>
+    </div>
+
+    <div class="control-panel">
+        <div class="filter-grid">
+            <div class="form-group">
+                <label>🔍 查詢範圍模式</label>
+                <select id="queryMode" onchange="handleModeChange()">
+                    <option value="month">按指定月份查詢</option>
+                    <option value="year">按指定年份查詢 (全年 12 個月)</option>
+                </select>
+            </div>
+            <div class="form-group" id="monthInputWrap">
+                <label>📅 選擇月份</label>
+                <input type="month" id="filterMonth">
+            </div>
+            <div class="form-group" id="yearInputWrap" style="display:none;">
+                <label>📅 選擇年份</label>
+                <input type="number" id="filterYear" min="2020" max="2035" step="1">
+            </div>
+            <div class="form-group">
+                <label>👤 司機姓名 (留空顯示全部)</label>
+                <input type="text" id="filterDriver" placeholder="例如: 嬌姐 / 大輝" oninput="applyLocalFilters()">
+            </div>
+            <div class="form-group">
+                <label>🕒 更次篩選</label>
+                <select id="filterShift" onchange="applyLocalFilters()">
+                    <option value="ALL">全部更次</option>
+                    <option value="早更">單獨：早更</option>
+                    <option value="夜更">單獨：夜更</option>
+                </select>
+            </div>
+        </div>
+        <button type="button" class="btn-sync" onclick="loadDataFromFirebase()">
+            ⚡ 從 Firebase 讀取並重新計算
+        </button>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-box"><div class="lbl">涵蓋天數</div><div class="val" id="statDays" style="color:var(--primary);">0 日</div></div>
+        <div class="stat-box"><div class="lbl">總班次</div><div class="val" id="statTrips" style="color:var(--primary);">0 班</div></div>
+        <div class="stat-box"><div class="lbl">💳 八達通總收入</div><div class="val" id="statOctopus" style="color:#1F497D;">$0</div></div>
+        <div class="stat-box"><div class="lbl">💵 現金總收入</div><div class="val" id="statCash" style="color:#B25900;">$0</div></div>
+        <div class="stat-box"><div class="lbl">💰 全車總營業額</div><div class="val" id="statRevenue" style="color:#2E8540;">$0</div></div>
+    </div>
+
+    <div class="table-preview-wrap" id="tablePreviewWrap">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="color:var(--primary); margin:0; font-size:15px;" id="previewTitle">📋 營運及對數實時清單</h3>
+            <span id="activeFilterBadge" style="font-size:12px; color:var(--text-muted);"></span>
+        </div>
+        <table class="preview-table">
+            <thead>
+                <tr>
+                    <th>營運日期</th><th>車牌</th><th>早更司機</th><th>夜更司機</th><th>班次數</th>
+                    <th style="background:#1F497D;">💳 八達通收入</th>
+                    <th style="background:#B25900;">💵 現金收入</th>
+                    <th style="background:#2E8540;">💰 當日總營業額</th>
+                </tr>
+            </thead>
+            <tbody id="previewTbody"></tbody>
+        </table>
+    </div>
+
+    <div id="monthExportArea" style="display:none;">
+        <div class="export-section-title">📑 月度專用豪華匯出與分拆（已適配運輸署 A4 列印排版）</div>
+        <div class="btn-grid" style="display:grid;">
+            <button type="button" class="btn-export btn-exp-full" onclick="exportFullMonthWorkbook()">📑 下載【全月 30 日分頁 + 總結】單一 Excel</button>
+            <button type="button" class="btn-export btn-exp-split" onclick="exportDailyZip()">📦 打包下載【全月 30 份獨立單日 Excel】ZIP</button>
+            <button type="button" class="btn-export btn-exp-half" onclick="exportHalfMonthWorkbooks()">📅 下載【半月分拆 (上半月 / 下半月)】2 份 Excel</button>
+            <button type="button" class="btn-export btn-exp-week" onclick="exportWeeklyWorkbooks()">🗓️ 下載【按週分拆 (第 1 至 5 週)】獨立 Excel</button>
+            <button type="button" class="btn-export btn-exp-sum" onclick="exportMonthlySummaryOnly()">📊 下載【單月純總結匯總表】Excel</button>
+        </div>
+    </div>
+
+    <div id="yearExportArea" style="display:none;">
+        <div class="export-section-title">📈 年度專用豪華匯出</div>
+        <div class="btn-grid" style="display:grid;">
+            <button type="button" class="btn-export btn-exp-full" onclick="exportAnnualWorkbook()">📑 下載【全年 12 個月分頁 + 年度總覽】豪華 Excel</button>
+            <button type="button" class="btn-export btn-exp-sum" onclick="exportAnnualSummaryOnly()">📊 下載【全年 12 個月純總結表】Excel</button>
+        </div>
+    </div>
+
+    <div id="statusMsg" class="status-msg"></div>
+</div>
+
+<script>
+const DB_URL = "https://driver-s-shift-report-default-rtdb.asia-southeast1.firebasedatabase.app/records.json";
+
+let rawCloudRecords = {};
+let filteredTrips = [];
+let dateGroups = {};
+
+window.onload = function() {
+    initTheme();
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    document.getElementById('filterMonth').value = `${yyyy}-${mm}`;
+    document.getElementById('filterYear').value = yyyy;
+    loadDataFromFirebase();
+};
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('app_theme') || 'light';
+    setTheme(savedTheme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+}
+
+function setTheme(theme) {
+    if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('themeBtn').innerText = '☀️ 淺色模式';
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('themeBtn').innerText = '🌙 深色模式';
+    }
+    localStorage.setItem('app_theme', theme);
+}
+
+function handleModeChange() {
+    const mode = document.getElementById('queryMode').value;
+    if (mode === 'month') {
+        document.getElementById('monthInputWrap').style.display = 'flex';
+        document.getElementById('yearInputWrap').style.display = 'none';
+        document.getElementById('monthExportArea').style.display = 'block';
+        document.getElementById('yearExportArea').style.display = 'none';
+    } else {
+        document.getElementById('monthInputWrap').style.display = 'none';
+        document.getElementById('yearInputWrap').style.display = 'flex';
+        document.getElementById('monthExportArea').style.display = 'none';
+        document.getElementById('yearExportArea').style.display = 'block';
+    }
+    applyLocalFilters();
+}
+
+async function loadDataFromFirebase() {
+    showNotice('🔥 正在從 Firebase 雲端讀取最新營運數據...', 'info');
+    try {
+        const res = await fetch(DB_URL);
+        if (!res.ok) throw new Error(`伺服器回應代碼 ${res.status}`);
+        const val = await res.json();
+        if (!val || Object.keys(val).length === 0) {
+            showNotice('❌ Firebase 資料庫內無有效 records 資料！', 'error');
+            return;
+        }
+        const cleaned = {};
+        Object.entries(val).forEach(([k, v]) => {
+            if (k === '_placeholder') return;
+            if (v && typeof v === 'object') cleaned[k] = v;
+        });
+        rawCloudRecords = cleaned;
+        applyLocalFilters();
+        showNotice(`🎉 成功與 Firebase 連線同步！`, 'success');
+    } catch (err) {
+        showNotice(`❌ 連線失敗：${err.message}`, 'error');
+        alert("連線 Firebase 失敗，請確認資料庫已開啟讀取權限！\n錯誤: " + err.message);
+    }
+}
+
+function applyLocalFilters() {
+    if (!rawCloudRecords || Object.keys(rawCloudRecords).length === 0) return;
+    const mode = document.getElementById('queryMode').value;
+    const targetMonth = document.getElementById('filterMonth').value;
+    const targetYear = document.getElementById('filterYear').value;
+    const targetDriver = document.getElementById('filterDriver').value.trim();
+    const targetShift = document.getElementById('filterShift').value;
+
+    filteredTrips = [];
+    dateGroups = {};
+
+    Object.entries(rawCloudRecords).forEach(([dateStr, dayData]) => {
+        if (mode === 'month' && targetMonth && !dateStr.startsWith(targetMonth)) return;
+        if (mode === 'year' && targetYear && !dateStr.startsWith(targetYear)) return;
+
+        const plate = dayData.plate || '';
+        const dayDriver = dayData.dayDriver || dayData.driver || '';
+        const nightDriver = dayData.nightDriver || dayData.driver || '';
+        const trips = dayData.trips || [];
+        const tripsArray = Array.isArray(trips) ? trips.filter(Boolean) : Object.values(trips).filter(Boolean);
+
+        tripsArray.forEach(t => {
+            const shift = t.shift || '';
+            const activeDriver = shift === '早更' ? dayDriver : (shift === '夜更' ? nightDriver : `${dayDriver}/${nightDriver}`);
+            if (targetShift !== 'ALL' && shift !== targetShift) return;
+            if (targetDriver) {
+                const matchDay = dayDriver.includes(targetDriver);
+                const matchNight = nightDriver.includes(targetDriver);
+                if (shift === '早更' && !matchDay) return;
+                if (shift === '夜更' && !matchNight) return;
+                if (!shift && !matchDay && !matchNight) return;
+            }
+            const tripObj = {
+                date: dateStr, plate: plate,
+                morningDriver: dayDriver, nightDriver: nightDriver,
+                assignedDriver: activeDriver, shift: shift,
+                time: t.time || t.departTime || '',
+                destination: t.dest || t.destination || '',
+                oct9: Number(t.c9Elec || 0), oct6: Number(t.c6Elec || 0),
+                cash9: Number(t.c9Cash || 0), cash6: Number(t.c6Cash || 0),
+                total: Number(t.total || 0)
+            };
+            filteredTrips.push(tripObj);
+            if (!dateGroups[dateStr]) dateGroups[dateStr] = [];
+            dateGroups[dateStr].push(tripObj);
+        });
+    });
+    renderStatsAndPreview();
+}
+
+function renderStatsAndPreview() {
+    const dates = Object.keys(dateGroups).sort();
+    let sumOct = 0, sumCash = 0;
+    filteredTrips.forEach(t => {
+        sumOct += (t.oct9 * 9 + t.oct6 * 6);
+        sumCash += (t.cash9 * 9 + t.cash6 * 6);
+    });
+    document.getElementById('statDays').innerText = `${dates.length} 日`;
+    document.getElementById('statTrips').innerText = `${filteredTrips.length} 班`;
+    document.getElementById('statOctopus').innerText = `$${sumOct.toLocaleString()}`;
+    document.getElementById('statCash').innerText = `$${sumCash.toLocaleString()}`;
+    document.getElementById('statRevenue').innerText = `$${(sumOct + sumCash).toLocaleString()}`;
+
+    const tbody = document.getElementById('previewTbody');
+    tbody.innerHTML = '';
+    const targetDriver = document.getElementById('filterDriver').value.trim();
+    document.getElementById('activeFilterBadge').innerText = targetDriver ? `（目前只顯示司機：${targetDriver} 的班次）` : '';
+
+    if (dates.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="padding:16px;">沒有符合條件的班次記錄</td></tr>`;
+    } else {
+        dates.forEach(d => {
+            const grp = dateGroups[d];
+            const plate = grp[0].plate || '-';
+            const mDrv = grp.find(t => t.shift === '早更' && t.morningDriver)?.morningDriver || grp[0].morningDriver || '-';
+            const nDrv = grp.find(t => t.shift === '夜更' && t.nightDriver)?.nightDriver || grp[0].nightDriver || '-';
+            let dOct = 0, dCash = 0;
+            grp.forEach(t => {
+                dOct += (t.oct9 * 9 + t.oct6 * 6);
+                dCash += (t.cash9 * 9 + t.cash6 * 6);
+            });
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><strong>${d}</strong></td><td>${plate}</td><td>${mDrv}</td><td>${nDrv}</td><td>${grp.length} 班</td><td style="color:#1F497D; font-weight:bold;">$${dOct.toLocaleString()}</td><td style="color:#B25900; font-weight:bold;">$${dCash.toLocaleString()}</td><td style="color:#2E8540; font-weight:bold;">$${(dOct + dCash).toLocaleString()}</td>`;
+            tbody.appendChild(tr);
+        });
+        const trTot = document.createElement('tr');
+        trTot.className = 'total-row';
+        trTot.innerHTML = `<td><strong>合計</strong></td><td>-</td><td>-</td><td>-</td><td>${filteredTrips.length} 班</td><td style="color:#1F497D; font-size:14px;">$${sumOct.toLocaleString()}</td><td style="color:#B25900; font-size:14px;">$${sumCash.toLocaleString()}</td><td style="color:#2E8540; font-size:14px;">$${(sumOct + sumCash).toLocaleString()}</td>`;
+        tbody.appendChild(trTot);
+    }
+    document.getElementById('statsGrid').style.display = 'grid';
+    document.getElementById('tablePreviewWrap').style.display = 'block';
+    const mode = document.getElementById('queryMode').value;
+    if (mode === 'month') {
+        document.getElementById('monthExportArea').style.display = 'block';
+        document.getElementById('yearExportArea').style.display = 'none';
+    } else {
+        document.getElementById('monthExportArea').style.display = 'none';
+        document.getElementById('yearExportArea').style.display = 'block';
+    }
+}
+
+function thinBorder() {
+    return { top: { style: 'thin', color: { argb: 'FFB0C4DE' } }, bottom: { style: 'thin', color: { argb: 'FFB0C4DE' } }, left: { style: 'thin', color: { argb: 'FFB0C4DE' } }, right: { style: 'thin', color: { argb: 'FFB0C4DE' } } };
+}
+function totalBorder() {
+    return { top: { style: 'thin', color: { argb: 'FFB0C4DE' } }, bottom: { style: 'double', color: { argb: 'FF1F497D' } }, left: { style: 'thin', color: { argb: 'FFB0C4DE' } }, right: { style: 'thin', color: { argb: 'FFB0C4DE' } } };
+}
+function applyPrintSetup(ws) {
+    ws.views = [{ showGridLines: true }];
+    ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+}
+
+function populateDailySheet(ws, dateKey, trips) {
+    applyPrintSetup(ws);
+    const plate = trips[0]?.plate || '';
+    const morningDriver = trips.find(t => t.shift === '早更' && t.morningDriver)?.morningDriver || trips[0]?.morningDriver || '';
+    const nightDriver = trips.find(t => t.shift === '夜更' && t.nightDriver)?.nightDriver || trips[0]?.nightDriver || '';
+
+    let leftOct9 = 0, leftOct6 = 0, leftCash9 = 0, leftCash6 = 0;
+    let rightOct9 = 0, rightOct6 = 0, rightCash9 = 0, rightCash6 = 0;
+    const leftData = trips.filter(t => t.destination.includes('元朗'));
+    const rightData = trips.filter(t => t.destination.includes('大棠') || t.destination.includes('黃泥墩'));
+    leftData.forEach(t => { leftOct9 += t.oct9; leftOct6 += t.oct6; leftCash9 += t.cash9; leftCash6 += t.cash6; });
+    rightData.forEach(t => { rightOct9 += t.oct9; rightOct6 += t.oct6; rightCash9 += t.cash9; rightCash6 += t.cash6; });
+
+    const totalOctopusRev = (leftOct9 + rightOct9) * 9 + (leftOct6 + rightOct6) * 6;
+    const totalCashRev = (leftCash9 + rightCash9) * 9 + (leftCash6 + rightCash6) * 6;
+    const totalPassengers = (leftOct9 + leftOct6 + leftCash9 + leftCash6) + (rightOct9 + rightOct6 + rightCash9 + rightCash6);
+    const grandTotalRev = totalOctopusRev + totalCashRev;
+
+    ws.mergeCells('A1:M1');
+    ws.getCell('A1').value = "浚鍵管理有限公司";
+    ws.getCell('A1').font = { name: "Microsoft JhengHei", size: 16, bold: true, color: { argb: "FF1F497D" } };
+    ws.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+
+    ws.mergeCells('A2:M2');
+    ws.getCell('A2').value = "紅色小巴班次記錄表 (八達通 / 現金 分拆對數表)";
+    ws.getCell('A2').font = { name: "Microsoft JhengHei", size: 12, bold: true, color: { argb: "FF2C3E50" } };
+    ws.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' };
+
+    ws.getCell('A3').value = "日期 :"; ws.getCell('B3').value = dateKey;
+    ws.getCell('D3').value = "車牌號碼 :"; ws.getCell('E3').value = plate;
+    ws.getCell('H3').value = "早更司機 :"; ws.getCell('I3').value = morningDriver;
+    ws.getCell('H4').value = "夜更司機 :"; ws.getCell('I4').value = nightDriver;
+    ['A3','B3','D3','E3','H3','I3','H4','I4'].forEach(pos => {
+        ws.getCell(pos).font = { name: "Microsoft JhengHei", size: 10, bold: true };
+    });
+
+    ws.mergeCells('A6:F6');
+    ws.getCell('A6').value = "去 西鐵 元朗站";
+    ws.getCell('A6').font = { name: "Microsoft JhengHei", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+    ws.getCell('A6').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FF1F497D" } };
+    ws.getCell('A6').alignment = { horizontal: 'center', vertical: 'middle' };
+
+    ws.mergeCells('H6:M6');
+    ws.getCell('H6').value = "去 大棠 黃泥墩";
+    ws.getCell('H6').font = { name: "Microsoft JhengHei", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+    ws.getCell('H6').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FF1E7E34" } };
+    ws.getCell('H6').alignment = { horizontal: 'center', vertical: 'middle' };
+
+    const subHdr = ["開出時間", "八達通 9元", "八達通 6元", "現金 9元", "現金 6元", "單程金額"];
+    subHdr.forEach((h, i) => {
+        const cl = ws.getCell(7, i + 1);
+        cl.value = h;
+        cl.font = { name: "Microsoft JhengHei", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+        cl.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FF1F497D" } };
+        cl.alignment = { horizontal: 'center', vertical: 'middle' };
+        cl.border = thinBorder();
+        const cr = ws.getCell(7, i + 8);
+        cr.value = h;
+        cr.font = { name: "Microsoft JhengHei", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+        cr.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FF1E7E34" } };
+        cr.alignment = { horizontal: 'center', vertical: 'middle' };
+        cr.border = thinBorder();
+    });
+
+    const totalLines = Math.max(leftData.length, rightData.length, 18);
+    for (let i = 0; i < totalLines; i++) {
+        const r = 8 + i;
+        const l = leftData[i];
+        const rt = rightData[i];
+        if (l) {
+            const rowAmt = (l.oct9 * 9) + (l.oct6 * 6) + (l.cash9 * 9) + (l.cash6 * 6);
+            ws.getCell(`A${r}`).value = l.time;
+            ws.getCell(`B${r}`).value = l.oct9;
+            ws.getCell(`C${r}`).value = l.oct6;
+            ws.getCell(`D${r}`).value = l.cash9;
+            ws.getCell(`E${r}`).value = l.cash6;
+            ws.getCell(`F${r}`).value = { formula: `(B${r}*9)+(C${r}*6)+(D${r}*9)+(E${r}*6)`, result: rowAmt };
+        } else {
+            ws.getCell(`F${r}`).value = { formula: `IF(OR(B${r}<>"",C${r}<>"",D${r}<>"",E${r}<>""),(N(B${r})*9)+(N(C${r})*6)+(N(D${r})*9)+(N(E${r})*6),"")`, result: 0 };
+        }
+        if (rt) {
+            const rowAmtR = (rt.oct9 * 9) + (rt.oct6 * 6) + (rt.cash9 * 9) + (rt.cash6 * 6);
+            ws.getCell(`H${r}`).value = rt.time;
+            ws.getCell(`I${r}`).value = rt.oct9;
+            ws.getCell(`J${r}`).value = rt.oct6;
+            ws.getCell(`K${r}`).value = rt.cash9;
+            ws.getCell(`L${r}`).value = rt.cash6;
+            ws.getCell(`M${r}`).value = { formula: `(I${r}*9)+(J${r}*6)+(K${r}*9)+(L${r}*6)`, result: rowAmtR };
+        } else {
+            ws.getCell(`M${r}`).value = { formula: `IF(OR(I${r}<>"",J${r}<>"",K${r}<>"",L${r}<>""),(N(I${r})*9)+(N(J${r})*6)+(N(K${r})*9)+(N(L${r})*6),"")`, result: 0 };
+        }
+        ['A','B','C','D','E','F','H','I','J','K','L','M'].forEach(col => {
+            const cell = ws.getCell(`${col}${r}`);
+            cell.font = { name: "Microsoft JhengHei", size: 10 };
+            cell.border = thinBorder();
+            cell.alignment = { horizontal: (col === 'F' || col === 'M') ? 'right' : 'center', vertical: 'middle' };
+            if (i % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFF9FAFB" } };
+            if (col === 'F' || col === 'M') cell.numFmt = '$#,##0';
+        });
+    }
+
+    const rTot = 8 + totalLines;
+    ws.getCell(`A${rTot}`).value = "人數合計";
+    ws.getCell(`A${rTot}`).font = { name: "Microsoft JhengHei", size: 10, bold: true };
+    ws.getCell(`A${rTot}`).alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getCell(`A${rTot}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFFFF2CC" } };
+    ws.getCell(`A${rTot}`).border = totalBorder();
+
+    const leftTotals = [leftOct9, leftOct6, leftCash9, leftCash6];
+    ['B','C','D','E'].forEach((col, idx) => {
+        const c = ws.getCell(`${col}${rTot}`);
+        c.value = { formula: `SUM(${col}8:${col}${rTot-1})`, result: leftTotals[idx] };
+        c.font = { name: "Microsoft JhengHei", size: 10, bold: true };
+        c.alignment = { horizontal: 'center', vertical: 'middle' };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFFFF2CC" } };
+        c.border = totalBorder();
+        c.numFmt = '#,##0';
+    });
+
+    const leftTotalAmt = (leftOct9 * 9) + (leftOct6 * 6) + (leftCash9 * 9) + (leftCash6 * 6);
+    const cTotL = ws.getCell(`F${rTot}`);
+    cTotL.value = { formula: `SUM(F8:F${rTot-1})`, result: leftTotalAmt };
+    cTotL.font = { name: "Microsoft JhengHei", size: 10, bold: true };
+    cTotL.alignment = { horizontal: 'right', vertical: 'middle' };
+    cTotL.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFFFF2CC" } };
+    cTotL.border = totalBorder();
+    cTotL.numFmt = '$#,##0';
+
+    ws.getCell(`H${rTot}`).value = "人數合計";
+    ws.getCell(`H${rTot}`).font = { name: "Microsoft JhengHei", size: 10, bold: true };
+    ws.getCell(`H${rTot}`).alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getCell(`H${rTot}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFFFF2CC" } };
+    ws.getCell(`H${rTot}`).border = totalBorder();
+
+    const rightTotals = [rightOct9, rightOct6, rightCash9, rightCash6];
+    ['I','J','K','L'].forEach((col, idx) => {
+        const c = ws.getCell(`${col}${rTot}`);
+        c.value = { formula: `SUM(${col}8:${col}${rTot-1})`, result: rightTotals[idx] };
+        c.font = { name: "Microsoft JhengHei", size: 10, bold: true };
+        c.alignment = { horizontal: 'center', vertical: 'middle' };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFFFF2CC" } };
+        c.border = totalBorder();
+        c.numFmt = '#,##0';
+    });
+
+    const rightTotalAmt = (rightOct9 * 9) + (rightOct6 * 6) + (rightCash9 * 9) + (rightCash6 * 6);
+    const cTotR = ws.getCell(`M${rTot}`);
+    cTotR.value = { formula: `SUM(M8:M${rTot-1})`, result: rightTotalAmt };
+    cTotR.font = { name: "Microsoft JhengHei", size: 10, bold: true };
+    cTotR.alignment = { horizontal: 'right', vertical: 'middle' };
+    cTotR.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFFFF2CC" } };
+    cTotR.border = totalBorder();
+    cTotR.numFmt = '$#,##0';
+
+    const rBox = rTot + 2;
+    ws.mergeCells(`A${rBox}:M${rBox}`);
+    ws.getCell(`A${rBox}`).value = "【當日全日營運結算總表】";
+    ws.getCell(`A${rBox}`).font = { name: "Microsoft JhengHei", size: 11, bold: true, color: { argb: "FF1F497D" } };
+    ws.getCell(`A${rBox}`).alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getCell(`A${rBox}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFFFF2CC" } };
+    ws.getCell(`A${rBox}`).border = thinBorder();
+
+    ws.mergeCells(`A${rBox+1}:C${rBox+1}`);
+    ws.getCell(`A${rBox+1}`).value = "💳 八達通總收入";
+    ws.getCell(`A${rBox+1}`).font = { name: "Microsoft JhengHei", size: 10, bold: true, color: { argb: "FF1F497D" } };
+    ws.getCell(`A${rBox+1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFDDEBF7" } };
+    ws.getCell(`A${rBox+1}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+    ws.mergeCells(`A${rBox+2}:C${rBox+2}`);
+    ws.getCell(`A${rBox+2}`).value = { formula: `(B${rTot}+I${rTot})*9 + (C${rTot}+J${rTot})*6`, result: totalOctopusRev };
+    ws.getCell(`A${rBox+2}`).font = { name: "Microsoft JhengHei", size: 13, bold: true, color: { argb: "FF1F497D" } };
+    ws.getCell(`A${rBox+2}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFDDEBF7" } };
+    ws.getCell(`A${rBox+2}`).alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getCell(`A${rBox+2}`).numFmt = '$#,##0';
+
+    ws.mergeCells(`D${rBox+1}:F${rBox+1}`);
+    ws.getCell(`D${rBox+1}`).value = "💵 現金總收入 (交收)";
+    ws.getCell(`D${rBox+1}`).font = { name: "Microsoft JhengHei", size: 10, bold: true, color: { argb: "FFB25900" } };
+    ws.getCell(`D${rBox+1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFFCE4D6" } };
+    ws.getCell(`D${rBox+1}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+    ws.mergeCells(`D${rBox+2}:F${rBox+2}`);
+    ws.getCell(`D${rBox+2}`).value = { formula: `(D${rTot}+K${rTot})*9 + (E${rTot}+L${rTot})*6`, result: totalCashRev };
+    ws.getCell(`D${rBox+2}`).font = { name: "Microsoft JhengHei", size: 13, bold: true, color: { argb: "FFB25900" } };
+    ws.getCell(`D${rBox+2}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFFCE4D6" } };
+    ws.getCell(`D${rBox+2}`).alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getCell(`D${rBox+2}`).numFmt = '$#,##0';
+
+    ws.mergeCells(`H${rBox+1}:J${rBox+1}`);
+    ws.getCell(`H${rBox+1}`).value = "👥 當日總載客人次";
+    ws.getCell(`H${rBox+1}`).font = { name: "Microsoft JhengHei", size: 10, bold: true, color: { argb: "FF1E7E34" } };
+    ws.getCell(`H${rBox+1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFE2EFDA" } };
+    ws.getCell(`H${rBox+1}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+    ws.mergeCells(`H${rBox+2}:J${rBox+2}`);
+    ws.getCell(`H${rBox+2}`).value = { formula: `SUM(B${rTot}:E${rTot})+SUM(I${rTot}:L${rTot})`, result: totalPassengers };
+    ws.getCell(`H${rBox+2}`).font = { name: "Microsoft JhengHei", size: 13, bold: true, color: { argb: "FF1E7E34" } };
+    ws.getCell(`H${rBox+2}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFE2EFDA" } };
+    ws.getCell(`H${rBox+2}`).alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getCell(`H${rBox+2}`).numFmt = '#,##0 人次';
+
+    ws.mergeCells(`K${rBox+1}:M${rBox+1}`);
+    ws.getCell(`K${rBox+1}`).value = "💰 全車總營業額";
+    ws.getCell(`K${rBox+1}`).font = { name: "Microsoft JhengHei", size: 10, bold: true, color: { argb: "FF1F497D" } };
+    ws.getCell(`K${rBox+1}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFDDEBF7" } };
+    ws.getCell(`K${rBox+1}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+    ws.mergeCells(`K${rBox+2}:M${rBox+2}`);
+    ws.getCell(`K${rBox+2}`).value = { formula: `F${rTot}+M${rTot}`, result: grandTotalRev };
+    ws.getCell(`K${rBox+2}`).font = { name: "Microsoft JhengHei", size: 13, bold: true, color: { argb: "FF1F497D" } };
+    ws.getCell(`K${rBox+2}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFDDEBF7" } };
+    ws.getCell(`K${rBox+2}`).alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getCell(`K${rBox+2}`).numFmt = '$#,##0';
+
+    for (let rb = rBox + 1; rb <= rBox + 2; rb++) {
+        for (let cb = 1; cb <= 13; cb++) {
+            if (cb !== 7) ws.getCell(rb, cb).border = thinBorder();
+        }
+    }
+
+    ws.columns = [{ width: 12 }, { width: 11 }, { width: 11 }, { width: 10 }, { width: 10 }, { width: 13 }, { width: 3 }, { width: 12 }, { width: 11 }, { width: 11 }, { width: 10 }, { width: 10 }, { width: 13 }];
+}
+
+function populateSummarySheet(ws, title, targetDates, dateData) {
+    applyPrintSetup(ws);
+    const driverName = document.getElementById('filterDriver').value.trim();
+    const titleText = driverName ? `${title} (司機：${driverName})` : title;
+
+    ws.mergeCells('A1:H1');
+    ws.getCell('A1').value = titleText;
+    ws.getCell('A1').font = { name: "Microsoft JhengHei", size: 15, bold: true, color: { argb: "FF1F497D" } };
+    ws.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+
+    const headers = ["營運日期", "車牌", "早更司機", "夜更司機", "總班次", "💳 八達通收入", "💵 現金收入", "💰 當日總營業額"];
+    headers.forEach((h, i) => {
+        const cell = ws.getCell(3, i + 1);
+        cell.value = h;
+        cell.font = { name: "Microsoft JhengHei", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FF1F497D" } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = thinBorder();
+    });
+
+    let rowIdx = 4;
+    targetDates.forEach((d, idx) => {
+        const grp = dateData[d];
+        const plate = grp[0]?.plate || '-';
+        const mDrv = grp.find(t => t.shift === '早更' && t.morningDriver)?.morningDriver || grp[0]?.morningDriver || '-';
+        const nDrv = grp.find(t => t.shift === '夜更' && t.nightDriver)?.nightDriver || grp[0]?.nightDriver || '-';
+        let dOct = 0, dCash = 0;
+        grp.forEach(t => {
+            dOct += (t.oct9 * 9 + t.oct6 * 6);
+            dCash += (t.cash9 * 9 + t.cash6 * 6);
+        });
+        ws.getCell(`A${rowIdx}`).value = d;
+        ws.getCell(`B${rowIdx}`).value = plate;
+        ws.getCell(`C${rowIdx}`).value = mDrv;
+        ws.getCell(`D${rowIdx}`).value = nDrv;
+        ws.getCell(`E${rowIdx}`).value = grp.length;
+        ws.getCell(`F${rowIdx}`).value = dOct;
+        ws.getCell(`G${rowIdx}`).value = dCash;
+        ws.getCell(`H${rowIdx}`).value = { formula: `F${rowIdx}+G${rowIdx}`, result: dOct + dCash };
+        for (let col = 1; col <= 8; col++) {
+            const cell = ws.getCell(rowIdx, col);
+            cell.font = { name: "Microsoft JhengHei", size: 10 };
+            cell.border = thinBorder();
+            cell.alignment = { horizontal: col >= 5 ? 'right' : 'center', vertical: 'middle' };
+            if (idx % 2 === 1) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFF9FAFB" } };
+            if (col >= 6) cell.numFmt = '$#,##0';
+        }
+        rowIdx++;
+    });
+
+    const rTot = rowIdx;
+    ws.getCell(`A${rTot}`).value = "全期總計";
+    ws.getCell(`B${rTot}`).value = "-";
+    ws.getCell(`C${rTot}`).value = "-";
+    ws.getCell(`D${rTot}`).value = "-";
+    ws.getCell(`E${rTot}`).value = { formula: `SUM(E4:E${rTot-1})` };
+    ws.getCell(`F${rTot}`).value = { formula: `SUM(F4:F${rTot-1})` };
+    ws.getCell(`G${rTot}`).value = { formula: `SUM(G4:G${rTot-1})` };
+    ws.getCell(`H${rTot}`).value = { formula: `SUM(H4:H${rTot-1})` };
+    for (let col = 1; col <= 8; col++) {
+        const cell = ws.getCell(rTot, col);
+        cell.font = { name: "Microsoft JhengHei", size: 10, bold: true, color: { argb: "FF1F497D" } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: "FFFFF2CC" } };
+        cell.border = totalBorder();
+        cell.alignment = { horizontal: col >= 5 ? 'right' : 'center', vertical: 'middle' };
+        if (col >= 6) cell.numFmt = '$#,##0';
+    }
+    ws.columns = [{ width: 13 }, { width: 11 }, { width: 11 }, { width: 11 }, { width: 9 }, { width: 16 }, { width: 16 }, { width: 16 }];
+}
+
+async function exportFullMonthWorkbook() {
+    try {
+        const dates = Object.keys(dateGroups).sort();
+        if (dates.length === 0) { alert('目前沒有可匯出的營運數據！'); return; }
+        showNotice('⏳ 正在生成【全月豪華多分頁 Excel】...', 'info');
+        const wb = new ExcelJS.Workbook();
+        wb.creator = "浚鍵管理有限公司";
+        const sumWs = wb.addWorksheet("全月營運總覽");
+        populateSummarySheet(sumWs, "浚鍵管理有限公司 - 全月小巴營運彙總對數總表", dates, dateGroups);
+        for (const d of dates) {
+            const ws = wb.addWorksheet(`${d.slice(5)}日記錄`);
+            populateDailySheet(ws, d, dateGroups[d]);
+        }
+        const driverName = document.getElementById('filterDriver').value.trim();
+        const prefix = driverName ? `${driverName}_` : '';
+        const buf = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buf]), `浚鍵管理_${prefix}全月豪華報表_${dates[0]}_至_${dates[dates.length-1]}.xlsx`);
+        showNotice('🎉 全月豪華 Excel 下載完成！', 'success');
+    } catch (err) { alert('匯出出錯：' + err.message); }
+}
+
+async function exportDailyZip() {
+    try {
+        const dates = Object.keys(dateGroups).sort();
+        if (dates.length === 0) { alert('目前沒有可匯出的營運數據！'); return; }
+        showNotice('⏳ 正在生成 30 份獨立 Excel 並打包成 ZIP...', 'info');
+        const zip = new JSZip();
+        const driverName = document.getElementById('filterDriver').value.trim();
+        const prefix = driverName ? `${driverName}_` : '';
+        for (const d of dates) {
+            const wb = new ExcelJS.Workbook();
+            wb.creator = "浚鍵管理有限公司";
+            const ws = wb.addWorksheet(`${d}日記錄`);
+            populateDailySheet(ws, d, dateGroups[d]);
+            const buf = await wb.xlsx.writeBuffer();
+            zip.file(`浚鍵管理_${prefix}行車記錄表_${d}.xlsx`, buf);
+        }
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        saveAs(zipBlob, `浚鍵管理_${prefix}全月單日分拆報表_${dates[0].slice(0,7)}.zip`);
+        showNotice('🎉 30 份單日分拆 Excel ZIP 打包下載完成！', 'success');
+    } catch (err) { alert('打包出錯：' + err.message); }
+}
+
+async function exportHalfMonthWorkbooks() {
+    try {
+        const dates = Object.keys(dateGroups).sort();
+        if (dates.length === 0) { alert('目前沒有可匯出的營運數據！'); return; }
+        showNotice('⏳ 正在生成【半月分拆報表】...', 'info');
+        const driverName = document.getElementById('filterDriver').value.trim();
+        const prefix = driverName ? `${driverName}_` : '';
+        const firstHalf = dates.filter(d => parseInt(d.split('-')[2] || "0", 10) <= 15);
+        const secondHalf = dates.filter(d => parseInt(d.split('-')[2] || "0", 10) > 15);
+        if (firstHalf.length > 0) {
+            const wb1 = new ExcelJS.Workbook();
+            const sumWs1 = wb1.addWorksheet("上半月總覽");
+            populateSummarySheet(sumWs1, "浚鍵管理有限公司 - 上半月營運總覽", firstHalf, dateGroups);
+            for (const d of firstHalf) {
+                const ws = wb1.addWorksheet(`${d.slice(5)}日`);
+                populateDailySheet(ws, d, dateGroups[d]);
+            }
+            const buf1 = await wb1.xlsx.writeBuffer();
+            saveAs(new Blob([buf1]), `浚鍵管理_${prefix}上半月報表(01-15日).xlsx`);
+        }
+        if (secondHalf.length > 0) {
+            const wb2 = new ExcelJS.Workbook();
+            const sumWs2 = wb2.addWorksheet("下半月總覽");
+            populateSummarySheet(sumWs2, "浚鍵管理有限公司 - 下半月營運總覽", secondHalf, dateGroups);
+            for (const d of secondHalf) {
+                const ws = wb2.addWorksheet(`${d.slice(5)}日`);
+                populateDailySheet(ws, d, dateGroups[d]);
+            }
+            const buf2 = await wb2.xlsx.writeBuffer();
+            saveAs(new Blob([buf2]), `浚鍵管理_${prefix}下半月報表(16-尾).xlsx`);
+        }
+        showNotice('🎉 半月分拆報表已成功下載！', 'success');
+    } catch (err) { alert('匯出出錯：' + err.message); }
+}
+
+async function exportWeeklyWorkbooks() {
+    try {
+        const dates = Object.keys(dateGroups).sort();
+        if (dates.length === 0) { alert('目前沒有可匯出的營運數據！'); return; }
+        showNotice('⏳ 正在生成【第 1 至 5 週分拆報表】...', 'info');
+        const driverName = document.getElementById('filterDriver').value.trim();
+        const prefix = driverName ? `${driverName}_` : '';
+        const weeks = [
+            { name: "第1週(01-07日)", min: 1, max: 7 },
+            { name: "第2週(08-14日)", min: 8, max: 14 },
+            { name: "第3週(15-21日)", min: 15, max: 21 },
+            { name: "第4週(22-28日)", min: 22, max: 28 },
+            { name: "第5週(29-尾)", min: 29, max: 31 }
+        ];
+        for (const w of weeks) {
+            const wDates = dates.filter(d => {
+                const dayNum = parseInt(d.split('-')[2] || "0", 10);
+                return dayNum >= w.min && dayNum <= w.max;
+            });
+            if (wDates.length > 0) {
+                const wb = new ExcelJS.Workbook();
+                const sumWs = wb.addWorksheet(`${w.name}總覽`);
+                populateSummarySheet(sumWs, `浚鍵管理有限公司 - ${w.name}營運總結`, wDates, dateGroups);
+                for (const d of wDates) {
+                    const ws = wb.addWorksheet(`${d.slice(5)}日`);
+                    populateDailySheet(ws, d, dateGroups[d]);
+                }
+                const buf = await wb.xlsx.writeBuffer();
+                saveAs(new Blob([buf]), `浚鍵管理_${prefix}${w.name}報表.xlsx`);
+            }
+        }
+        showNotice('🎉 按週分拆報表下載完成！', 'success');
+    } catch (err) { alert('按週匯出出錯：' + err.message); }
+}
+
+async function exportMonthlySummaryOnly() {
+    try {
+        const dates = Object.keys(dateGroups).sort();
+        if (dates.length === 0) { alert('目前沒有可匯出的營運數據！'); return; }
+        const wb = new ExcelJS.Workbook();
+        const sumWs = wb.addWorksheet("全月總結表");
+        populateSummarySheet(sumWs, "浚鍵管理有限公司 - 全月小巴營運彙總對數總表", dates, dateGroups);
+        const driverName = document.getElementById('filterDriver').value.trim();
+        const prefix = driverName ? `${driverName}_` : '';
+        const buf = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buf]), `浚鍵管理_${prefix}全月總結表_${dates[0].slice(0,7)}.xlsx`);
+        showNotice('🎉 全月總結對數表下載完成！', 'success');
+    } catch (err) { alert('匯出出錯：' + err.message); }
+}
+
+async function exportAnnualWorkbook() {
+    try {
+        const dates = Object.keys(dateGroups).sort();
+        if (dates.length === 0) { alert('目前沒有可匯出的年度數據！'); return; }
+        showNotice('⏳ 正在生成【全年 12 個月豪華版 Excel】...', 'info');
+        const targetYear = document.getElementById('filterYear').value;
+        const driverName = document.getElementById('filterDriver').value.trim();
+        const prefix = driverName ? `${driverName}_` : '';
+        const wb = new ExcelJS.Workbook();
+        wb.creator = "浚鍵管理有限公司";
+        const sumWs = wb.addWorksheet("全年營運總覽");
+        populateSummarySheet(sumWs, `浚鍵管理有限公司 - ${targetYear}年度小巴營運彙總總表`, dates, dateGroups);
+        for (let m = 1; m <= 12; m++) {
+            const mStr = `${targetYear}-${String(m).padStart(2, '0')}`;
+            const mDates = dates.filter(d => d.startsWith(mStr));
+            if (mDates.length > 0) {
+                const ws = wb.addWorksheet(`${m}月份`);
+                populateSummarySheet(ws, `浚鍵管理有限公司 - ${mStr} 月度營運總表`, mDates, dateGroups);
+            }
+        }
+        const buf = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buf]), `浚鍵管理_${prefix}${targetYear}全年豪華報表.xlsx`);
+        showNotice('🎉 全年豪華 Excel 下載完成！', 'success');
+    } catch (err) { alert('年度匯出出錯：' + err.message); }
+}
+
+async function exportAnnualSummaryOnly() {
+    try {
+        const dates = Object.keys(dateGroups).sort();
+        if (dates.length === 0) { alert('目前沒有可匯出的年度數據！'); return; }
+        const targetYear = document.getElementById('filterYear').value;
+        const driverName = document.getElementById('filterDriver').value.trim();
+        const prefix = driverName ? `${driverName}_` : '';
+        const wb = new ExcelJS.Workbook();
+        const sumWs = wb.addWorksheet("年度總結表");
+        populateSummarySheet(sumWs, `浚鍵管理有限公司 - ${targetYear}年度營運總結表`, dates, dateGroups);
+        const buf = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buf]), `浚鍵管理_${prefix}${targetYear}年度總結表.xlsx`);
+        showNotice('🎉 年度總結表下載完成！', 'success');
+    } catch (err) { alert('匯出出錯：' + err.message); }
+}
+
+function showNotice(msg, type) {
+    const box = document.getElementById('statusMsg');
+    box.innerText = msg;
+    box.className = `status-msg status-${type}`;
+    box.style.display = 'block';
+}
+</script>
+</body>
+</html>
