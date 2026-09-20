@@ -218,6 +218,7 @@
 // ============================================================
 // 浚鍵管理有限公司 · 小巴留座系統
 // Firebase: triple-login-version（同西鐵小巴共用）
+// 支援：自動識別西鐵小巴登入狀態
 // ============================================================
 
 const firebaseConfig = {
@@ -852,9 +853,44 @@ async function markArrived(bookingId, date) {
 // 司機端
 // ============================================================
 
+// 嘗試從 Firebase Auth 自動識別司機（同西鐵小巴共用登入）
+async function tryAutoDetectDriver() {
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser) return null;
+  try {
+    const snap = await db.ref('users/' + firebaseUser.uid).once('value');
+    const userData = snap.val();
+    if (!userData) return null;
+    if (userData.role !== 'driver' && userData.role !== 'admin') return null;
+    const driverInDB = await DataLayer.getDriverByIdentifier(userData.identifier);
+    if (!driverInDB) return null;
+    return {
+      identifier: userData.identifier,
+      plate: driverInDB.plate || loadDriverPlate(userData.identifier)
+    };
+  } catch(e) {
+    console.warn('自動識別失敗：', e);
+    return null;
+  }
+}
+
 async function renderDriverHome() {
   const content = document.getElementById('driver-content');
+
+  // 1. 先試 Firebase Auth 自動識別（同西鐵小巴共用）
+  if (!currentDriver) {
+    const autoDriver = await tryAutoDetectDriver();
+    if (autoDriver) {
+      currentDriver = autoDriver;
+      saveDriverSession(currentDriver);
+      toast('✅ 已自動識別西鐵小巴登入身份');
+    }
+  }
+
+  // 2. Fallback：localStorage
   if (!currentDriver) currentDriver = loadDriverSession();
+
+  // 3. 都冇 → 顯示登入頁
   if (!currentDriver) { renderDriverLogin(content); return; }
 
   const driverInDB = await DataLayer.getDriverByIdentifier(currentDriver.identifier);
@@ -1313,6 +1349,23 @@ window.addEventListener('popstate', function(e) {
 db.ref('.info/connected').on('value', snap => {
   if (snap.val() === true) console.log('☁️ Firebase 已連線');
   else console.log('⚠️ Firebase 離線');
+});
+
+// 監聽 Firebase Auth 狀態變化（同西鐵小巴共用登入）
+auth.onAuthStateChanged(async (user) => {
+  console.log('🔐 Auth 狀態變化：', user ? (user.uid + ' / ' + (user.email || 'anonymous')) : '未登入');
+  if (user && !currentDriver) {
+    // 如果用戶已經喺司機端頁面，嘗試自動識別
+    if (currentScreen === 'driver') {
+      const autoDriver = await tryAutoDetectDriver();
+      if (autoDriver) {
+        currentDriver = autoDriver;
+        saveDriverSession(currentDriver);
+        renderDriverHome();
+        toast('✅ 已自動識別西鐵小巴登入身份');
+      }
+    }
+  }
 });
 
 async function autoCleanExpiredBookings() {
