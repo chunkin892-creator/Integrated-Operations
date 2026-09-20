@@ -17,7 +17,6 @@
     overflow-x: hidden;
   }
   .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
-
   .header {
     background: linear-gradient(135deg, #0f172a, #1e293b);
     padding: 18px 16px;
@@ -28,10 +27,8 @@
   .header h1 { font-size: 16px; font-weight: 700; color: #38bdf8; letter-spacing: 0.5px; }
   .header .sub { font-size: 11px; color: #64748b; margin-top: 4px; }
   .header .company { font-size: 13px; color: #94a3b8; font-weight: 600; }
-
   .screen { display: none; flex: 1; padding: 16px; }
   .screen.active { display: block; }
-
   .btn {
     display: block; width: 100%; padding: 16px; border: none; border-radius: 12px;
     font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;
@@ -47,13 +44,11 @@
   .btn-outline:active { background: #1e293b; }
   .btn-sm { padding: 10px 16px; font-size: 14px; border-radius: 8px; width: auto; display: inline-block; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
   .card {
     background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 12px;
     border: 1px solid #334155;
   }
   .card-title { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 8px; }
-
   .module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
   .module-card {
     background: #1e293b; border-radius: 16px; padding: 20px 16px;
@@ -64,7 +59,6 @@
   .module-card .icon { font-size: 32px; margin-bottom: 8px; }
   .module-card .name { font-size: 14px; font-weight: 600; color: #f1f5f9; }
   .module-card .desc { font-size: 11px; color: #64748b; margin-top: 4px; }
-
   .shift-card {
     background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 10px;
     border: 1px solid #334155; display: flex; justify-content: space-between;
@@ -79,7 +73,6 @@
   .shift-seats .num.low { color: #f59e0b; }
   .shift-seats .num.zero { color: #ef4444; }
   .shift-seats .label { font-size: 11px; color: #64748b; }
-
   .badge {
     display: inline-block; padding: 3px 10px; border-radius: 20px;
     font-size: 11px; font-weight: 600;
@@ -88,7 +81,6 @@
   .badge-yellow { background: #422006; color: #fbbf24; }
   .badge-red { background: #450a0a; color: #f87171; }
   .badge-blue { background: #082f49; color: #38bdf8; }
-
   .input-group { margin-bottom: 14px; }
   .input-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
   .input-group input, .input-group select {
@@ -96,7 +88,6 @@
     background: #0f172a; color: #f1f5f9; font-size: 16px; outline: none;
   }
   .input-group input:focus, .input-group select:focus { border-color: #0ea5e9; }
-
   .gps-box {
     background: #0f172a; border-radius: 12px; padding: 16px; text-align: center;
     border: 2px dashed #334155; margin: 16px 0;
@@ -106,7 +97,6 @@
   .gps-icon { font-size: 40px; margin-bottom: 8px; }
   .gps-text { font-size: 14px; font-weight: 600; }
   .gps-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
-
   .booking-item {
     display: flex; justify-content: space-between; align-items: center;
     padding: 12px; border-radius: 10px; margin-bottom: 8px;
@@ -118,7 +108,6 @@
   .booking-name { font-size: 15px; font-weight: 600; }
   .booking-phone { font-size: 12px; color: #64748b; }
   .booking-status { font-size: 20px; }
-
   .stats { display: flex; gap: 8px; margin-bottom: 16px; }
   .stat {
     flex: 1; background: #1e293b; border-radius: 10px; padding: 12px;
@@ -129,7 +118,6 @@
   .stat.green .num { color: #22c55e; }
   .stat.yellow .num { color: #f59e0b; }
   .stat.blue .num { color: #38bdf8; }
-
   .toast {
     position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
     background: #1e293b; color: #f1f5f9; padding: 12px 24px; border-radius: 10px;
@@ -137,7 +125,6 @@
     border: 1px solid #334155; white-space: nowrap;
   }
   .toast.show { opacity: 1; }
-
   .bottom-nav {
     display: flex; background: #1e293b; border-top: 1px solid #334155;
     position: sticky; bottom: 0;
@@ -148,7 +135,6 @@
   }
   .nav-item.active { color: #38bdf8; }
   .nav-item .icon { font-size: 20px; display: block; margin-bottom: 2px; }
-
   .credit-bar {
     height: 8px; border-radius: 4px; background: #334155; overflow: hidden; margin-top: 6px;
   }
@@ -156,9 +142,7 @@
   .credit-fill.high { background: #22c55e; }
   .credit-fill.mid { background: #f59e0b; }
   .credit-fill.low { background: #ef4444; }
-
   .timer { font-size: 13px; color: #f59e0b; font-weight: 600; }
-
   .empty { text-align: center; padding: 40px 20px; color: #475569; }
   .empty .icon { font-size: 48px; margin-bottom: 12px; }
 </style>
@@ -172,7 +156,6 @@
     <div class="sub" id="header-sub">大棠黃泥墩 ↔ 元朗西鐵站</div>
   </div>
 
-  <!-- 首頁 -->
   <div class="screen active" id="screen-home">
     <div class="module-grid">
       <div class="module-card" onclick="openModule('booking')">
@@ -206,22 +189,18 @@
     </div>
   </div>
 
-  <!-- 小巴留座（乘客端） -->
   <div class="screen" id="screen-booking">
     <div id="booking-content"></div>
   </div>
 
-  <!-- 司機端 -->
   <div class="screen" id="screen-driver">
     <div id="driver-content"></div>
   </div>
 
-  <!-- 管理 -->
   <div class="screen" id="screen-admin">
     <div id="admin-content"></div>
   </div>
 
-  <!-- 服務資訊 -->
   <div class="screen" id="screen-info">
     <div id="info-content"></div>
   </div>
@@ -254,26 +233,13 @@ if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-// ============================================================
-// 常數設定
-// ============================================================
-
 const COMPANY = '浚鍵管理有限公司';
-
-// GPS 座標
-const GPS_WONG = { lat: 22.416280, lng: 114.021977 }; // 大棠黃泥墩
-const GPS_YUEN = { lat: 22.445847, lng: 114.037022 }; // 元朗站 H 出口（朗明街）
-
-// 班次表（平日）
+const GPS_WONG = { lat: 22.416280, lng: 114.021977 };
+const GPS_YUEN = { lat: 22.445847, lng: 114.037022 };
 const SHIFTS_MORNING = ['06:20', '06:30', '06:40', '06:50'];
 const SHIFTS_EVENING = ['18:15', '18:30', '18:45', '19:00', '19:15', '19:30', '19:45', '20:00', '20:20'];
-
-const GPS_RADIUS = 80; // 到站半徑（米）
-const ARRIVE_WINDOW = 15 * 60 * 1000; // 發車前 15 分鐘開始追蹤
-
-// ============================================================
-// 工具函數
-// ============================================================
+const GPS_RADIUS = 80;
+const ARRIVE_WINDOW = 15 * 60 * 1000;
 
 function toast(msg, duration = 2500) {
   const el = document.getElementById('toast');
@@ -281,19 +247,15 @@ function toast(msg, duration = 2500) {
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), duration);
 }
-
 function now() { return Date.now(); }
-
 function getToday() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
-
 function isWeekday() {
   const day = new Date().getDay();
-  return day >= 1 && day <= 5; // 星期一至五
+  return day >= 1 && day <= 5;
 }
-
 function distance(lat1, lng1, lat2, lng2) {
   const R = 6371000;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -301,49 +263,30 @@ function distance(lat1, lng1, lat2, lng2) {
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
-
 function getShiftTime(date, time) {
   const [h, m] = time.split(':').map(Number);
   const d = new Date(date + 'T00:00:00');
   d.setHours(h, m, 0, 0);
   return d.getTime();
 }
-
 function getScheduleId(date, time) {
   return date + '_' + time.replace(':', '');
 }
-
 function getShiftDirection(time) {
-  // 早上班次：黃泥墩開出，往元朗
-  // 傍晚班次：元朗站開出，往黃泥墩
   const hour = parseInt(time.split(':')[0]);
   return hour < 12 ? 'morning' : 'evening';
 }
-
 function getShiftGPS(time) {
   return getShiftDirection(time) === 'morning' ? GPS_WONG : GPS_YUEN;
 }
-
 function getShiftOrigin(time) {
   return getShiftDirection(time) === 'morning' ? '大棠黃泥墩' : '元朗站 H 出口';
 }
-
 function getShiftDestination(time) {
   return getShiftDirection(time) === 'morning' ? '元朗西鐵站' : '大棠黃泥墩';
 }
 
-function getTodayShifts() {
-  if (!isWeekday()) return [];
-  return [...SHIFTS_MORNING, ...SHIFTS_EVENING];
-}
-
-// ============================================================
-// Firebase 資料層
-// ============================================================
-
 const DataLayer = {
-
-  // ---------- 司機 ----------
   async getDriverByIdentifier(identifier) {
     const snap = await db.ref('drivers').orderByChild('identifier').equalTo(identifier).once('value');
     if (!snap.exists()) return null;
@@ -351,44 +294,14 @@ const DataLayer = {
     snap.forEach(c => { driver = { key: c.key, ...c.val() }; });
     return driver;
   },
-
-  async getDriverByPhone(phone) {
-    return DataLayer.getDriverByIdentifier(phone);
-  },
-
-  // ---------- 當值狀態 ----------
   async getActiveBus(plate) {
     const snap = await db.ref('van/active_buses/' + plate).once('value');
     return snap.val();
   },
-
-  watchActiveBus(plate, cb) {
-    const ref = db.ref('van/active_buses/' + plate);
-    const handler = snap => cb(snap.val());
-    ref.on('value', handler);
-    return () => ref.off('value', handler);
-  },
-
-  async setDriverSeats(plate, seats) {
-    return db.ref('van/active_buses/' + plate).update({
-      carSeats: seats,
-      seatsUpdatedAt: now()
-    });
-  },
-
-  // ---------- 留座 ----------
   async getBookings(date) {
     const snap = await db.ref('booking/' + date).once('value');
     return snap.val() || {};
   },
-
-  watchBookings(date, cb) {
-    const ref = db.ref('booking/' + date);
-    const handler = snap => cb(snap.val() || {});
-    ref.on('value', handler);
-    return () => ref.off('value', handler);
-  },
-
   async addBooking(date, booking) {
     const ref = db.ref('booking/' + date).push();
     booking.id = ref.key;
@@ -396,112 +309,70 @@ const DataLayer = {
     await ref.set(booking);
     return booking;
   },
-
   async updateBooking(date, id, patch) {
     return db.ref('booking/' + date + '/' + id).update(patch);
   },
-
   async cancelBooking(date, id) {
     return DataLayer.updateBooking(date, id, { status: 'cancelled', cancelledAt: now() });
   },
-
-  // ---------- 乘客 ----------
   async getPassenger(phone) {
     const snap = await db.ref('booking_passengers/' + phone).once('value');
     return snap.val();
   },
-
   async savePassenger(phone, data) {
     return db.ref('booking_passengers/' + phone).update(data);
   },
-
-  // ---------- 座位設定 ----------
   async getSeatConfig(date, time) {
     const snap = await db.ref('booking_seats/' + date + '/' + time.replace(':','')).once('value');
     return snap.val();
   },
-
   async setSeatConfig(date, time, seats, plate) {
     return db.ref('booking_seats/' + date + '/' + time.replace(':','')).set({
-      seats: seats,
-      plate: plate,
-      setAt: now()
+      seats: seats, plate: plate, setAt: now()
     });
   }
 };
 
-// ============================================================
-// 全域狀態
-// ============================================================
-
-let currentDriver = null; // { identifier, plate, ... }
-let currentPassenger = null; // { phone, name }
+let currentDriver = null;
+let currentPassenger = null;
 let currentScreen = 'home';
-let bookingListenerOff = null;
-let activeBusListenerOff = null;
 
-// 司機登入狀態（localStorage 記住）
 function saveDriverSession(driver) {
   try { localStorage.setItem('booking_driver', JSON.stringify(driver)); } catch(e) {}
 }
 function loadDriverSession() {
-  try {
-    const raw = localStorage.getItem('booking_driver');
-    return raw ? JSON.parse(raw) : null;
-  } catch(e) { return null; }
+  try { const raw = localStorage.getItem('booking_driver'); return raw ? JSON.parse(raw) : null; } catch(e) { return null; }
 }
 function clearDriverSession() {
   try { localStorage.removeItem('booking_driver'); } catch(e) {}
 }
-
-// 乘客登入狀態（localStorage 記住）
 function savePassengerSession(p) {
   try { localStorage.setItem('booking_passenger', JSON.stringify(p)); } catch(e) {}
 }
 function loadPassengerSession() {
-  try {
-    const raw = localStorage.getItem('booking_passenger');
-    return raw ? JSON.parse(raw) : null;
-  } catch(e) { return null; }
+  try { const raw = localStorage.getItem('booking_passenger'); return raw ? JSON.parse(raw) : null; } catch(e) { return null; }
 }
 function clearPassengerSession() {
   try { localStorage.removeItem('booking_passenger'); } catch(e) {}
 }
-
-// ============================================================
-// 導航
-// ============================================================
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   currentScreen = id.replace('screen-', '');
 }
-
 function navTo(module) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   event.target.closest('.nav-item').classList.add('active');
   openModule(module);
 }
-
 function openModule(module) {
   document.getElementById('bottom-nav').style.display = 'flex';
-  if (module === 'home') {
-    showScreen('screen-home');
-    updateHomeStats();
-  } else if (module === 'booking') {
-    showScreen('screen-booking');
-    renderPassengerHome();
-  } else if (module === 'driver') {
-    showScreen('screen-driver');
-    renderDriverHome();
-  } else if (module === 'admin') {
-    showScreen('screen-admin');
-    renderAdmin();
-  } else if (module === 'info') {
-    showScreen('screen-info');
-    renderInfo();
-  }
+  if (module === 'home') { showScreen('screen-home'); updateHomeStats(); }
+  else if (module === 'booking') { showScreen('screen-booking'); renderPassengerHome(); }
+  else if (module === 'driver') { showScreen('screen-driver'); renderDriverHome(); }
+  else if (module === 'admin') { showScreen('screen-admin'); renderAdmin(); }
+  else if (module === 'info') { showScreen('screen-info'); renderInfo(); }
 }
 
 async function updateHomeStats() {
@@ -515,32 +386,22 @@ async function updateHomeStats() {
   document.getElementById('home-arrived').textContent = arrived;
   document.getElementById('home-pending').textContent = pending;
   document.getElementById('home-active').textContent = '—';
-}<script>
+}
+
 // ============================================================
 // 乘客端
 // ============================================================
 
 async function renderPassengerHome() {
   const content = document.getElementById('booking-content');
-  
-  // 檢查乘客登入狀態
-  if (!currentPassenger) {
-    currentPassenger = loadPassengerSession();
-  }
-  
-  if (!currentPassenger) {
-    renderPassengerLogin(content);
-    return;
-  }
+  if (!currentPassenger) currentPassenger = loadPassengerSession();
+  if (!currentPassenger) { renderPassengerLogin(content); return; }
 
-  // 檢查乘客信用分
   const passengerData = await DataLayer.getPassenger(currentPassenger.phone) || {};
   const creditScore = passengerData.creditScore != null ? passengerData.creditScore : 100;
   const suspendedUntil = passengerData.suspendedUntil || 0;
-
   const today = getToday();
 
-  // 檢查週末
   if (!isWeekday()) {
     content.innerHTML = `
       <div class="card">
@@ -560,7 +421,6 @@ async function renderPassengerHome() {
     return;
   }
 
-  // 檢查暫停資格
   if (suspendedUntil > now()) {
     const remaining = Math.ceil((suspendedUntil - now()) / (24*60*60*1000));
     content.innerHTML = `
@@ -575,7 +435,6 @@ async function renderPassengerHome() {
     return;
   }
 
-  // 顯示乘客資訊卡
   let html = `
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -591,25 +450,20 @@ async function renderPassengerHome() {
     </div>
   `;
 
-  // 讀取今日班次嘅座位設定同預約
   const todayBookings = await DataLayer.getBookings(today);
 
-  // 早上班次
   html += `<div class="card-title" style="margin-bottom:10px;">🌅 早上班次 · 黃泥墩開出</div>`;
   for (const time of SHIFTS_MORNING) {
     html += await renderShiftCard(today, time, todayBookings);
   }
 
-  // 傍晚班次
   html += `<div class="card-title" style="margin:16px 0 10px;">🌆 傍晚班次 · 元朗站開出</div>`;
   for (const time of SHIFTS_EVENING) {
     html += await renderShiftCard(today, time, todayBookings);
   }
 
-  // 我的預約
   const myBookings = Object.values(todayBookings).filter(b =>
-    b.passengerPhone === currentPassenger.phone &&
-    b.status !== 'cancelled'
+    b.passengerPhone === currentPassenger.phone && b.status !== 'cancelled'
   );
 
   if (myBookings.length > 0) {
@@ -617,10 +471,8 @@ async function renderPassengerHome() {
     myBookings.sort((a,b) => a.time.localeCompare(b.time));
     myBookings.forEach(b => {
       const statusText = {
-        'reserved': '⏳ 等待到站',
-        'arrived': '✅ 已到站',
-        'boarded': '🚐 已上車',
-        'no-show': '❌ 未到站'
+        'reserved': '⏳ 等待到站', 'arrived': '✅ 已到站',
+        'boarded': '🚐 已上車', 'no-show': '❌ 未到站'
       }[b.status] || b.status;
 
       html += `
@@ -646,11 +498,8 @@ async function renderPassengerHome() {
 
 async function renderShiftCard(date, time, allBookings) {
   const scheduleId = getScheduleId(date, time);
-
-  // 讀取座位設定（由司機當值時輸入）
   const seatConfig = await DataLayer.getSeatConfig(date, time);
 
-  // 如果未有座位設定，代表司機未開始當值
   if (!seatConfig || !seatConfig.seats) {
     return `
       <div class="shift-card full" style="opacity:0.4;">
@@ -668,16 +517,12 @@ async function renderShiftCard(date, time, allBookings) {
   }
 
   const totalSeats = seatConfig.seats;
-
-  // 計算已預約座位
   const bookedSeats = Object.values(allBookings)
     .filter(b => b.scheduleId === scheduleId && ['reserved','arrived','boarded'].includes(b.status))
     .reduce((sum, b) => sum + (b.seats || 0), 0);
-
   const remaining = totalSeats - bookedSeats;
   const isFull = remaining <= 0;
 
-  // 檢查乘客自己有冇預約呢班
   const myBooking = Object.values(allBookings).find(b =>
     b.scheduleId === scheduleId &&
     b.passengerPhone === currentPassenger.phone &&
@@ -733,7 +578,6 @@ async function passengerLogin() {
   if (!/^\d{8}$/.test(phone)) { toast('請輸入 8 位數字電話號碼'); return; }
   if (!name || name.length > 20) { toast('請輸入姓名（20 字內）'); return; }
 
-  // 檢查有冇被暫停
   const existing = await DataLayer.getPassenger(phone) || {};
   if (existing.suspendedUntil && existing.suspendedUntil > now()) {
     const remaining = Math.ceil((existing.suspendedUntil - now()) / (24*60*60*1000));
@@ -741,10 +585,8 @@ async function passengerLogin() {
     return;
   }
 
-  // 儲存乘客資料
   await DataLayer.savePassenger(phone, {
-    name: name,
-    phone: phone,
+    name: name, phone: phone,
     creditScore: existing.creditScore != null ? existing.creditScore : 100,
     totalBookings: existing.totalBookings || 0,
     totalNoShows: existing.totalNoShows || 0,
@@ -767,10 +609,7 @@ function passengerLogout() {
 async function selectShift(date, time) {
   const content = document.getElementById('booking-content');
   const seatConfig = await DataLayer.getSeatConfig(date, time);
-  if (!seatConfig || !seatConfig.seats) {
-    toast('此班次未開放預約');
-    return;
-  }
+  if (!seatConfig || !seatConfig.seats) { toast('此班次未開放預約'); return; }
 
   const todayBookings = await DataLayer.getBookings(date);
   const scheduleId = getScheduleId(date, time);
@@ -779,16 +618,12 @@ async function selectShift(date, time) {
     .reduce((sum, b) => sum + (b.seats || 0), 0);
   const remaining = seatConfig.seats - bookedSeats;
 
-  // 已預約檢查
   const myBooking = Object.values(todayBookings).find(b =>
     b.scheduleId === scheduleId &&
     b.passengerPhone === currentPassenger.phone &&
     b.status !== 'cancelled'
   );
-  if (myBooking) {
-    toast('你已經預約咗呢個班次');
-    return;
-  }
+  if (myBooking) { toast('你已經預約咗呢個班次'); return; }
 
   const passengerData = await DataLayer.getPassenger(currentPassenger.phone) || {};
 
@@ -835,25 +670,16 @@ async function confirmBooking(date, time) {
     .filter(b => b.scheduleId === scheduleId && ['reserved','arrived','boarded'].includes(b.status))
     .reduce((sum, b) => sum + (b.seats || 0), 0);
 
-  if (bookedSeats + seats > seatConfig.seats) {
-    toast('座位不足，請重新選擇');
-    return;
-  }
+  if (bookedSeats + seats > seatConfig.seats) { toast('座位不足，請重新選擇'); return; }
 
   const booking = {
-    scheduleId: scheduleId,
-    date: date,
-    time: time,
-    passengerName: name,
-    passengerPhone: currentPassenger.phone,
-    seats: seats,
-    status: 'reserved',
-    direction: getShiftDirection(time)
+    scheduleId: scheduleId, date: date, time: time,
+    passengerName: name, passengerPhone: currentPassenger.phone,
+    seats: seats, status: 'reserved', direction: getShiftDirection(time)
   };
 
   await DataLayer.addBooking(date, booking);
 
-  // 更新乘客統計
   const passengerData = await DataLayer.getPassenger(currentPassenger.phone) || {};
   await DataLayer.savePassenger(currentPassenger.phone, {
     totalBookings: (passengerData.totalBookings || 0) + 1,
@@ -872,7 +698,6 @@ async function renderWaitingRoom(bookingId, date, time) {
 
   const shiftTime = getShiftTime(b.date, b.time);
   const timeUntil = shiftTime - now();
-  const gps = getShiftGPS(b.time);
 
   let html = `
     <div style="display:flex; align-items:center; margin-bottom:16px;">
@@ -914,20 +739,16 @@ async function renderWaitingRoom(bookingId, date, time) {
   }
 
   content.innerHTML = html;
-
   updateCountdown(b.date, b.time);
 
   if (b.status === 'reserved') {
     if (timeUntil < ARRIVE_WINDOW && timeUntil > -5 * 60 * 1000) {
       startGPS(b.id, b.date, b.time);
     } else if (timeUntil > 0) {
-      // 等到時間到先啟動
       const delay = timeUntil - ARRIVE_WINDOW;
       if (delay < 24 * 60 * 60 * 1000) {
         setTimeout(() => {
-          if (currentScreen === 'booking') {
-            checkAndStartGPS(b.id, b.date, b.time);
-          }
+          if (currentScreen === 'booking') checkAndStartGPS(b.id, b.date, b.time);
         }, delay);
       }
     } else {
@@ -940,9 +761,7 @@ async function renderWaitingRoom(bookingId, date, time) {
 async function checkAndStartGPS(bookingId, date, time) {
   const bookings = await DataLayer.getBookings(date);
   const b = bookings[bookingId];
-  if (b && b.status === 'reserved') {
-    startGPS(bookingId, date, time);
-  }
+  if (b && b.status === 'reserved') startGPS(bookingId, date, time);
 }
 
 function updateCountdown(date, time) {
@@ -954,9 +773,7 @@ function updateCountdown(date, time) {
   const mins = Math.floor(diff / 60000);
   const secs = Math.floor((diff % 60000) / 1000);
   el.textContent = `距離發車：${mins}:${String(secs).padStart(2,'0')}`;
-  setTimeout(() => {
-    if (document.getElementById('countdown')) updateCountdown(date, time);
-  }, 1000);
+  setTimeout(() => { if (document.getElementById('countdown')) updateCountdown(date, time); }, 1000);
 }
 
 async function cancelBooking(bookingId) {
@@ -967,10 +784,6 @@ async function cancelBooking(bookingId) {
   toast('已取消預約');
   renderPassengerHome();
 }
-
-// ============================================================
-// GPS 到站確認
-// ============================================================
 
 let gpsWatchId = null;
 let gpsMarkedBookingId = null;
@@ -1030,10 +843,7 @@ async function markArrived(bookingId, date) {
   const bookings = await DataLayer.getBookings(date);
   const b = bookings[bookingId];
   if (!b || b.status !== 'reserved') return;
-  await DataLayer.updateBooking(date, bookingId, {
-    status: 'arrived',
-    arrivedAt: now()
-  });
+  await DataLayer.updateBooking(date, bookingId, { status: 'arrived', arrivedAt: now() });
   stopGPS();
   toast('✅ 已確認到站！');
 }
@@ -1044,18 +854,9 @@ async function markArrived(bookingId, date) {
 
 async function renderDriverHome() {
   const content = document.getElementById('driver-content');
+  if (!currentDriver) currentDriver = loadDriverSession();
+  if (!currentDriver) { renderDriverLogin(content); return; }
 
-  // 檢查司機登入
-  if (!currentDriver) {
-    currentDriver = loadDriverSession();
-  }
-
-  if (!currentDriver) {
-    renderDriverLogin(content);
-    return;
-  }
-
-  // 驗證司機仍然有效
   const driverInDB = await DataLayer.getDriverByIdentifier(currentDriver.identifier);
   if (!driverInDB) {
     clearDriverSession();
@@ -1065,11 +866,8 @@ async function renderDriverHome() {
     return;
   }
 
-  // 檢查有冇當值中嘅車輛
   let activeBus = null;
-  if (currentDriver.plate) {
-    activeBus = await DataLayer.getActiveBus(currentDriver.plate);
-  }
+  if (currentDriver.plate) activeBus = await DataLayer.getActiveBus(currentDriver.plate);
 
   let html = `
     <div class="card">
@@ -1085,7 +883,6 @@ async function renderDriverHome() {
     </div>
   `;
 
-  // 如果冇當值，顯示車牌輸入 + 座位設定
   if (!activeBus || !activeBus.isActive) {
     html += `
       <div class="card">
@@ -1111,10 +908,6 @@ async function renderDriverHome() {
     content.innerHTML = html;
     return;
   }
-
-  // 當值中
-  const now_t = now();
-  const activeTime = Math.floor((now_t - (activeBus.lastUpdate || now_t)) / 60000);
 
   html += `
     <div class="card" style="border-color:#22c55e; background:#052e16;">
@@ -1186,15 +979,9 @@ async function driverLogin() {
   if (!id) { toast('請輸入電話號碼或電郵'); return; }
 
   const driver = await DataLayer.getDriverByIdentifier(id);
-  if (!driver) {
-    toast('❌ 此帳戶不是司機');
-    return;
-  }
+  if (!driver) { toast('❌ 此帳戶不是司機'); return; }
 
-  currentDriver = {
-    identifier: id,
-    plate: driver.plate || loadDriverPlate(id)
-  };
+  currentDriver = { identifier: id, plate: driver.plate || loadDriverPlate(id) };
   saveDriverSession(currentDriver);
   toast('✅ 司機登入成功');
   renderDriverHome();
@@ -1208,12 +995,8 @@ function driverLogout() {
 }
 
 function loadDriverPlate(id) {
-  try {
-    const raw = localStorage.getItem('booking_driver_plate_' + id);
-    return raw || null;
-  } catch(e) { return null; }
+  try { return localStorage.getItem('booking_driver_plate_' + id) || null; } catch(e) { return null; }
 }
-
 function saveDriverPlate(id, plate) {
   try { localStorage.setItem('booking_driver_plate_' + id, plate); } catch(e) {}
 }
@@ -1228,17 +1011,11 @@ async function driverStartDuty() {
   saveDriverPlate(currentDriver.identifier, plate);
   saveDriverSession(currentDriver);
 
-  // 設定 active_buses（同西鐵小巴共用）
   await db.ref('van/active_buses/' + plate).update({
-    plate: plate,
-    driverIdentifier: currentDriver.identifier,
-    carSeats: seats,
-    isActive: true,
-    mode: 'booking',
-    lastUpdate: now()
+    plate: plate, driverIdentifier: currentDriver.identifier,
+    carSeats: seats, isActive: true, mode: 'booking', lastUpdate: now()
   });
 
-  // 為今日所有班次設定座位數
   const today = getToday();
   if (isWeekday()) {
     const allShifts = [...SHIFTS_MORNING, ...SHIFTS_EVENING];
@@ -1253,11 +1030,9 @@ async function driverStartDuty() {
 
 async function driverStopDuty() {
   if (!confirm('確定停止當值？停止後乘客將無法預約今日班次。')) return;
-
   if (currentDriver.plate) {
     await db.ref('van/active_buses/' + currentDriver.plate).remove();
   }
-
   toast('🔴 已停止當值');
   renderDriverHome();
 }
@@ -1352,10 +1127,7 @@ async function renderDriverShift(date, time) {
 }
 
 async function markBoarded(date, bookingId) {
-  await DataLayer.updateBooking(date, bookingId, {
-    status: 'boarded',
-    boardedAt: now()
-  });
+  await DataLayer.updateBooking(date, bookingId, { status: 'boarded', boardedAt: now() });
   toast('✅ 已確認上車');
   const todayBookings = await DataLayer.getBookings(date);
   const b = todayBookings[bookingId];
@@ -1370,13 +1142,11 @@ async function confirmDeparture(date, time) {
   );
 
   if (shiftBookings.length === 0) { toast('冇未到站嘅乘客'); return; }
-
   if (!confirm(`確定發車？有 ${shiftBookings.length} 位乘客未到站，將被記錄為未到站。`)) return;
 
   let noShowCount = 0;
   for (const [id, b] of shiftBookings) {
     await DataLayer.updateBooking(date, id, { status: 'no-show', noShowAt: now() });
-    // 扣信用分
     const passengerData = await DataLayer.getPassenger(b.passengerPhone) || {};
     const newScore = Math.max(0, (passengerData.creditScore != null ? passengerData.creditScore : 100) - 20);
     const patch = {
@@ -1392,7 +1162,7 @@ async function confirmDeparture(date, time) {
   toast(`已發車，${noShowCount} 人未到站`);
   renderDriverShift(date, time);
 }
-</script><script>
+
 // ============================================================
 // 管理端
 // ============================================================
@@ -1411,7 +1181,6 @@ async function renderAdmin() {
     </div>
   `;
 
-  // 今日班次狀況
   html += `<div class="card-title" style="margin:16px 0 10px;">📊 今日班次狀況</div>`;
 
   if (!isWeekday()) {
@@ -1525,20 +1294,15 @@ function renderInfo() {
 }
 
 // ============================================================
-// 事件綁定
+// 事件綁定 + 初始化
 // ============================================================
 
-// 允許按 Enter 送出登入表單
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
-  if (document.getElementById('login-phone')) {
-    passengerLogin();
-  } else if (document.getElementById('driver-login-id')) {
-    driverLogin();
-  }
+  if (document.getElementById('login-phone')) passengerLogin();
+  else if (document.getElementById('driver-login-id')) driverLogin();
 });
 
-// 處理返回鍵（瀏覽器）
 window.addEventListener('popstate', function(e) {
   if (currentScreen !== 'home') {
     openModule('home');
@@ -1546,32 +1310,19 @@ window.addEventListener('popstate', function(e) {
   }
 });
 
-// ============================================================
-// 連線狀態監控
-// ============================================================
-
 db.ref('.info/connected').on('value', snap => {
-  if (snap.val() === true) {
-    console.log('☁️ Firebase 已連線');
-  } else {
-    console.log('⚠️ Firebase 離線');
-  }
+  if (snap.val() === true) console.log('☁️ Firebase 已連線');
+  else console.log('⚠️ Firebase 離線');
 });
-
-// ============================================================
-// 自動清理：將過期未到站標記為 no-show
-// ============================================================
 
 async function autoCleanExpiredBookings() {
   if (!isWeekday()) return;
   const today = getToday();
   const bookings = await DataLayer.getBookings(today);
-  const allShifts = [...SHIFTS_MORNING, ...SHIFTS_EVENING];
 
   for (const [id, b] of Object.entries(bookings)) {
     if (b.status !== 'reserved') continue;
     const shiftTime = getShiftTime(b.date, b.time);
-    // 發車後 5 分鐘仍未到站，自動標記為 no-show
     if (now() > shiftTime + 5 * 60 * 1000) {
       await DataLayer.updateBooking(b.date, id, { status: 'no-show', noShowAt: now() });
       const passengerData = await DataLayer.getPassenger(b.passengerPhone) || {};
@@ -1587,36 +1338,24 @@ async function autoCleanExpiredBookings() {
   }
 }
 
-// ============================================================
-// 初始化
-// ============================================================
-
 (function init() {
   console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v1.0 啟動');
-
-  // 恢復乘客 / 司機會話
   currentPassenger = loadPassengerSession();
   currentDriver = loadDriverSession();
-
-  // 首頁統計
   updateHomeStats();
 
-  // 每分鐘自動清理
   setInterval(() => {
     autoCleanExpiredBookings().catch(e => console.warn('自動清理失敗：', e));
   }, 60 * 1000);
 
-  // 首次執行（延遲 5 秒）
   setTimeout(() => {
     autoCleanExpiredBookings().catch(e => console.warn('自動清理失敗：', e));
   }, 5000);
 
-  // 每 30 秒更新首頁統計（如喺首頁）
   setInterval(() => {
     if (currentScreen === 'home') updateHomeStats();
   }, 30 * 1000);
 
-  // 處理瀏覽器返回鍵
   history.pushState(null, '', location.href);
 })();
 </script>
