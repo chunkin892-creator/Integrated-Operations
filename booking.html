@@ -33,9 +33,12 @@
   .module-card .name { font-size: 14px; font-weight: 600; color: #f1f5f9; }
   .module-card .desc { font-size: 11px; color: #64748b; margin-top: 4px; }
   .shift-card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 10px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
+  .shift-card:active { background: #334155; }
   .shift-card.full { opacity: 0.5; }
   .shift-time { font-size: 22px; font-weight: 700; color: #f1f5f9; }
   .shift-info { font-size: 12px; color: #64748b; margin-top: 4px; }
+  .shift-info.morning { color: #4ade80; font-weight: 600; }
+  .shift-info.evening { color: #fdba74; font-weight: 600; }
   .shift-seats { text-align: right; }
   .shift-seats .num { font-size: 28px; font-weight: 700; color: #22c55e; }
   .shift-seats .num.low { color: #f59e0b; }
@@ -47,46 +50,23 @@
   .badge-red { background: #450a0a; color: #f87171; }
   .badge-blue { background: #082f49; color: #38bdf8; }
   .badge-orange { background: #431407; color: #fdba74; }
+  .badge-purple { background: #2e1065; color: #c4b5fd; }
   .input-group { margin-bottom: 14px; }
   .input-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
   .input-group input, .input-group select { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 16px; outline: none; }
   .input-group input:focus, .input-group select:focus { border-color: #0ea5e9; }
-  .gps-box { background: #0f172a; border-radius: 12px; padding: 16px; text-align: center; border: 2px dashed #334155; margin: 16px 0; }
-  .gps-box.arrived { border-color: #22c55e; background: #052e16; }
-  .gps-box.waiting { border-color: #f59e0b; background: #422006; }
-  .gps-icon { font-size: 40px; margin-bottom: 8px; }
-  .gps-text { font-size: 14px; font-weight: 600; }
-  .gps-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
-  .booking-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 10px; margin-bottom: 8px; background: #0f172a; border-left: 4px solid #334155; }
-  .booking-item.arrived { border-left-color: #22c55e; }
-  .booking-item.not-arrived { border-left-color: #f59e0b; }
-  .booking-item.pending { border-left-color: #fdba74; background: #1c1917; }
-  .booking-name { font-size: 15px; font-weight: 600; }
-  .booking-phone { font-size: 12px; color: #64748b; }
-  .stats { display: flex; gap: 8px; margin-bottom: 16px; }
-  .stat { flex: 1; background: #1e293b; border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #334155; }
-  .stat .num { font-size: 24px; font-weight: 700; }
-  .stat .lbl { font-size: 11px; color: #64748b; margin-top: 2px; }
-  .stat.green .num { color: #22c55e; }
-  .stat.yellow .num { color: #f59e0b; }
-  .stat.blue .num { color: #38bdf8; }
   .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #f1f5f9; padding: 12px 24px; border-radius: 10px; font-size: 14px; z-index: 9999; opacity: 0; transition: opacity 0.3s; border: 1px solid #334155; max-width: 90%; text-align: center; }
   .toast.show { opacity: 1; }
   .bottom-nav { display: flex; background: #1e293b; border-top: 1px solid #334155; position: sticky; bottom: 0; }
   .nav-item { flex: 1; padding: 12px; text-align: center; font-size: 11px; color: #64748b; cursor: pointer; border: none; background: none; }
   .nav-item.active { color: #38bdf8; }
   .nav-item .icon { font-size: 20px; display: block; margin-bottom: 2px; }
-  .timer { font-size: 13px; color: #f59e0b; font-weight: 600; }
-  .success-big { text-align: center; padding: 24px 16px; }
-  .success-big .check { font-size: 72px; line-height: 1; margin-bottom: 12px; }
-  .success-big h2 { font-size: 24px; margin-bottom: 8px; }
-  .success-big p { font-size: 14px; color: #94a3b8; }
-  .success-pending h2 { color: #fdba74; }
-  .success-pending .card { border-color: #fdba74; background: #431407; }
-  .success-ok h2 { color: #22c55e; }
-  .success-ok .card { border-color: #22c55e; background: #052e16; }
-  .success-reject h2 { color: #f87171; }
-  .success-reject .card { border-color: #ef4444; background: #450a0a; }
+  .booking-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 10px; margin-bottom: 8px; background: #0f172a; border-left: 4px solid #334155; }
+  .booking-item.arrived { border-left-color: #22c55e; }
+  .booking-item.not-arrived { border-left-color: #f59e0b; }
+  .booking-item.pending { border-left-color: #fdba74; background: #1c1917; }
+  .booking-name { font-size: 15px; font-weight: 600; }
+  .booking-phone { font-size: 12px; color: #64748b; }
   .driver-top { background: linear-gradient(135deg,#052e16,#065f46); border: 2px solid #22c55e; border-radius: 14px; padding: 18px; text-align: center; margin-bottom: 16px; }
   .driver-top .plate { font-size: 42px; font-weight: 900; color: #4ade80; letter-spacing: 4px; line-height: 1; }
   .driver-top .seats { font-size: 18px; color: #86efac; margin-top: 8px; font-weight: 700; }
@@ -130,6 +110,18 @@
   .bus-pick .plate { font-size: 26px; font-weight: 900; color: #38bdf8; }
   .bus-pick .info { font-size: 13px; color: #94a3b8; margin-top: 4px; }
   .bus-pick .arrow { font-size: 28px; color: #38bdf8; }
+  /* 循環線候補專用 */
+  .loop-card { background: linear-gradient(135deg,#0c4a6e,#075985); border: 2px solid #0ea5e9; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+  .loop-card .title { font-size: 16px; font-weight: 900; color: #7dd3fc; }
+  .loop-card .sub { font-size: 12px; color: #bae6fd; margin-top: 4px; }
+  .loop-wait { background: #0f172a; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-left: 4px solid #0ea5e9; }
+  .loop-wait .name { font-size: 16px; font-weight: 700; color: #fff; }
+  .loop-wait .phone { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  .loop-wait .seats { font-size: 13px; color: #7dd3fc; margin-top: 4px; font-weight: 600; }
+  .loop-wait .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .loop-wait .actions button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .loop-wait .actions .btn-board { background: #22c55e; color: #fff; }
+  .loop-wait .actions .btn-cancel { background: #ef4444; color: #fff; }
 </style>
 </head>
 <body>
@@ -166,10 +158,19 @@
     </div>
     <div class="card">
       <div class="card-title">📊 今日概況</div>
-      <div class="stats">
-        <div class="stat yellow"><div class="num" id="home-pending">0</div><div class="lbl">待確認</div></div>
-        <div class="stat green"><div class="num" id="home-confirmed">0</div><div class="lbl">已確認</div></div>
-        <div class="stat blue"><div class="num" id="home-active">0</div><div class="lbl">當值中</div></div>
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;text-align:center;padding:12px;background:#422006;border-radius:10px;border:1px solid #f59e0b;">
+          <div style="font-size:24px;font-weight:700;color:#fbbf24;" id="home-pending">0</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">待確認</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px;background:#052e16;border-radius:10px;border:1px solid #22c55e;">
+          <div style="font-size:24px;font-weight:700;color:#4ade80;" id="home-confirmed">0</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">已確認</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px;background:#0c4a6e;border-radius:10px;border:1px solid #0ea5e9;">
+          <div style="font-size:24px;font-weight:700;color:#7dd3fc;" id="home-loop">0</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">循環候補</div>
+        </div>
       </div>
     </div>
   </div>
@@ -186,9 +187,7 @@
   </div>
 
   <div class="toast" id="toast"></div>
-</div>
-
-<script>
+</div><script>
 const firebaseConfig = {
   apiKey: "AIzaSyAX7Zy5br1ozGOGxHvDeFNY-Ldcjjw8Qgc",
   authDomain: "triple-login-version.firebaseapp.com",
@@ -210,6 +209,9 @@ const SHIFTS_EVENING = ['18:15', '18:30', '18:45', '19:00', '19:15', '19:30', '1
 const GPS_RADIUS = 80;
 const ARRIVE_WINDOW = 15 * 60 * 1000;
 const ACTIVE_BUS_TIMEOUT = 5 * 60 * 1000;
+// 循環線時段（介乎早上同傍晚之間）
+const LOOP_START_HOUR = 7;
+const LOOP_END_HOUR = 18;
 
 function toast(msg, duration = 3000) {
   const el = document.getElementById('toast');
@@ -243,27 +245,23 @@ function getShiftGPS(time) { return getShiftDirection(time) === 'morning' ? GPS_
 function getShiftOrigin(time) { return getShiftDirection(time) === 'morning' ? '大棠黃泥墩' : '元朗港鐵站 H 出口'; }
 function getShiftOriginLabel(time) { return getShiftDirection(time) === 'morning' ? '🌅 大棠黃泥墩開出' : '🌆 元朗港鐵站 H 出口開出'; }
 function getShiftDestination(time) { return getShiftDirection(time) === 'morning' ? '元朗港鐵站 H 出口' : '大棠黃泥墩'; }
-
-function playBeep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine'; osc.frequency.value = 880; gain.gain.value = 0.3;
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(); osc.stop(ctx.currentTime + 0.15);
-    setTimeout(() => {
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = 'sine'; osc2.frequency.value = 1320; gain2.gain.value = 0.3;
-      osc2.connect(gain2); gain2.connect(ctx.destination);
-      osc2.start(); osc2.stop(ctx.currentTime + 0.15);
-    }, 200);
-  } catch(e) {}
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-function vibrate(pattern) { try { if (navigator.vibrate) navigator.vibrate(pattern || [200, 100, 200]); } catch(e) {} }
+function isLoopHour() {
+  const h = new Date().getHours();
+  return isWeekday() && h >= LOOP_START_HOUR && h < LOOP_END_HOUR;
+}
 
 const DataLayer = {
+  async getDriverByIdentifier(id) {
+    const snap = await db.ref('drivers').orderByChild('identifier').equalTo(id).once('value');
+    if (!snap.exists()) return null;
+    let d = null; snap.forEach(c => { d = { key: c.key, ...c.val() }; });
+    return d;
+  },
+  async getActiveBus(plate) { const snap = await db.ref('van/active_buses/' + plate).once('value'); return snap.val(); },
   async getActiveBuses() {
     const snap = await db.ref('van/active_buses').once('value');
     const all = snap.val() || {};
@@ -275,38 +273,60 @@ const DataLayer = {
     return result;
   },
   async getBookings(date) { const snap = await db.ref('booking/' + date).once('value'); return snap.val() || {}; },
-  async addBooking(date, booking) {
+  async addBooking(date, b) {
     const ref = db.ref('booking/' + date).push();
-    booking.id = ref.key; booking.createdAt = now();
-    await ref.set(booking); return booking;
+    b.id = ref.key; b.createdAt = now();
+    await ref.set(b); return b;
   },
   async updateBooking(date, id, patch) { return db.ref('booking/' + date + '/' + id).update(patch); },
   async cancelBooking(date, id) { return DataLayer.updateBooking(date, id, { status: 'cancelled', cancelledAt: now() }); },
   async getPassenger(phone) { const snap = await db.ref('booking_passengers/' + phone).once('value'); return snap.val(); },
   async savePassenger(phone, data) { return db.ref('booking_passengers/' + phone).update(data); },
   async getSeatConfig(date, time) { const snap = await db.ref('booking_seats/' + date + '/' + time.replace(':','')).once('value'); return snap.val(); },
-  async getAllSeatConfigs(date) { const snap = await db.ref('booking_seats/' + date).once('value'); return snap.val() || {}; }
+  async getAllSeatConfigs(date) { const snap = await db.ref('booking_seats/' + date).once('value'); return snap.val() || {}; },
+  // 循環線候補
+  async getLoopQueue(date) { const snap = await db.ref('booking_loop/' + date).once('value'); return snap.val() || {}; },
+  async addLoopQueue(date, item) {
+    const ref = db.ref('booking_loop/' + date).push();
+    item.id = ref.key; item.createdAt = now();
+    await ref.set(item); return item;
+  },
+  async updateLoopQueue(date, id, patch) { return db.ref('booking_loop/' + date + '/' + id).update(patch); },
+  async removeLoopQueue(date, id) { return db.ref('booking_loop/' + date + '/' + id).remove(); }
 };
 
+let currentDriver = null;
 let currentPassenger = null;
 let currentScreen = 'home';
-let selectedDriverBus = null;
-let driverListeners = [];
+let driverBookingListener = null;
+let driverLoopListener = null;
+let driverListenerDate = null;
+let currentCachedBookings = {};
+let currentCachedLoop = {};
 let driverKnownBookingIds = new Set();
+let driverKnownLoopIds = new Set();
 let driverFirstLoad = true;
+let loopFirstLoad = true;
 let waitingRoomListener = null;
+let gpsWatchId = null;
+let gpsMarkedBookingId = null;
 
+function saveDriverSession(d) { try { localStorage.setItem('booking_driver', JSON.stringify(d)); } catch(e) {} }
+function loadDriverSession() { try { const r = localStorage.getItem('booking_driver'); return r ? JSON.parse(r) : null; } catch(e) { return null; } }
+function clearDriverSession() { try { localStorage.removeItem('booking_driver'); } catch(e) {} }
 function savePassengerSession(p) { try { localStorage.setItem('booking_passenger', JSON.stringify(p)); } catch(e) {} }
-function loadPassengerSession() { try { const raw = localStorage.getItem('booking_passenger'); return raw ? JSON.parse(raw) : null; } catch(e) { return null; } }
+function loadPassengerSession() { try { const r = localStorage.getItem('booking_passenger'); return r ? JSON.parse(r) : null; } catch(e) { return null; } }
 function clearPassengerSession() { try { localStorage.removeItem('booking_passenger'); } catch(e) {} }
-function saveSelectedBus(plate) { try { localStorage.setItem('booking_selected_bus', plate); } catch(e) {} }
+function saveSelectedBus(p) { try { localStorage.setItem('booking_selected_bus', p); } catch(e) {} }
 function loadSelectedBus() { try { return localStorage.getItem('booking_selected_bus'); } catch(e) { return null; } }
 function clearSelectedBus() { try { localStorage.removeItem('booking_selected_bus'); } catch(e) {} }
+function loadDriverPlate(id) { try { return localStorage.getItem('booking_driver_plate_' + id) || null; } catch(e) { return null; } }
+function saveDriverPlate(id, p) { try { localStorage.setItem('booking_driver_plate_' + id, p); } catch(e) {} }
 
 async function ensureAuth() {
   if (auth.currentUser) return auth.currentUser;
-  try { const result = await auth.signInAnonymously(); return result.user; }
-  catch(e) { throw new Error('無法連接 Firebase（' + e.message + '）'); }
+  const r = await auth.signInAnonymously();
+  return r.user;
 }
 
 function showScreen(id) {
@@ -314,18 +334,18 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
   currentScreen = id.replace('screen-', '');
 }
-function navTo(module) {
+function navTo(m) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   event.target.closest('.nav-item').classList.add('active');
-  openModule(module);
+  openModule(m);
 }
-function openModule(module) {
+function openModule(m) {
   document.getElementById('bottom-nav').style.display = 'flex';
-  if (module === 'home') { showScreen('screen-home'); updateHomeStats(); }
-  else if (module === 'booking') { showScreen('screen-booking'); renderPassengerHome(); }
-  else if (module === 'driver') { showScreen('screen-driver'); renderDriverHome(); }
-  else if (module === 'admin') { showScreen('screen-admin'); renderAdmin(); }
-  else if (module === 'info') { showScreen('screen-info'); renderInfo(); }
+  if (m === 'home') { showScreen('screen-home'); updateHomeStats(); }
+  else if (m === 'booking') { showScreen('screen-booking'); renderPassengerHome(); }
+  else if (m === 'driver') { showScreen('screen-driver'); renderDriverHome(); }
+  else if (m === 'admin') { showScreen('screen-admin'); renderAdmin(); }
+  else if (m === 'info') { showScreen('screen-info'); renderInfo(); }
 }
 
 async function updateHomeStats() {
@@ -337,17 +357,20 @@ async function updateHomeStats() {
       if (b.status === 'pending') pending++;
       if (b.status === 'reserved' || b.status === 'arrived' || b.status === 'boarded') confirmed++;
     });
-    const activeBuses = await DataLayer.getActiveBuses();
+    const loop = await DataLayer.getLoopQueue(today);
+    let loopCount = 0;
+    Object.values(loop).forEach(item => {
+      if (item.status === 'waiting') loopCount++;
+    });
     document.getElementById('home-pending').textContent = pending;
     document.getElementById('home-confirmed').textContent = confirmed;
-    document.getElementById('home-active').textContent = activeBuses.length;
+    document.getElementById('home-loop').textContent = loopCount;
   } catch(e) {}
 }
 
 // ============================================================
 // 乘客端
 // ============================================================
-
 async function renderPassengerHome() {
   const content = document.getElementById('booking-content');
   if (waitingRoomListener) { try { waitingRoomListener.off(); } catch(e) {} waitingRoomListener = null; }
@@ -355,15 +378,15 @@ async function renderPassengerHome() {
   if (!currentPassenger) { renderPassengerLogin(content); return; }
 
   try {
-    const passengerData = await DataLayer.getPassenger(currentPassenger.phone) || {};
-    const creditScore = passengerData.creditScore != null ? passengerData.creditScore : 100;
-    const suspendedUntil = passengerData.suspendedUntil || 0;
+    const pd = await DataLayer.getPassenger(currentPassenger.phone) || {};
+    const creditScore = pd.creditScore != null ? pd.creditScore : 100;
+    const suspendedUntil = pd.suspendedUntil || 0;
     const today = getToday();
 
     if (!isWeekday()) {
       content.innerHTML = `
         <div class="card"><div class="card-title">📅 今日不設留座</div>
-        <div style="font-size:13px;color:#64748b;line-height:1.8;">星期六、日及公眾假期採循環線運作，不設留座。</div></div>
+        <div style="font-size:13px;color:#64748b;line-height:1.8;">星期六、日及公眾假期採循環線運作，不設留座。乘客可即場上車。</div></div>
         <button class="btn btn-outline" onclick="passengerLogout()">登出</button>`;
       return;
     }
@@ -383,8 +406,8 @@ async function renderPassengerHome() {
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div style="font-size:15px;font-weight:600;">👤 ${passengerData.name || currentPassenger.name}</div>
-            <div style="font-size:12px;color:#64748b;margin-top:2px;">${currentPassenger.phone}</div>
+            <div style="font-size:15px;font-weight:600;">👤 ${esc(pd.name || currentPassenger.name)}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px;">${esc(currentPassenger.phone)}</div>
           </div>
           <div style="text-align:right;">
             <div style="font-size:20px;font-weight:700;color:${creditScore >= 80 ? '#22c55e' : creditScore >= 50 ? '#f59e0b' : '#ef4444'};">${creditScore}</div>
@@ -393,21 +416,34 @@ async function renderPassengerHome() {
         </div>
       </div>`;
 
+    // 固定班次
     const todayBookings = await DataLayer.getBookings(today);
     const seatConfigs = await DataLayer.getAllSeatConfigs(today);
 
-    html += `<div class="card-title" style="margin-bottom:10px;">🌅 早上班次 · 大棠黃泥墩開出</div>`;
+    html += `<div class="card-title" style="margin-bottom:10px;">🌅 早上固定班次 · 大棠黃泥墩開出</div>`;
     for (const time of SHIFTS_MORNING) html += renderShiftCard(today, time, todayBookings, seatConfigs);
 
-    html += `<div class="card-title" style="margin:16px 0 10px;">🌆 傍晚班次 · 元朗港鐵站 H 出口開出</div>`;
+    // 循環線時段
+    if (isLoopHour()) {
+      html += `
+        <div class="loop-card">
+          <div class="title">🔄 循環線候補（即時排隊）</div>
+          <div class="sub">而家係循環線時段（07:00 - 18:00）<br>冇固定班次，留名後到站排隊，有位就上</div>
+        </div>
+        <div id="loop-section"></div>
+      `;
+    }
+
+    html += `<div class="card-title" style="margin:16px 0 10px;">🌆 傍晚固定班次 · 元朗港鐵站 H 出口開出</div>`;
     for (const time of SHIFTS_EVENING) html += renderShiftCard(today, time, todayBookings, seatConfigs);
 
+    // 我的預約（固定班次）
     const myBookings = Object.values(todayBookings).filter(b =>
       b.passengerPhone === currentPassenger.phone && b.status !== 'cancelled' && b.status !== 'rejected'
     );
 
     if (myBookings.length > 0) {
-      html += `<div class="card-title" style="margin:16px 0 10px;">🎫 我的預約</div>`;
+      html += `<div class="card-title" style="margin:16px 0 10px;">🎫 我的固定班次預約</div>`;
       myBookings.sort((a,b) => a.time.localeCompare(b.time));
       myBookings.forEach(b => {
         const map = {
@@ -418,13 +454,12 @@ async function renderPassengerHome() {
           'no-show': { text: '❌ 未到站', color: '#f87171', border: '#ef4444' }
         };
         const s = map[b.status] || { text: b.status, color: '#94a3b8', border: '#334155' };
-
         html += `
           <div class="card" style="padding:12px;border-color:${s.border};cursor:pointer;" onclick="openWaitingRoom('${b.id}','${b.date}','${b.time}')">
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <div>
-                <div style="font-size:15px;font-weight:600;">${b.time} 班次</div>
-                <div style="font-size:12px;color:#64748b;">${getShiftOrigin(b.time)} · ${b.seats} 人</div>
+                <div style="font-size:15px;font-weight:600;">${esc(b.time)} 班次</div>
+                <div style="font-size:12px;color:#64748b;">${esc(getShiftOrigin(b.time))} · ${b.seats} 人</div>
               </div>
               <div style="font-size:13px;color:${s.color};font-weight:700;">${s.text}</div>
             </div>
@@ -434,9 +469,118 @@ async function renderPassengerHome() {
 
     html += `<button class="btn btn-outline" style="margin-top:20px;" onclick="passengerLogout()">登出</button>`;
     content.innerHTML = html;
+
+    // 載入循環線候補區
+    if (isLoopHour()) loadLoopSection();
+
   } catch(e) {
-    content.innerHTML = `<div class="card" style="border-color:#ef4444;"><div style="color:#f87171;">⚠️ ${e.message}</div></div>
+    content.innerHTML = `<div class="card" style="border-color:#ef4444;"><div style="color:#f87171;">⚠️ ${esc(e.message)}</div></div>
       <button class="btn btn-primary" onclick="renderPassengerHome()">🔄 重試</button>`;
+  }
+}
+
+// 循環線候補：乘客端
+let loopPassengerRef = null, loopPassengerHandler = null;
+
+async function loadLoopSection() {
+  const section = document.getElementById('loop-section');
+  if (!section) return;
+  section.innerHTML = `<div class="card" style="text-align:center;color:#64748b;padding:20px;">🔄 載入中...</div>`;
+  const today = getToday();
+
+  if (loopPassengerRef && loopPassengerHandler) {
+    try { loopPassengerRef.off('value', loopPassengerHandler); } catch(e) {}
+    loopPassengerRef = null; loopPassengerHandler = null;
+  }
+
+  const ref = db.ref('booking_loop/' + today);
+  const handler = (snap) => {
+    const all = snap.val() || {};
+    const myItem = Object.values(all).find(item => item.phone === currentPassenger.phone && item.status === 'waiting');
+    const waitingCount = Object.values(all).filter(item => item.status === 'waiting').length;
+
+    const el = document.getElementById('loop-section');
+    if (!el) return;
+
+    if (myItem) {
+      // 已排隊
+      const myPos = Object.values(all)
+        .filter(item => item.status === 'waiting')
+        .sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0))
+        .findIndex(item => item.id === myItem.id) + 1;
+
+      el.innerHTML = `
+        <div class="loop-card" style="background:linear-gradient(135deg,#052e16,#065f46);border-color:#22c55e;">
+          <div class="title" style="color:#4ade80;">✅ 已排隊，等待上車</div>
+          <div class="sub" style="color:#86efac;">
+            你嘅排隊位置：第 <strong style="font-size:24px;color:#4ade80;">${myPos}</strong> 位<br>
+            前面仲有 ${myPos - 1} 位乘客<br>
+            到站後司機叫名上車
+          </div>
+          <button class="btn btn-danger" style="margin-top:12px;" onclick="loopCancel()">取消排隊</button>
+        </div>
+      `;
+    } else {
+      // 未排隊
+      el.innerHTML = `
+        <div class="loop-card">
+          <div class="title" style="color:#7dd3fc;">🔄 立即排隊留名</div>
+          <div class="sub" style="color:#bae6fd;">
+            而家候補人數：<strong>${waitingCount}</strong> 人<br>
+            撳下面按鈕排隊，到站後司機叫名上車
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="loopJoin()">✅ 立即排隊</button>
+        </div>
+      `;
+    }
+  };
+  ref.on('value', handler);
+  loopPassengerRef = ref;
+  loopPassengerHandler = handler;
+}
+
+async function loopJoin() {
+  try {
+    await ensureAuth();
+    const today = getToday();
+    const all = await DataLayer.getLoopQueue(today);
+
+    // 檢查係咪已經排咗隊
+    const existing = Object.values(all).find(item => item.phone === currentPassenger.phone && item.status === 'waiting');
+    if (existing) { toast('⚠️ 你已經排咗隊'); return; }
+
+    // 檢查信用分
+    const pd = await DataLayer.getPassenger(currentPassenger.phone) || {};
+    const creditScore = pd.creditScore != null ? pd.creditScore : 100;
+    if (creditScore < 50) {
+      toast('⚠️ 信用分不足，暫時唔可以使用循環線候補');
+      return;
+    }
+
+    await DataLayer.addLoopQueue(today, {
+      phone: currentPassenger.phone,
+      name: pd.name || currentPassenger.name,
+      seats: 1,
+      status: 'waiting',
+      date: today
+    });
+    toast('✅ 已排隊，等待上車', 3000);
+  } catch(e) {
+    console.error('排隊失敗：', e);
+    toast('❌ 排隊失敗：' + e.message);
+  }
+}
+
+async function loopCancel() {
+  if (!confirm('確定取消排隊？')) return;
+  try {
+    const today = getToday();
+    const all = await DataLayer.getLoopQueue(today);
+    const myItem = Object.values(all).find(item => item.phone === currentPassenger.phone && item.status === 'waiting');
+    if (myItem) await DataLayer.removeLoopQueue(today, myItem.id);
+    toast('已取消排隊');
+  } catch(e) {
+    toast('取消失敗：' + e.message);
   }
 }
 
@@ -449,8 +593,8 @@ function renderShiftCard(date, time, allBookings, seatConfigs) {
     return `
       <div class="shift-card full" style="opacity:0.4;">
         <div>
-          <div class="shift-time">${time}</div>
-          <div class="shift-info ${dir === 'morning' ? 'origin-morning' : 'origin-evening'}">${getShiftOriginLabel(time)}</div>
+          <div class="shift-time">${esc(time)}</div>
+          <div class="shift-info ${dir === 'morning' ? 'morning' : 'evening'}">${esc(getShiftOriginLabel(time))}</div>
           <div style="margin-top:6px;"><span class="badge badge-red">未開放</span></div>
         </div>
         <div class="shift-seats"><div class="num zero">—</div><div class="label">未開放</div></div>
@@ -482,8 +626,8 @@ function renderShiftCard(date, time, allBookings, seatConfigs) {
   return `
     <div class="shift-card ${isFull && !myBooking ? 'full' : ''}" ${clickable ? `onclick="selectShift('${date}','${time}')"` : ''}>
       <div>
-        <div class="shift-time">${time}</div>
-        <div class="shift-info ${dir === 'morning' ? 'origin-morning' : 'origin-evening'}" style="${dir === 'morning' ? 'color:#4ade80;' : 'color:#fdba74;'}">${getShiftOriginLabel(time)}</div>
+        <div class="shift-time">${esc(time)}</div>
+        <div class="shift-info ${dir === 'morning' ? 'morning' : 'evening'}">${esc(getShiftOriginLabel(time))}</div>
         ${badge ? '<div style="margin-top:6px;">' + badge + '</div>' : ''}
       </div>
       <div class="shift-seats">
@@ -497,10 +641,14 @@ function renderPassengerLogin(content) {
   content.innerHTML = `
     <div class="card">
       <div class="card-title">📱 輸入電話號碼開始預約</div>
-      <div class="input-group"><label>電話號碼（8 位數字）</label>
-        <input type="tel" id="login-phone" placeholder="例如：91234567" maxlength="8" inputmode="numeric"></div>
-      <div class="input-group"><label>姓名</label>
-        <input type="text" id="login-name" placeholder="例如：陳先生" maxlength="20"></div>
+      <div class="input-group">
+        <label>電話號碼（8 位數字）</label>
+        <input type="tel" id="login-phone" placeholder="例如：91234567" maxlength="8" inputmode="numeric">
+      </div>
+      <div class="input-group">
+        <label>姓名</label>
+        <input type="text" id="login-name" placeholder="例如：陳先生" maxlength="20">
+      </div>
       <button class="btn btn-primary" id="passenger-login-btn" onclick="passengerLogin()">確認</button>
     </div>`;
 }
@@ -510,8 +658,10 @@ async function passengerLogin() {
   if (btn) { btn.disabled = true; btn.textContent = '處理中...'; }
   const phone = document.getElementById('login-phone').value.trim();
   const name = document.getElementById('login-name').value.trim();
-  if (!/^\d{8}$/.test(phone)) { toast('請輸入 8 位數字'); if (btn) { btn.disabled = false; btn.textContent = '確認'; } return; }
+
+  if (!/^\d{8}$/.test(phone)) { toast('請輸入 8 位數字電話號碼'); if (btn) { btn.disabled = false; btn.textContent = '確認'; } return; }
   if (!name || name.length > 20) { toast('請輸入姓名（20 字內）'); if (btn) { btn.disabled = false; btn.textContent = '確認'; } return; }
+
   try {
     await ensureAuth();
     const existing = await DataLayer.getPassenger(phone) || {};
@@ -543,6 +693,7 @@ function passengerLogout() {
   clearPassengerSession();
   stopGPS();
   if (waitingRoomListener) { try { waitingRoomListener.off(); } catch(e) {} waitingRoomListener = null; }
+  if (loopPassengerRef && loopPassengerHandler) { try { loopPassengerRef.off('value', loopPassengerHandler); } catch(e) {} loopPassengerRef = null; loopPassengerHandler = null; }
   renderPassengerHome();
 }
 
@@ -564,7 +715,7 @@ async function selectShift(date, time) {
     );
     if (myBooking) { toast('你已經預約咗呢個班次'); return; }
 
-    const passengerData = await DataLayer.getPassenger(currentPassenger.phone) || {};
+    const pd = await DataLayer.getPassenger(currentPassenger.phone) || {};
 
     content.innerHTML = `
       <div style="display:flex;align-items:center;margin-bottom:16px;">
@@ -572,15 +723,15 @@ async function selectShift(date, time) {
       </div>
       <div class="card">
         <div class="card-title">🚐 預約班次</div>
-        <div style="font-size:28px;font-weight:700;color:#38bdf8;">${time}</div>
-        <div style="font-size:13px;color:#64748b;margin-top:4px;">${date}</div>
-        <div style="font-size:13px;margin-top:6px;font-weight:600;color:${getShiftDirection(time) === 'morning' ? '#4ade80' : '#fdba74'};">${getShiftOriginLabel(time)}</div>
-        <div style="font-size:13px;color:#94a3b8;margin-top:4px;">→ ${getShiftDestination(time)}</div>
+        <div style="font-size:28px;font-weight:700;color:#38bdf8;">${esc(time)}</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px;">${esc(date)}</div>
+        <div style="font-size:13px;margin-top:6px;font-weight:600;color:${getShiftDirection(time) === 'morning' ? '#4ade80' : '#fdba74'};">${esc(getShiftOriginLabel(time))}</div>
+        <div style="font-size:13px;color:#94a3b8;margin-top:4px;">→ ${esc(getShiftDestination(time))}</div>
         <div style="font-size:13px;color:#22c55e;margin-top:8px;">剩餘 ${remaining} 個座位</div>
       </div>
       <div class="card">
         <div class="input-group"><label>姓名</label>
-          <input type="text" id="book-name" value="${passengerData.name || currentPassenger.name}" maxlength="20"></div>
+          <input type="text" id="book-name" value="${esc(pd.name || currentPassenger.name)}" maxlength="20"></div>
         <div class="input-group"><label>人數</label>
           <select id="book-seats"><option value="1">1 人</option><option value="2">2 人</option></select></div>
         <button class="btn btn-primary" id="confirm-booking-btn" onclick="confirmBooking('${date}','${time}')">送出預約（待司機確認）</button>
@@ -597,6 +748,7 @@ async function confirmBooking(date, time) {
   const name = document.getElementById('book-name').value.trim();
   const seats = parseInt(document.getElementById('book-seats').value);
   if (!name || name.length > 20) { toast('請輸入姓名'); if (btn) { btn.disabled = false; btn.textContent = '送出預約（待司機確認）'; } return; }
+
   try {
     await ensureAuth();
     const cfg = await DataLayer.getSeatConfig(date, time);
@@ -616,9 +768,7 @@ async function confirmBooking(date, time) {
     const saved = await DataLayer.addBooking(date, booking);
     try {
       const pd = await DataLayer.getPassenger(currentPassenger.phone) || {};
-      await DataLayer.savePassenger(currentPassenger.phone, {
-        totalBookings: (pd.totalBookings || 0) + 1, lastBooking: now()
-      });
+      await DataLayer.savePassenger(currentPassenger.phone, { totalBookings: (pd.totalBookings || 0) + 1, lastBooking: now() });
     } catch(e) {}
     toast('✅ 已送出，等待司機確認', 3000);
     openWaitingRoom(saved.id, date, time);
@@ -628,16 +778,10 @@ async function confirmBooking(date, time) {
   }
 }
 
-function openWaitingRoom(bookingId, date, time) {
-  showScreen('screen-booking');
-  renderWaitingRoom(bookingId, date, time);
-}
+function openWaitingRoom(bookingId, date, time) { renderWaitingRoom(bookingId, date, time); }
 
 async function renderWaitingRoom(bookingId, date, time) {
-  const content = document.getElementById('booking-content');
-
   if (waitingRoomListener) { try { waitingRoomListener.off(); } catch(e) {} waitingRoomListener = null; }
-
   const ref = db.ref('booking/' + date + '/' + bookingId);
   const handler = (snap) => {
     const b = snap.val();
@@ -646,7 +790,6 @@ async function renderWaitingRoom(bookingId, date, time) {
   };
   ref.on('value', handler);
   waitingRoomListener = ref;
-
   const snap = await ref.once('value');
   const b = snap.val();
   if (!b) { renderPassengerHome(); return; }
@@ -660,36 +803,33 @@ function renderWaitingRoomUI(b, date, bookingId) {
 
   let statusBlock = '';
   if (b.status === 'pending') {
-    statusBlock = `
-      <div class="success-big card success-pending" style="border-color:#fb923c;background:#431407;">
-        <div class="check">⏳</div>
-        <h2 style="color:#fdba74;">等待司機確認</h2>
-        <p>你嘅預約已送出<br>司機確認後會即時通知你</p>
-      </div>`;
+    statusBlock = `<div class="card" style="border-color:#fb923c;background:#431407;text-align:center;padding:24px;">
+      <div style="font-size:60px;">⏳</div>
+      <h2 style="color:#fdba74;font-size:22px;margin:12px 0 8px;">等待司機確認</h2>
+      <p style="font-size:14px;color:#fdba74;">你嘅預約已送出<br>司機確認後會即時通知你</p>
+    </div>`;
   } else if (b.status === 'reserved') {
-    statusBlock = `
-      <div class="success-big card success-ok" style="border-color:#22c55e;background:#052e16;">
-        <div class="check">✅</div>
-        <h2 style="color:#22c55e;">已確認留位！</h2>
-        <p>司機已確認你嘅預約</p>
-      </div>`;
+    statusBlock = `<div class="card" style="border-color:#22c55e;background:#052e16;text-align:center;padding:24px;">
+      <div style="font-size:60px;">✅</div>
+      <h2 style="color:#22c55e;font-size:22px;margin:12px 0 8px;">已確認留位！</h2>
+      <p style="font-size:14px;color:#86efac;">司機已確認你嘅預約</p>
+    </div>`;
   } else if (b.status === 'rejected') {
-    statusBlock = `
-      <div class="success-big card success-reject" style="border-color:#ef4444;background:#450a0a;">
-        <div class="check">❌</div>
-        <h2 style="color:#f87171;">預約已被拒絕</h2>
-        <p>${b.rejectReason ? '原因：' + b.rejectReason : '司機未能確認你嘅預約'}</p>
-      </div>`;
+    statusBlock = `<div class="card" style="border-color:#ef4444;background:#450a0a;text-align:center;padding:24px;">
+      <div style="font-size:60px;">❌</div>
+      <h2 style="color:#f87171;font-size:22px;margin:12px 0 8px;">預約已被拒絕</h2>
+      <p style="font-size:14px;color:#fca5a5;">${esc(b.rejectReason ? '原因：' + b.rejectReason : '司機未能確認你嘅預約')}</p>
+    </div>`;
   } else if (b.status === 'arrived') {
-    statusBlock = `<div class="success-big card success-ok" style="border-color:#22c55e;background:#052e16;">
-      <div class="check">✅</div><h2 style="color:#22c55e;">已確認到站</h2><p>請在總站等候上車</p></div>`;
+    statusBlock = `<div class="card" style="border-color:#22c55e;background:#052e16;text-align:center;padding:24px;">
+      <div style="font-size:60px;">✅</div><h2 style="color:#22c55e;font-size:22px;margin:12px 0 8px;">已確認到站</h2>
+      <p style="font-size:14px;color:#86efac;">請在總站等候上車</p></div>`;
   } else if (b.status === 'boarded') {
-    statusBlock = `<div class="success-big card success-ok"><div class="check">🚐</div><h2 style="color:#7dd3fc;">已上車</h2></div>`;
+    statusBlock = `<div class="card" style="text-align:center;padding:24px;"><div style="font-size:60px;">🚐</div><h2 style="color:#7dd3fc;font-size:22px;margin:12px 0 8px;">已上車</h2></div>`;
   } else if (b.status === 'cancelled') {
     statusBlock = `<div class="card" style="text-align:center;color:#94a3b8;">已取消</div>`;
   } else if (b.status === 'no-show') {
-    statusBlock = `<div class="card" style="text-align:center;border-color:#ef4444;background:#450a0a;">
-      <div style="color:#f87171;font-weight:600;">❌ 未到站</div></div>`;
+    statusBlock = `<div class="card" style="text-align:center;border-color:#ef4444;background:#450a0a;"><div style="color:#f87171;font-weight:600;">❌ 未到站</div></div>`;
   }
 
   let html = `
@@ -699,20 +839,20 @@ function renderWaitingRoomUI(b, date, bookingId) {
     ${statusBlock}
     <div class="card" style="text-align:center;">
       <div style="font-size:14px;color:#64748b;">預約編號</div>
-      <div style="font-size:20px;font-weight:700;color:#38bdf8;letter-spacing:2px;margin:8px 0;">${b.id.substring(0,8).toUpperCase()}</div>
-      <div style="font-size:13px;color:#94a3b8;">${b.time} 班次 · ${b.seats} 人</div>
-      <div style="font-size:13px;margin-top:6px;font-weight:600;color:${getShiftDirection(b.time) === 'morning' ? '#4ade80' : '#fdba74'};">${getShiftOriginLabel(b.time)}</div>
-      <div style="font-size:12px;color:#64748b;margin-top:4px;">乘客：${b.passengerName}</div>
+      <div style="font-size:20px;font-weight:700;color:#38bdf8;letter-spacing:2px;margin:8px 0;">${esc(b.id.substring(0,8).toUpperCase())}</div>
+      <div style="font-size:13px;color:#94a3b8;">${esc(b.time)} 班次 · ${b.seats} 人</div>
+      <div style="font-size:13px;margin-top:6px;font-weight:600;color:${getShiftDirection(b.time) === 'morning' ? '#4ade80' : '#fdba74'};">${esc(getShiftOriginLabel(b.time))}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px;">乘客：${esc(b.passengerName)}</div>
     </div>`;
 
   if (b.status === 'reserved') {
     html += `
-      <div class="gps-box waiting" id="gps-box">
-        <div class="gps-icon">📍</div>
-        <div class="gps-text" id="gps-text">等待開始定位...</div>
-        <div class="gps-sub" id="gps-sub">發車前 15 分鐘開始追蹤</div>
+      <div class="card" style="text-align:center;padding:16px;border:2px dashed #f59e0b;background:#422006;" id="gps-box">
+        <div style="font-size:40px;">📍</div>
+        <div style="font-size:14px;font-weight:600;" id="gps-text">等待開始定位...</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px;" id="gps-sub">發車前 15 分鐘開始追蹤</div>
       </div>
-      <div class="card" style="text-align:center;"><div class="timer" id="countdown">距離發車：--:--</div></div>`;
+      <div class="card" style="text-align:center;"><div style="font-size:13px;color:#f59e0b;font-weight:600;" id="countdown">距離發車：--:--</div></div>`;
   }
 
   if (b.status === 'pending' || b.status === 'reserved') {
@@ -728,7 +868,7 @@ function renderWaitingRoomUI(b, date, bookingId) {
     else if (timeUntil > 0) {
       const delay = timeUntil - ARRIVE_WINDOW;
       if (delay < 24 * 60 * 60 * 1000) setTimeout(() => {
-        if (currentScreen === 'booking') checkAndStartGPS(b.id, b.date, b.time);
+        if (document.getElementById('countdown')) checkAndStartGPS(b.id, b.date, b.time);
       }, delay);
     }
   }
@@ -764,9 +904,6 @@ async function cancelBooking(bookingId, date) {
   } catch(e) { toast('取消失敗：' + e.message); }
 }
 
-let gpsWatchId = null;
-let gpsMarkedBookingId = null;
-
 function startGPS(bookingId, date, time) {
   if (!navigator.geolocation) { const t = document.getElementById('gps-text'); if (t) t.textContent = '不支援 GPS'; return; }
   const gps = getShiftGPS(time);
@@ -784,11 +921,12 @@ function startGPS(bookingId, date, time) {
       if (!box || !text || !sub) return;
       if (d <= GPS_RADIUS) {
         box.className = 'gps-box arrived';
+        box.style.borderColor = '#22c55e';
+        box.style.background = '#052e16';
         text.textContent = '✅ 已到站！';
         sub.textContent = `距離 ${Math.round(d)} 米`;
         if (gpsMarkedBookingId !== bookingId) { gpsMarkedBookingId = bookingId; await markArrived(bookingId, date); }
       } else {
-        box.className = 'gps-box waiting';
         text.textContent = '⏳ 未到站';
         sub.textContent = `距離 ${Math.round(d)} 米（需進入 ${GPS_RADIUS} 米範圍）`;
       }
@@ -813,10 +951,10 @@ async function markArrived(bookingId, date) {
 // ============================================================
 // 司機端
 // ============================================================
-
 function clearDriverListeners() {
-  driverListeners.forEach(({ref, handler}) => { try { ref.off('value', handler); } catch(e) {} });
-  driverListeners = [];
+  if (driverBookingListener && driverListenerDate) { try { db.ref('booking/' + driverListenerDate).off('value', driverBookingListener); } catch(e) {} driverBookingListener = null; }
+  if (driverLoopListener && driverListenerDate) { try { db.ref('booking_loop/' + driverListenerDate).off('value', driverLoopListener); } catch(e) {} driverLoopListener = null; }
+  driverListenerDate = null;
 }
 
 async function renderDriverHome() {
@@ -827,7 +965,7 @@ async function renderDriverHome() {
     const activeBuses = await DataLayer.getActiveBuses();
 
     if (activeBuses.length === 0) {
-      clearSelectedBus(); selectedDriverBus = null;
+      clearSelectedBus(); currentDriver = null;
       content.innerHTML = `
         <div class="waiting-big">
           <div class="icon">🚐</div>
@@ -837,38 +975,35 @@ async function renderDriverHome() {
       const ref = db.ref('van/active_buses');
       const handler = () => { if (currentScreen === 'driver') renderDriverHome(); };
       ref.on('value', handler);
-      driverListeners.push({ref, handler});
       return;
     }
 
     if (activeBuses.length === 1) {
-      selectedDriverBus = activeBuses[0];
-      saveSelectedBus(selectedDriverBus.plate);
+      currentDriver = { plate: activeBuses[0].plate, carSeats: activeBuses[0].carSeats || 16 };
+      saveSelectedBus(currentDriver.plate);
       renderDriverDuty();
       return;
     }
 
     const saved = loadSelectedBus();
     if (saved && activeBuses.find(b => b.plate === saved)) {
-      selectedDriverBus = activeBuses.find(b => b.plate === saved);
+      const bus = activeBuses.find(b => b.plate === saved);
+      currentDriver = { plate: bus.plate, carSeats: bus.carSeats || 16 };
       renderDriverDuty();
       return;
     }
 
-    let html = `
-      <div class="card">
-        <div class="card-title">🚐 而家有 ${activeBuses.length} 部車當值中</div>
-        <div style="font-size:13px;color:#94a3b8;">請揀你揸緊嗰部車：</div>
-      </div>`;
+    let html = `<div class="card"><div class="card-title">🚐 而家有 ${activeBuses.length} 部車當值中</div>
+      <div style="font-size:13px;color:#94a3b8;">請揀你揸緊嗰部車：</div></div>`;
     activeBuses.forEach(bus => {
-      html += `<div class="bus-pick" onclick="pickBus('${bus.plate}')">
-        <div><div class="plate">${bus.plate}</div>
-        <div class="info">${bus.carSeats || 16} 座 · ${bus.currentStation || '未知位置'}</div></div>
+      html += `<div class="bus-pick" onclick="pickBus('${esc(bus.plate)}')">
+        <div><div class="plate">${esc(bus.plate)}</div>
+        <div class="info">${bus.carSeats || 16} 座 · ${esc(bus.currentStation || '未知位置')}</div></div>
         <div class="arrow">›</div></div>`;
     });
     content.innerHTML = html;
   } catch(e) {
-    content.innerHTML = `<div class="card" style="border-color:#ef4444;"><div style="color:#f87171;">⚠️ ${e.message}</div></div>
+    content.innerHTML = `<div class="card" style="border-color:#ef4444;"><div style="color:#f87171;">⚠️ ${esc(e.message)}</div></div>
       <button class="btn btn-primary" onclick="renderDriverHome()">🔄 重試</button>`;
   }
 }
@@ -877,39 +1012,88 @@ function pickBus(plate) { saveSelectedBus(plate); renderDriverHome(); }
 
 async function renderDriverDuty() {
   const content = document.getElementById('driver-content');
-  const bus = selectedDriverBus;
+  const bus = currentDriver;
   if (!bus) { renderDriverHome(); return; }
   const today = getToday();
 
   content.innerHTML = `
     <div class="driver-top">
-      <div class="plate">${bus.plate}</div>
+      <div class="plate">${esc(bus.plate)}</div>
       <div class="seats">${bus.carSeats || 16} 座</div>
       <div class="status">🟢 當值中 · 實時同步</div>
     </div>
     <div id="alert-area"></div>
-    <div id="driver-list"></div>`;
+    <div class="card" style="padding:0;border:none;background:none;margin-bottom:12px;">
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" id="tab-btn-fixed" onclick="switchDriverTab('fixed')" style="padding:12px;font-size:14px;">📋 固定班次</button>
+        <button class="btn btn-outline" id="tab-btn-loop" onclick="switchDriverTab('loop')" style="padding:12px;font-size:14px;">🔄 循環線候補</button>
+      </div>
+    </div>
+    <div id="driver-tab-fixed"></div>
+    <div id="driver-tab-loop" style="display:none;"></div>
+  `;
 
+  // 監聽當值狀態變化
   const busRef = db.ref('van/active_buses/' + bus.plate);
-  const busHandler = (snap) => {
+  busRef.on('value', (snap) => {
     const data = snap.val();
     if (!data || !data.isActive) {
       toast('🔴 西鐵小巴已停止當值');
-      clearSelectedBus(); selectedDriverBus = null;
-      renderDriverHome(); return;
+      clearSelectedBus(); currentDriver = null;
+      renderDriverHome();
+      return;
     }
-    if (data.carSeats && data.carSeats !== selectedDriverBus.carSeats) {
-      selectedDriverBus.carSeats = data.carSeats;
-      renderDriverList(currentCachedBookings);
+    if (data.carSeats && data.carSeats !== currentDriver.carSeats) {
+      currentDriver.carSeats = data.carSeats;
     }
-  };
-  busRef.on('value', busHandler);
-  driverListeners.push({ref: busRef, handler: busHandler});
+  });
 
-  const bookingsRef = db.ref('booking/' + today);
-  const bookingsHandler = (snap) => {
+  // 預設顯示固定班次
+  switchDriverTab('fixed');
+}
+
+function switchDriverTab(tab) {
+  const btnFixed = document.getElementById('tab-btn-fixed');
+  const btnLoop = document.getElementById('tab-btn-loop');
+  const divFixed = document.getElementById('driver-tab-fixed');
+  const divLoop = document.getElementById('driver-tab-loop');
+  if (!btnFixed || !btnLoop) return;
+
+  if (tab === 'fixed') {
+    btnFixed.className = 'btn btn-primary';
+    btnLoop.className = 'btn btn-outline';
+    divFixed.style.display = 'block';
+    divLoop.style.display = 'none';
+    renderDriverFixedList();
+  } else {
+    btnFixed.className = 'btn btn-outline';
+    btnLoop.className = 'btn btn-primary';
+    divFixed.style.display = 'none';
+    divLoop.style.display = 'block';
+    renderDriverLoopList();
+  }
+}
+
+async function renderDriverFixedList() {
+  const container = document.getElementById('driver-tab-fixed');
+  if (!container) return;
+  container.innerHTML = `<div style="text-align:center;color:#64748b;padding:20px;">🔄 載入中...</div>`;
+  const today = getToday();
+  const allShifts = [...SHIFTS_MORNING, ...SHIFTS_EVENING];
+  const seatConfigs = await DataLayer.getAllSeatConfigs(today);
+
+  // 初次載入
+  const initialBookings = await DataLayer.getBookings(today);
+  currentCachedBookings = initialBookings;
+  Object.keys(initialBookings).forEach(id => driverKnownBookingIds.add(id));
+  driverFirstLoad = false;
+  renderDriverFixedHTML(initialBookings, seatConfigs, today, allShifts);
+
+  // 實時監聽
+  const ref = db.ref('booking/' + today);
+  driverListenerDate = today;
+  driverBookingListener = (snap) => {
     const allBookings = snap.val() || {};
-
     const newIds = new Set(Object.keys(allBookings));
     let newPending = 0;
     if (!driverFirstLoad) {
@@ -920,43 +1104,38 @@ async function renderDriverDuty() {
         }
       });
       if (newPending > 0) {
-        playBeep(); vibrate([300, 100, 300]);
-        toast(`🔔 有 ${newPending} 個新預約，請確認！`, 4000);
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator(); const g = ctx.createGain();
+          osc.frequency.value = 880; g.gain.value = 0.3;
+          osc.connect(g); g.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.15);
+          setTimeout(() => {
+            const osc2 = ctx.createOscillator(); const g2 = ctx.createGain();
+            osc2.frequency.value = 1320; g2.gain.value = 0.3;
+            osc2.connect(g2); g2.connect(ctx.destination); osc2.start(); osc2.stop(ctx.currentTime + 0.15);
+          }, 200);
+        } catch(e) {}
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+        toast(`🔔 有 ${newPending} 個新固定班次預約！`, 4000);
       }
     }
     driverKnownBookingIds = newIds;
     driverFirstLoad = false;
     currentCachedBookings = allBookings;
-    renderDriverList(allBookings);
+    renderDriverFixedHTML(allBookings, seatConfigs, today, allShifts);
   };
-  bookingsRef.on('value', bookingsHandler);
-  driverListeners.push({ref: bookingsRef, handler: bookingsHandler});
-
-  const initial = await DataLayer.getBookings(today);
-  currentCachedBookings = initial;
-  Object.keys(initial).forEach(id => driverKnownBookingIds.add(id));
-  driverFirstLoad = false;
-  renderDriverList(initial);
+  ref.on('value', driverBookingListener);
 }
 
-let currentCachedBookings = {};
-
-async function renderDriverList(allBookings) {
-  const listEl = document.getElementById('driver-list');
+function renderDriverFixedHTML(allBookings, seatConfigs, today, allShifts) {
+  const container = document.getElementById('driver-tab-fixed');
   const alertEl = document.getElementById('alert-area');
-  if (!listEl) return;
-  const bus = selectedDriverBus;
+  if (!container) return;
+  const bus = currentDriver;
   if (!bus) return;
 
-  const today = getToday();
-  const seatConfigs = await DataLayer.getAllSeatConfigs(today);
-  const allShifts = [...SHIFTS_MORNING, ...SHIFTS_EVENING];
-
-  // 待確認總數（屬於我部車嘅班次）
   let myPendingTotal = 0;
   allShifts.forEach(time => {
-    const cfg = seatConfigs[time.replace(':','')];
-    if (cfg && cfg.plate && cfg.plate !== bus.plate) return;
     const scheduleId = getScheduleId(today, time);
     Object.values(allBookings).forEach(b => {
       if (b.scheduleId === scheduleId && b.status === 'pending') myPendingTotal++;
@@ -977,17 +1156,13 @@ async function renderDriverList(allBookings) {
   }
 
   let html = '';
-
   allShifts.forEach(time => {
     const scheduleId = getScheduleId(today, time);
     const cfg = seatConfigs[time.replace(':','')];
     const totalSeats = (cfg && cfg.seats) || bus.carSeats || 16;
     const dir = getShiftDirection(time);
 
-    const shiftBookings = Object.values(allBookings).filter(b =>
-      b.scheduleId === scheduleId && b.status !== 'cancelled'
-    );
-
+    const shiftBookings = Object.values(allBookings).filter(b => b.scheduleId === scheduleId && b.status !== 'cancelled');
     const bookedSeats = shiftBookings
       .filter(b => ['pending','reserved','arrived','boarded'].includes(b.status))
       .reduce((s,b) => s + (b.seats||0), 0);
@@ -1000,8 +1175,8 @@ async function renderDriverList(allBookings) {
 
     html += `
       <div class="big-shift ${isFull ? 'full' : ''}">
-        <div class="time">${time}</div>
-        <div class="origin ${dir === 'morning' ? 'origin-morning' : 'origin-evening'}" style="color:${dir === 'morning' ? '#4ade80' : '#fdba74'};font-weight:700;">${getShiftOriginLabel(time)}</div>
+        <div class="time">${esc(time)}</div>
+        <div class="origin ${dir === 'morning' ? 'origin-morning' : 'origin-evening'}" style="color:${dir === 'morning' ? '#4ade80' : '#fdba74'};font-weight:700;">${esc(getShiftOriginLabel(time))}</div>
         <div class="counts">
           <div>
             <div class="pending-count">⏳ ${pendingList.length} 待確認</div>
@@ -1013,46 +1188,43 @@ async function renderDriverList(allBookings) {
           </div>
         </div>
         ${isFull ? '<span class="full-label">🔴 滿座</span>' : ''}
-
         ${pendingList.length > 0 ? `
           <div class="pending-box">
             <div class="pending-title">🔔 待你確認（${pendingList.length}）</div>
             ${pendingList.map(b => `
               <div class="pending-item">
-                <div class="name">${b.passengerName}${b.seats > 1 ? ' ×'+b.seats : ''}</div>
-                <div class="phone">${b.passengerPhone}</div>
+                <div class="name">${esc(b.passengerName)}${b.seats > 1 ? ' ×'+b.seats : ''}</div>
+                <div class="phone">${esc(b.passengerPhone)}</div>
                 <div class="actions">
-                  <button class="btn-confirm" onclick="driverConfirm('${b.date}','${b.id}','${bus.plate}')">✅ 確認</button>
-                  <button class="btn-reject" onclick="driverReject('${b.date}','${b.id}','${bus.plate}')">❌ 拒絕</button>
+                  <button class="btn-confirm" onclick="driverConfirm('${b.date}','${b.id}','${esc(bus.plate)}')">✅ 確認</button>
+                  <button class="btn-reject" onclick="driverReject('${b.date}','${b.id}','${esc(bus.plate)}')">❌ 拒絕</button>
                 </div>
               </div>
             `).join('')}
           </div>
         ` : ''}
-
         ${confirmedList.length > 0 ? `
           <div style="margin-top:12px;">
             <div style="font-size:13px;color:#4ade80;font-weight:700;margin-bottom:6px;">✅ 已確認留位（${confirmedList.length}）</div>
             ${confirmedList.map(b => `
               <div class="booking-item arrived">
                 <div>
-                  <div class="booking-name">${b.passengerName}${b.seats > 1 ? ' ×'+b.seats : ''}</div>
-                  <div class="booking-phone">${b.passengerPhone}</div>
+                  <div class="booking-name">${esc(b.passengerName)}${b.seats > 1 ? ' ×'+b.seats : ''}</div>
+                  <div class="booking-phone">${esc(b.passengerPhone)}</div>
                 </div>
                 <div style="font-size:12px;color:#4ade80;">已確認</div>
               </div>
             `).join('')}
           </div>
         ` : ''}
-
         ${arrivedList.length > 0 ? `
           <div style="margin-top:12px;">
             <div style="font-size:13px;color:#22c55e;font-weight:700;margin-bottom:6px;">🔴 已到站（${arrivedList.length}）</div>
             ${arrivedList.map(b => `
               <div class="booking-item arrived">
                 <div>
-                  <div class="booking-name">${b.passengerName}${b.seats > 1 ? ' ×'+b.seats : ''}</div>
-                  <div class="booking-phone">${b.passengerPhone}</div>
+                  <div class="booking-name">${esc(b.passengerName)}${b.seats > 1 ? ' ×'+b.seats : ''}</div>
+                  <div class="booking-phone">${esc(b.passengerPhone)}</div>
                 </div>
                 <div>
                   ${b.status === 'boarded' ? '<span class="badge badge-blue">已上車</span>' :
@@ -1064,18 +1236,154 @@ async function renderDriverList(allBookings) {
         ` : ''}
       </div>`;
   });
+  container.innerHTML = html;
+}
 
-  listEl.innerHTML = html;
+// ========== 循環線候補（司機端） ==========
+async function renderDriverLoopList() {
+  const container = document.getElementById('driver-tab-loop');
+  if (!container) return;
+  container.innerHTML = `<div style="text-align:center;color:#64748b;padding:20px;">🔄 載入中...</div>`;
+  const today = getToday();
+
+  if (driverLoopListener && driverListenerDate) {
+    try { db.ref('booking_loop/' + driverListenerDate).off('value', driverLoopListener); } catch(e) {}
+  }
+
+  const initial = await DataLayer.getLoopQueue(today);
+  currentCachedLoop = initial;
+  Object.keys(initial).forEach(id => driverKnownLoopIds.add(id));
+  loopFirstLoad = false;
+  renderDriverLoopHTML(initial);
+
+  const ref = db.ref('booking_loop/' + today);
+  driverLoopListener = (snap) => {
+    const all = snap.val() || {};
+    const newIds = new Set(Object.keys(all));
+    let newWaiting = 0;
+    if (!loopFirstLoad) {
+      newIds.forEach(id => {
+        if (!driverKnownLoopIds.has(id)) {
+          const item = all[id];
+          if (item && item.status === 'waiting') newWaiting++;
+        }
+      });
+      if (newWaiting > 0) {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator(); const g = ctx.createGain();
+          osc.frequency.value = 660; g.gain.value = 0.3;
+          osc.connect(g); g.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.2);
+        } catch(e) {}
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+        toast(`🔄 有 ${newWaiting} 位循環線乘客加入！`, 4000);
+      }
+    }
+    driverKnownLoopIds = newIds;
+    loopFirstLoad = false;
+    currentCachedLoop = all;
+    renderDriverLoopHTML(all);
+  };
+  ref.on('value', driverLoopListener);
+}
+
+function renderDriverLoopHTML(allLoop) {
+  const container = document.getElementById('driver-tab-loop');
+  if (!container) return;
+  const bus = currentDriver;
+  if (!bus) return;
+
+  const waitingList = Object.values(allLoop)
+    .filter(item => item.status === 'waiting')
+    .sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+  const boardedList = Object.values(allLoop)
+    .filter(item => item.status === 'boarded')
+    .sort((a,b) => (b.boardedAt || 0) - (a.boardedAt || 0))
+    .slice(0, 10);
+
+  let html = `
+    <div class="loop-card">
+      <div class="title">🔄 循環線候補名單</div>
+      <div class="sub">
+        而家候補人數：<strong style="font-size:20px;color:#7dd3fc;">${waitingList.length}</strong> 人<br>
+        到站後按「叫名上車」，乘客上車後按「已上車」
+      </div>
+    </div>
+  `;
+
+  if (waitingList.length === 0) {
+    html += `
+      <div class="waiting-big">
+        <div class="icon">🔄</div>
+        <h3>暫時冇乘客候補</h3>
+        <p>循環線時段（07:00 - 18:00）<br>乘客排隊後會即時顯示喺呢度</p>
+      </div>
+    `;
+  } else {
+    html += `<div class="card-title" style="margin-bottom:8px;">📋 候補名單（按排隊次序）</div>`;
+    waitingList.forEach((item, idx) => {
+      html += `
+        <div class="loop-wait">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div class="name">#${idx + 1} ${esc(item.name)}</div>
+              <div class="phone">${esc(item.phone)}</div>
+              <div class="seats">👥 ${item.seats || 1} 人</div>
+            </div>
+            <div style="font-size:11px;color:#94a3b8;text-align:right;">
+              ${item.createdAt ? new Date(item.createdAt).toLocaleTimeString('zh-HK', {hour:'2-digit',minute:'2-digit'}) : ''}
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn-board" onclick="driverBoardLoop('${item.id}')">✅ 已上車</button>
+            <button class="btn-cancel" onclick="driverCancelLoop('${item.id}')">❌ 取消</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  if (boardedList.length > 0) {
+    html += `
+      <div class="card-title" style="margin:16px 0 8px;">✅ 最近已上車（${boardedList.length}）</div>
+    `;
+    boardedList.forEach(item => {
+      html += `
+        <div class="booking-item arrived">
+          <div>
+            <div class="booking-name">${esc(item.name)}</div>
+            <div class="booking-phone">${esc(item.phone)} · ${item.seats || 1} 人</div>
+          </div>
+          <div style="font-size:12px;color:#4ade80;">已上車</div>
+        </div>
+      `;
+    });
+  }
+
+  container.innerHTML = html;
+}
+
+async function driverBoardLoop(loopId) {
+  try {
+    const today = getToday();
+    await DataLayer.updateLoopQueue(today, loopId, { status: 'boarded', boardedAt: now() });
+    toast('✅ 已標記上車', 2000);
+  } catch(e) { toast('操作失敗：' + e.message); }
+}
+
+async function driverCancelLoop(loopId) {
+  if (!confirm('確定取消呢位乘客嘅候補？')) return;
+  try {
+    const today = getToday();
+    await DataLayer.removeLoopQueue(today, loopId);
+    toast('❌ 已取消', 2000);
+  } catch(e) { toast('操作失敗：' + e.message); }
 }
 
 async function driverConfirm(date, bookingId, plate) {
   try {
-    await DataLayer.updateBooking(date, bookingId, {
-      status: 'reserved',
-      confirmedAt: now(),
-      confirmedBy: plate
-    });
-    playBeep();
+    await DataLayer.updateBooking(date, bookingId, { status: 'reserved', confirmedAt: now(), confirmedBy: plate });
     toast('✅ 已確認留位', 2000);
   } catch(e) { toast('確認失敗：' + e.message); }
 }
@@ -1083,12 +1391,7 @@ async function driverConfirm(date, bookingId, plate) {
 async function driverReject(date, bookingId, plate) {
   const reason = prompt('拒絕原因（可以留空）：', '') || '';
   try {
-    await DataLayer.updateBooking(date, bookingId, {
-      status: 'rejected',
-      rejectedAt: now(),
-      rejectedBy: plate,
-      rejectReason: reason
-    });
+    await DataLayer.updateBooking(date, bookingId, { status: 'rejected', rejectedAt: now(), rejectedBy: plate, rejectReason: reason });
     toast('❌ 已拒絕', 2000);
   } catch(e) { toast('操作失敗：' + e.message); }
 }
@@ -1103,30 +1406,36 @@ async function markBoarded(date, bookingId) {
 // ============================================================
 // 管理端
 // ============================================================
-
 async function renderAdmin() {
   const content = document.getElementById('admin-content');
   const today = getToday();
   let html = `<div class="card"><div class="card-title">⚙️ 系統管理</div>
-    <div style="font-size:12px;color:#64748b;line-height:1.8;">
-      留座系統同西鐵小巴自動同步。<br>司機開始當值後，留座系統會自動顯示佢嘅預約名單。</div></div>`;
+    <div style="font-size:12px;color:#64748b;line-height:1.8;">留座系統同西鐵小巴自動同步。<br>司機開始當值後，留座系統會自動顯示佢嘅預約名單。</div></div>`;
 
   try {
     const activeBuses = await DataLayer.getActiveBuses();
     html += `<div class="card-title" style="margin:16px 0 10px;">🚐 當值中嘅車（${activeBuses.length}）</div>`;
     if (activeBuses.length === 0) html += `<div class="card" style="text-align:center;color:#64748b;padding:24px;">暫時冇車當值</div>`;
     else activeBuses.forEach(bus => {
-      html += `<div class="card" style="padding:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div style="font-size:18px;font-weight:700;color:#4ade80;">${bus.plate}</div>
-            <div style="font-size:12px;color:#64748b;">${bus.carSeats || 16} 座 · ${bus.currentStation || '未知'}</div>
-          </div>
-          <div style="font-size:12px;color:#22c55e;">🟢 當值中</div>
-        </div></div>`;
+      html += `<div class="card" style="padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-size:18px;font-weight:700;color:#4ade80;">${esc(bus.plate)}</div>
+        <div style="font-size:12px;color:#64748b;">${bus.carSeats || 16} 座 · ${esc(bus.currentStation || '未知')}</div></div>
+        <div style="font-size:12px;color:#22c55e;">🟢 當值中</div></div></div>`;
     });
+
+    // 循環線候補統計
+    const loop = await DataLayer.getLoopQueue(today);
+    const waitingLoop = Object.values(loop).filter(item => item.status === 'waiting').length;
+    const boardedLoop = Object.values(loop).filter(item => item.status === 'boarded').length;
+    html += `<div class="card-title" style="margin:16px 0 10px;">🔄 循環線候補</div>`;
+    html += `<div class="card" style="padding:14px;">
+      <div style="display:flex;justify-content:space-between;">
+        <div><div style="font-size:12px;color:#64748b;">候補中</div><div style="font-size:24px;font-weight:700;color:#7dd3fc;">${waitingLoop}</div></div>
+        <div style="text-align:right;"><div style="font-size:12px;color:#64748b;">已上車</div><div style="font-size:24px;font-weight:700;color:#4ade80;">${boardedLoop}</div></div>
+      </div>
+    </div>`;
   } catch(e) {
-    html += `<div class="card" style="color:#f87171;">載入失敗：${e.message}</div>`;
+    html += `<div class="card" style="color:#f87171;">載入失敗：${esc(e.message)}</div>`;
   }
   content.innerHTML = html;
 }
@@ -1134,7 +1443,6 @@ async function renderAdmin() {
 // ============================================================
 // 服務資訊
 // ============================================================
-
 function renderInfo() {
   const content = document.getElementById('info-content');
   content.innerHTML = `
@@ -1143,34 +1451,34 @@ function renderInfo() {
     </div>
     <div class="card"><div class="card-title">🕐 星期一至五</div>
       <div style="font-size:13px;line-height:1.9;">
-        <strong style="color:#22c55e;">🌅 早上固定班次（大棠黃泥墩開出）：</strong><br>
-        06:20 ｜ 06:30 ｜ 06:40 ｜ 06:50<br><br>
-        <strong style="color:#fdba74;">🌆 傍晚固定班次（元朗港鐵站 H 出口開出）：</strong><br>
-        18:15 ｜ 18:30 ｜ 18:45 ｜ 19:00 ｜ 19:15<br>
-        19:30 ｜ 19:45 ｜ 20:00 ｜ 20:20（尾班車）
+        <strong style="color:#22c55e;">🌅 早上固定班次（大棠黃泥墩開出）：</strong><br>06:20 ｜ 06:30 ｜ 06:40 ｜ 06:50<br><br>
+        <strong style="color:#0ea5e9;">🔄 循環線時段（07:00 - 18:00）：</strong><br>無固定班次，可使用「循環線候補」留名排隊<br><br>
+        <strong style="color:#fdba74;">🌆 傍晚固定班次（元朗港鐵站 H 出口開出）：</strong><br>18:15 ｜ 18:30 ｜ 18:45 ｜ 19:00 ｜ 19:15<br>19:30 ｜ 19:45 ｜ 20:00 ｜ 20:20（尾班車）
       </div>
     </div>
-    <div class="card"><div class="card-title">🕐 星期六 / 日及公眾假期</div>
-      <div style="font-size:13px;line-height:1.9;">全日循環行走，不設留座</div>
+    <div class="card"><div class="card-title">🔄 循環線候補點用？</div>
+      <div style="font-size:13px;line-height:1.9;">
+        1. 乘客喺循環線時段（07:00 - 18:00）撳「立即排隊」<br>
+        2. 系統會記低你嘅排隊位置<br>
+        3. 到站後，司機會叫名上車<br>
+        4. 上車後，司機會撳「已上車」<br>
+        5. 乘客可以隨時取消排隊
+      </div>
     </div>
     <div class="card"><div class="card-title">ℹ️ 留座流程</div>
       <div style="font-size:13px;line-height:1.9;">
         1. 乘客送出預約 → 狀態「⏳ 等待司機確認」<br>
         2. 司機撳「✅ 確認」→ 狀態「✅ 已確認留位」<br>
         3. 乘客到站 GPS 確認 → 狀態「已到站」<br>
-        4. 司機確認上車 → 狀態「已上車」<br><br>
-        • 發車前 15 分鐘開始 GPS 到站確認<br>
-        • 需進入總站 80 米範圍內方可確認到站<br>
-        • 未到站會扣信用分，嚴重者暫停預約資格
+        4. 司機確認上車 → 狀態「已上車」
       </div>
     </div>
-    <div class="card" style="text-align:center;font-size:12px;color:#64748b;">© ${COMPANY}<br>小巴留座系統 v3.0</div>`;
+    <div class="card" style="text-align:center;font-size:12px;color:#64748b;">© ${COMPANY}<br>小巴留座系統 v4.0</div>`;
 }
 
 // ============================================================
 // 初始化
 // ============================================================
-
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
   if (document.getElementById('login-phone')) passengerLogin();
@@ -1203,11 +1511,18 @@ async function autoCleanExpiredBookings() {
         await DataLayer.savePassenger(b.passengerPhone, patch);
       }
     }
+    // 清理過期候補（超過 4 小時）
+    const loop = await DataLayer.getLoopQueue(today);
+    for (const [id, item] of Object.entries(loop)) {
+      if (item.status === 'waiting' && now() - (item.createdAt || 0) > 4 * 60 * 60 * 1000) {
+        await DataLayer.removeLoopQueue(today, id);
+      }
+    }
   } catch(e) {}
 }
 
 (async function init() {
-  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v3.0 啟動');
+  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v4.0 啟動');
   currentPassenger = loadPassengerSession();
   try { await ensureAuth(); } catch(e) { console.warn(e); }
   updateHomeStats();
