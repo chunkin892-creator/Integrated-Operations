@@ -138,6 +138,21 @@ body{background:var(--bg);color:#fff;height:100vh;display:flex;flex-direction:co
 .msg-notification .msg-close-btn {background:transparent;border:none;color:#888;font-size:22px;cursor:pointer;padding:4px 10px;border-radius:30px;transition:background .2s;}
 .msg-notification .msg-close-btn:hover {background:rgba(255,255,255,.1);color:#fff;}
 @keyframes bounceIn {0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+/* ★★★ 新增：留位通知彈窗樣式 ★★★ */
+.booking-notify-bar{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:calc(100% - 20px);max-width:460px;background:linear-gradient(135deg,#7c2d12,#c2410c);border:2px solid #fb923c;border-radius:14px;padding:14px;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.6);display:none}
+.booking-notify-bar.show{display:block}
+.booking-notify-bar .bn-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.2)}
+.booking-notify-bar .bn-title{font-size:16px;font-weight:900;color:#fff}
+.booking-notify-bar .bn-count{background:#fff;color:#c2410c;font-size:14px;font-weight:900;padding:2px 10px;border-radius:20px}
+.booking-notify-bar .bn-close{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fed7aa;font-size:12px;padding:4px 12px;border-radius:20px;cursor:pointer;margin-left:8px}
+.booking-notify-bar .bn-item{background:rgba(0,0,0,.3);border-radius:10px;padding:10px;margin-bottom:8px}
+.booking-notify-bar .bn-name{font-size:15px;font-weight:700;color:#fff}
+.booking-notify-bar .bn-detail{font-size:12px;color:#fed7aa;margin-top:2px}
+.booking-notify-bar .bn-actions{display:flex;gap:8px;margin-top:10px}
+.booking-notify-bar .bn-actions button{flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+.booking-notify-bar .bn-confirm{background:#22c55e;color:#fff}
+.booking-notify-bar .bn-reject{background:#ef4444;color:#fff}
+.booking-notify-bar .bn-list{max-height:280px;overflow-y:auto}
 </style>
 </head>
 <body>
@@ -202,15 +217,26 @@ body{background:var(--bg);color:#fff;height:100vh;display:flex;flex-direction:co
         <small id="notif-sub">來自乘客</small>
     </div>
     <button class="msg-close-btn" id="notif-close">✕</button>
-</div><script>
-console.log('🔵 西鐵小巴系統 完整版啟動（模組化版 + 監聽器修復）');
+</div>
+<!-- ★★★ 留位通知彈窗 ★★★ -->
+<div class="booking-notify-bar" id="booking-notify-bar">
+  <div class="bn-header">
+    <div class="bn-title">🔔 新留位通知</div>
+    <div style="display:flex;align-items:center;">
+      <div class="bn-count" id="bn-count">0</div>
+      <button class="bn-close" onclick="hideBookingNotify()">收起</button>
+    </div>
+  </div>
+  <div class="bn-list" id="bn-list"></div>
+</div>
+<script>
+console.log('🔵 西鐵小巴系統 完整版啟動（模組化 + 監聽器修復 + 留位通知修復）');
 
 let currentUser = { uid: null, identifier: null, role: 'passenger', loginTime: null };
 let isSuperAdmin = false, isAdmin = false;
 let driverData = { mode: 'busy', direction: 0, stationIndex: 0, passengerCount: 0, isActive: false, plate: null, carSeats: 16, isFull: false };
 let currentBusId = null;
 let gpsWatchId = null;
-/* ★★★ 修復：新增模組級 listener 引用，避免累積 ★★★ */
 let busListRef = null, passengerMsgRef = null, driverMsgRef = null, adminMsgRef = null, walkieRef = null, adminWalkieRef = null;
 let adminBusesRef = null, deviceLogsRef = null, bansRef = null, adminAnnounceRef = null, driverBusRef = null;
 let passengerVoiceEnabled = localStorage.getItem('passengerVoice') === 'true';
@@ -483,6 +509,256 @@ function safeClick(el, cb) {
   });
 }
 
+/* ============================================================
+   ★★★ 留位通知功能（新增）★★★
+   ============================================================ */
+var _bnRef = null, _bnLoopRef = null;
+var _bnKnownIds = new Set(), _bnLoopKnownIds = new Set();
+var _bnFirstLoad = true, _bnLoopFirstLoad = true;
+var _bnPending = {}, _bnLoopPending = {};
+var _bnInitialized = false;
+
+function _bnToday() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function initBookingNotify() {
+  if (_bnInitialized) return;
+  _bnInitialized = true;
+  var today = _bnToday();
+  // 固定班次監聽
+  if (_bnRef) { try { _bnRef.off(); } catch(e) {} }
+  _bnRef = db.ref('booking/' + today);
+  _bnRef.on('value', function(snap) {
+    var all = snap.val() || {};
+    var newIds = new Set(Object.keys(all));
+    if (_bnFirstLoad) {
+      Object.keys(all).forEach(function(id) {
+        var b = all[id];
+        if (b && b.status === 'pending') _bnPending[id] = b;
+      });
+      _bnKnownIds = newIds;
+      _bnFirstLoad = false;
+      renderBookingNotify();
+      return;
+    }
+    var hasNew = false;
+    newIds.forEach(function(id) {
+      if (!_bnKnownIds.has(id)) {
+        var b = all[id];
+        if (b && b.status === 'pending') { _bnPending[id] = b; hasNew = true; }
+      }
+    });
+    Object.keys(_bnPending).forEach(function(id) {
+      if (!all[id] || all[id].status !== 'pending') delete _bnPending[id];
+    });
+    _bnKnownIds = newIds;
+    if (hasNew) {
+      playBookingBeep();
+      if (navigator.vibrate) navigator.vibrate([300,100,300]);
+      showToast('🔔 有新固定班次留位！');
+    }
+    renderBookingNotify();
+  });
+  // 循環線監聽
+  if (_bnLoopRef) { try { _bnLoopRef.off(); } catch(e) {} }
+  _bnLoopRef = db.ref('booking_loop/' + today);
+  _bnLoopRef.on('value', function(snap) {
+    var all = snap.val() || {};
+    var newIds = new Set(Object.keys(all));
+    if (_bnLoopFirstLoad) {
+      Object.keys(all).forEach(function(id) {
+        var x = all[id];
+        if (x && x.status === 'pending') _bnLoopPending[id] = x;
+      });
+      _bnLoopKnownIds = newIds;
+      _bnLoopFirstLoad = false;
+      renderBookingNotify();
+      return;
+    }
+    var hasNew = false;
+    newIds.forEach(function(id) {
+      if (!_bnLoopKnownIds.has(id)) {
+        var x = all[id];
+        if (x && x.status === 'pending') { _bnLoopPending[id] = x; hasNew = true; }
+      }
+    });
+    Object.keys(_bnLoopPending).forEach(function(id) {
+      if (!all[id] || all[id].status !== 'pending') delete _bnLoopPending[id];
+    });
+    _bnLoopKnownIds = newIds;
+    if (hasNew) {
+      playBookingBeep();
+      if (navigator.vibrate) navigator.vibrate([300,100,300]);
+      showToast('🔄 有循環線乘客留位！');
+    }
+    renderBookingNotify();
+  });
+}
+
+function stopBookingNotify() {
+  _bnInitialized = false;
+  if (_bnRef) { try { _bnRef.off(); } catch(e) {} _bnRef = null; }
+  if (_bnLoopRef) { try { _bnLoopRef.off(); } catch(e) {} _bnLoopRef = null; }
+  _bnPending = {};
+  _bnLoopPending = {};
+  _bnFirstLoad = true;
+  _bnLoopFirstLoad = true;
+  var bar = document.getElementById('booking-notify-bar');
+  if (bar) bar.classList.remove('show');
+}
+
+function _bnEsc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function renderBookingNotify() {
+  var bar = document.getElementById('booking-notify-bar');
+  var list = document.getElementById('bn-list');
+  var count = document.getElementById('bn-count');
+  if (!bar || !list || !count) return;
+  var fixedItems = Object.keys(_bnPending).map(function(id) {
+    return Object.assign({id: id, _type: 'fixed'}, _bnPending[id]);
+  });
+  var loopItems = Object.keys(_bnLoopPending).map(function(id) {
+    return Object.assign({id: id, _type: 'loop'}, _bnLoopPending[id]);
+  });
+  var all = fixedItems.concat(loopItems);
+  if (all.length === 0) { bar.classList.remove('show'); return; }
+  bar.classList.add('show');
+  count.textContent = all.length;
+  var h = '';
+  all.forEach(function(item) {
+    if (item._type === 'fixed') {
+      var dirLabel = item.direction === 'morning' ? '🌅 黃泥墩開出' : '🌆 元朗站開出';
+      h += '<div class="bn-item">';
+      h += '<div class="bn-name">🚐 ' + _bnEsc(item.passengerName || '乘客') + (item.seats > 1 ? ' ×' + item.seats : '') + '</div>';
+      h += '<div class="bn-detail">' + _bnEsc(item.passengerPhone || '') + ' · ' + _bnEsc(item.time || '') + ' 班次</div>';
+      h += '<div class="bn-detail">' + dirLabel + '</div>';
+      h += '<div class="bn-actions">';
+      h += '<button class="bn-confirm" onclick="bnConfirmFixed(\'' + item.id + '\')">✅ 確認</button>';
+      h += '<button class="bn-reject" onclick="bnRejectFixed(\'' + item.id + '\')">❌ 拒絕</button>';
+      h += '</div></div>';
+    } else {
+      h += '<div class="bn-item">';
+      h += '<div class="bn-name">🔄 ' + _bnEsc(item.name || '乘客') + (item.seats > 1 ? ' ×' + item.seats : '') + '</div>';
+      h += '<div class="bn-detail">' + _bnEsc(item.phone || '') + ' · 循環線</div>';
+      h += '<div class="bn-actions">';
+      h += '<button class="bn-confirm" onclick="bnConfirmLoop(\'' + item.id + '\')">✅ 確認</button>';
+      h += '<button class="bn-reject" onclick="bnRejectLoop(\'' + item.id + '\')">❌ 拒絕</button>';
+      h += '</div></div>';
+    }
+  });
+  list.innerHTML = h;
+}
+
+async function bnConfirmFixed(id) {
+  try {
+    var today = _bnToday();
+    var b = _bnPending[id];
+    if (!b) return;
+    var plate = driverData.plate || '';
+    await db.ref('booking/' + today + '/' + id).update({
+      status: 'reserved',
+      confirmedAt: Date.now(),
+      confirmedBy: plate || 'driver'
+    });
+    if (plate) {
+      await db.ref('van/active_buses/' + plate + '/passengerCount').transaction(function(c) {
+        return (c || 0) + (b.seats || 1);
+      });
+    }
+    delete _bnPending[id];
+    renderBookingNotify();
+    showToast('✅ 已確認留位');
+  } catch (e) { showToast('❌ 確認失敗：' + e.message); }
+}
+
+async function bnRejectFixed(id) {
+  var reason = prompt('拒絕原因（可以留空）：', '') || '';
+  try {
+    var today = _bnToday();
+    await db.ref('booking/' + today + '/' + id).update({
+      status: 'rejected',
+      rejectedAt: Date.now(),
+      rejectReason: reason
+    });
+    delete _bnPending[id];
+    renderBookingNotify();
+    showToast('❌ 已拒絕');
+  } catch (e) { showToast('❌ 操作失敗：' + e.message); }
+}
+
+async function bnConfirmLoop(id) {
+  try {
+    var today = _bnToday();
+    await db.ref('booking_loop/' + today + '/' + id).update({
+      status: 'reserved',
+      confirmedAt: Date.now()
+    });
+    delete _bnLoopPending[id];
+    renderBookingNotify();
+    showToast('✅ 已確認循環線留位');
+  } catch (e) { showToast('❌ 確認失敗：' + e.message); }
+}
+
+async function bnRejectLoop(id) {
+  if (!confirm('確定拒絕呢位乘客？')) return;
+  try {
+    var today = _bnToday();
+    await db.ref('booking_loop/' + today + '/' + id).remove();
+    delete _bnLoopPending[id];
+    renderBookingNotify();
+    showToast('❌ 已拒絕');
+  } catch (e) { showToast('❌ 操作失敗：' + e.message); }
+}
+
+function hideBookingNotify() {
+  var bar = document.getElementById('booking-notify-bar');
+  if (bar) bar.classList.remove('show');
+  setTimeout(function() {
+    var total = Object.keys(_bnPending).length + Object.keys(_bnLoopPending).length;
+    if (total > 0) renderBookingNotify();
+  }, 5000);
+}
+
+function playBookingBeep() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    gain.gain.value = 0.35;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.15);
+    setTimeout(function() {
+      var osc2 = ctx.createOscillator();
+      var gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.value = 1320;
+      gain2.gain.value = 0.35;
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start();
+      osc2.stop(ctx.currentTime + 0.15);
+    }, 200);
+  } catch(e) {}
+}
+
+window.bnConfirmFixed = bnConfirmFixed;
+window.bnRejectFixed = bnRejectFixed;
+window.bnConfirmLoop = bnConfirmLoop;
+window.bnRejectLoop = bnRejectLoop;
+window.hideBookingNotify = hideBookingNotify;
+
+/* ============================================================
+   司機 UI
+   ============================================================ */
 function updateDriverUI() {
   const route = getRoute();
   const idx = driverData.stationIndex || 0;
@@ -772,6 +1048,8 @@ function startDuty() {
   document.getElementById('start-gps').style.display = 'none';
   document.getElementById('stop-gps').style.display = 'block';
   setTimeout(scrollToPassengerCard, 300);
+  // ★★★ 啟動留位通知 ★★★
+  initBookingNotify();
 }
 
 function stopDuty() {
@@ -866,7 +1144,6 @@ function initDriverPanel() {
     showToast('已自動填入車牌：'+savedPlate);
   }
   if (driverMsgRef) driverMsgRef.off();
-  /* ★★★ 修復：先 off 舊 listener，避免累積 ★★★ */
   if (driverBusRef) driverBusRef.off();
   driverBusRef = db.ref('van/active_buses/'+ (driverData.plate || ''));
   driverBusRef.on('value', snap => {
@@ -955,6 +1232,8 @@ function initDriverPanel() {
     startGpsWatch();
   }
   setTimeout(scrollToPassengerCard, 500);
+  // ★★★ 啟動留位通知 ★★★
+  initBookingNotify();
 }
 
 function initWalkieTalkie() {
@@ -1206,9 +1485,11 @@ function renderPassRouteStrip(bus) {
   if (currentDot) setTimeout(()=> currentDot.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'}), 100);
 }
 
+/* ============================================================
+   管理員後台
+   ============================================================ */
 function loadAdminPanel() {
   try {
-    /* ★★★ 修復：先 off 舊 listener ★★★ */
     if (adminBusesRef) adminBusesRef.off();
     adminBusesRef = db.ref('van/active_buses');
     adminBusesRef.on('value', snap => {
@@ -1458,7 +1739,6 @@ function loadDeviceList() {
     const listContainer = document.getElementById('device-list-container');
     const toggleBtn = document.getElementById('device-toggle-btn');
     let allData = [], expanded = false;
-    /* ★★★ 修復：先 off 舊 listener ★★★ */
     if (deviceLogsRef) deviceLogsRef.off();
     deviceLogsRef = db.ref('login_logs').orderByChild('loginTime').limitToLast(100);
     deviceLogsRef.on('value', snap => {
@@ -1509,7 +1789,6 @@ function loadDeviceList() {
 
 function loadBans() {
   try {
-    /* ★★★ 修復：先 off 舊 listener ★★★ */
     if (bansRef) bansRef.off();
     bansRef = db.ref('bans');
     bansRef.on('value', snap => {
@@ -1529,7 +1808,6 @@ function loadBans() {
 
 function loadAdminAnnounce() {
   try {
-    /* ★★★ 修復：先 off 舊 listener ★★★ */
     if (adminAnnounceRef) adminAnnounceRef.off();
     adminAnnounceRef = db.ref('van/announcements').orderByChild('timestamp').limitToLast(20);
     adminAnnounceRef.on('value', snap => {
@@ -1698,6 +1976,9 @@ function applyAdminPermissions() {
   if (isSuperAdmin) loadAdminList();
 }
 
+/* ============================================================
+   登入 / 登出
+   ============================================================ */
 document.getElementById('login-google').addEventListener('click', function(){
   if (isLoggingIn) { showToast('⏳ 登入處理中，請稍候'); return; }
   isLoggingIn = true;
@@ -1712,7 +1993,11 @@ document.getElementById('login-google').addEventListener('click', function(){
       currentUser.uid = user.uid; currentUser.identifier = email; currentUser.role = role; currentUser.loginTime = Date.now();
       isSuperAdmin = isSuperAdminEmail(email);
       isAdmin = true;
-      await db.ref('users/' + user.uid).set({ identifier: email, role, lastLogin: Date.now() });
+      await db.ref('users/' + user.uid).set({ identifier: email, email: email, role, lastLogin: Date.now() });
+      if (isSuperAdminEmail(email)) {
+        await db.ref('admins/' + user.uid).update({ super: true, identifier: email, email: email, lastLogin: Date.now() });
+        isSuperAdmin = true;
+      }
       try {
         const parser = new UAParser();
         const ua = parser.getResult();
@@ -1770,6 +2055,8 @@ document.getElementById('driver-login-btn').addEventListener('click', async func
     showToast((role==='admin'?'管理員':'司機') + '登入成功，歡迎 ' + identifier);
     if (voiceEnabled) speakCantonese((role==='admin'?'管理員':'司機')+'登入成功');
     showView('view-lobby');
+    // ★★★ 司機登入後啟動留位通知 ★★★
+    if (role === 'driver' || role === 'admin') initBookingNotify();
   } catch(e) { errEl.textContent = '登入失敗：'+e.message; }
 });
 document.getElementById('login-passenger').addEventListener('click', function(){
@@ -1810,6 +2097,7 @@ document.getElementById('btn-logout').addEventListener('click', function(){
   if (gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
   if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
   releaseWakeLock();
+  stopBookingNotify(); // ★★★ 停止留位通知 ★★★
   auth.signOut().catch(console.warn);
   currentUser = { uid: null, identifier: null, role: 'passenger', loginTime: null };
   isSuperAdmin = false; isAdmin = false;
@@ -2156,7 +2444,9 @@ auth.onAuthStateChanged(function(user){
         }
         document.getElementById('login-modal').classList.remove('active');
         showToast('歡迎回來，' + currentUser.identifier);
+        // ★★★ 司機或管理員登入後，啟動留位通知 ★★★
         if (currentUser.role === 'driver' || currentUser.role === 'admin') {
+          initBookingNotify();
           const savedPlate = getSavedPlate(currentUser.identifier);
           if (savedPlate) {
             db.ref('van/active_buses/' + savedPlate).once('value', snap => {
@@ -2267,7 +2557,6 @@ setupRecordButton('btn-admin-broadcast-record', 'admin-broadcast-timer', (base64
     showToast('語音廣播已發送');
   });
 });
-/* ★★★ 修復：新增司機重複檢查 ★★★ */
 safeClick(document.getElementById('btn-add-driver'), function() {
   const input = document.getElementById('admin-add-driver-identifier');
   const identifier = input?.value.trim();
@@ -2286,7 +2575,6 @@ safeClick(document.getElementById('btn-add-driver'), function() {
     });
   });
 });
-/* ★★★ 修復：新增管理員重複檢查 ★★★ */
 safeClick(document.getElementById('btn-add-admin'), function() {
   if (!requireSuperAdmin()) return;
   const input = document.getElementById('admin-add-admin-email');
@@ -2326,7 +2614,7 @@ safeClick(document.getElementById('btn-clear-walkie'), function(e) {
   });
 });
 
-console.log('✅ 西鐵小巴系統 模組化版（監聽器修復版）已就緒');
+console.log('✅ 西鐵小巴系統 完整版（監聽器 + 留位通知修復）已就緒');
 </script>
 </body>
 </html>
