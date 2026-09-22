@@ -475,8 +475,9 @@ body{background:var(--bg);color:#fff;height:100vh;display:flex;flex-direction:co
 </div>
 <script>
 console.log('🔵 西鐵小巴系統 完整版啟動（模組化 + 監聽器修復 + 留位通知修復 + 效能優化）');
+
 /* ============================================================
-   全域狀態
+   全域狀態（★ 唯一宣告位置，_walkieChangeBound 只在這裡宣告一次）
    ============================================================ */
 let currentUser = { uid: null, identifier: null, role: 'passenger', loginTime: null };
 let isSuperAdmin = false, isAdmin = false;
@@ -531,9 +532,6 @@ function showToast(msg) {
   t._timer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-/* ============================================================
-   ★ 修復：語音系統（voiceLock + Promise 佇列）
-   ============================================================ */
 function speakCantonese(text) {
     if (!voiceEnabled || !window.speechSynthesis) return Promise.resolve();
     window.speechSynthesis.cancel();
@@ -608,9 +606,6 @@ function showView(id) {
   if (el) el.classList.add('active');
 }
 
-/* ============================================================
-   ★ 修復：isBanned TTL 快取
-   ============================================================ */
 const _banCache = new Map();
 const _BAN_CACHE_TTL = 30000;
 
@@ -798,9 +793,6 @@ function safeClick(el, cb) {
   });
 }
 
-/* ============================================================
-   ★ 留位通知（防重入 + 徹底清理）
-   ============================================================ */
 var _bnRef = null, _bnLoopRef = null;
 var _bnKnownIds = new Set(), _bnLoopKnownIds = new Set();
 var _bnFirstLoad = true, _bnLoopFirstLoad = true;
@@ -1053,9 +1045,6 @@ window.bnConfirmLoop = bnConfirmLoop;
 window.bnRejectLoop = bnRejectLoop;
 window.hideBookingNotify = hideBookingNotify;
 
-/* ============================================================
-   司機 UI
-   ============================================================ */
 function updateDriverUI() {
   const route = getRoute();
   const idx = driverData.stationIndex || 0;
@@ -1462,9 +1451,6 @@ document.getElementById('btn-set-plate').addEventListener('click', function () {
     if (voiceEnabled) speakCantonese(VOICE_TEXTS.carPlateSet);
     initDriverPanel();
 });
-/* ============================================================
-   司機面板初始化
-   ============================================================ */
 function initDriverPanel() {
     const savedPlate = getSavedPlate(currentUser.identifier);
     if (savedPlate && !driverData.plate) {
@@ -1653,8 +1639,6 @@ function initWalkieTalkie() {
         }
     });
 }
-
-let _walkieChangeBound = false;
 
 function updateWalkieTargets() {
     const select = document.getElementById('walkie-target');
@@ -1884,9 +1868,6 @@ function renderPassRouteStrip(bus) {
     }
 }
 
-/* ============================================================
-   管理員後台
-   ============================================================ */
 function loadAdminPanel() {
     try {
         if (_adminPanelInitialized && adminBusesRef && adminMsgRef) {
@@ -2506,9 +2487,6 @@ function applyAdminPermissions() {
     if (isSuperAdmin) loadAdminList();
 }
 
-/* ============================================================
-   登入 / 登出
-   ============================================================ */
 document.getElementById('login-google').addEventListener('click', function () {
     if (isLoggingIn) { showToast('⏳ 登入處理中，請稍候'); return; }
     isLoggingIn = true;
@@ -2716,9 +2694,6 @@ document.getElementById('btn-logout').addEventListener('click', function () {
     if (voiceEnabled) speakCantonese(VOICE_TEXTS.loggedOut);
 });
 
-/* ============================================================
-   事件綁定
-   ============================================================ */
 safeClick(document.getElementById('btn-passenger'), function () {
     if (!currentUser.uid) {
         document.getElementById('login-modal').classList.add('active');
