@@ -168,7 +168,7 @@ body{background:var(--bg);color:#fff;height:100vh;display:flex;flex-direction:co
 <div class="bn-list" id="bn-list"></div>
 </div>
 <script>
-console.log('🔵 西鐵小巴系統 v3.6 啟動');
+console.log('🔵 西鐵小巴系統 v3.7 啟動 (超級管理員修復版)');
 const firebaseConfig={apiKey:"AIzaSyAX7Zy5br1ozGOGxHvDeFNY-Ldcjjw8Qgc",authDomain:"triple-login-version.firebaseapp.com",databaseURL:"https://triple-login-version-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"triple-login-version",storageBucket:"triple-login-version.firebasestorage.app",messagingSenderId:"66459706459",appId:"1:66459706459:web:28f99a455652f393da0b7e"};
 const SUPER_ADMIN_EMAILS=['cheungyiufai1810@gmail.com','hujiaboy@gmail.com','chunkin892@gmail.com','zhangyaohuifai@gmail.com','cheungyiufai01@gmail.com'];
 const CONFIG={TRIGGER_DISTANCE:100,GPS_TIMEOUT:20000,GPS_ACCURACY_THRESHOLD:50,GPS_RETRY_DELAY:5000,MIN_SPEED_FOR_TRIGGER:1.0,SMOOTHING_WINDOW:3,VOICE_BITRATE:24000,RECORD_MAX_SECONDS:30,ACTIVE_BUS_TIMEOUT:300000,MESSAGE_LIMIT:100,VOICE_MSG_BOOST:1.5,VOICE_ANNOUNCE_BOOST:2};
@@ -203,7 +203,47 @@ function safeClick(el,cb){if(!el)return;el.addEventListener('click',function(e){
 function isSuperAdminEmail(e){return SUPER_ADMIN_EMAILS.some(x=>x.toLowerCase()===(e||'').toLowerCase());}
 function isTargetSuperAdmin(id){return isSuperAdminEmail(id);}
 function checkTargetNotSuperAdmin(id){if(isTargetSuperAdmin(id)){showToast('⛔ 無法操作超級管理員');return false;}return true;}
-async function checkSuperAdmin(uid){if(!uid)return false;const n=Date.now();if(_superCache.uid===uid&&(n-_superCache.ts)<60000)return _superCache.value;try{const s=await db.ref('admins/'+uid+'/super').once('value');let v=s.val()===true;if(!v){const u=await db.ref('users/'+uid+'/identifier').once('value');const id=u.val();if(id&&isSuperAdminEmail(id))v=true;}_superCache={uid,value:v,ts:Date.now()};return v;}catch(e){return false;}}
+
+/* ============================================================
+   ★★★ 修復 1：加強 checkSuperAdmin（5 重判斷）★★★
+   ============================================================ */
+async function checkSuperAdmin(uid){
+  if(!uid)return false;
+  const n=Date.now();
+  if(_superCache.uid===uid&&(n-_superCache.ts)<60000)return _superCache.value;
+  try{
+    // ① 最高優先：直接查 Firebase Auth 當前用戶 email
+    const cu=auth.currentUser;
+    if(cu && cu.uid===uid && cu.email && isSuperAdminEmail(cu.email)){
+      _superCache={uid,value:true,ts:Date.now()};
+      return true;
+    }
+    // ② 查 admins/{uid}/super
+    const s=await db.ref('admins/'+uid+'/super').once('value');
+    let v=s.val()===true;
+    // ③ 查 users/{uid}/identifier
+    if(!v){
+      const u=await db.ref('users/'+uid+'/identifier').once('value');
+      const id=u.val();
+      if(id&&isSuperAdminEmail(id))v=true;
+    }
+    // ④ 查 users/{uid}/email
+    if(!v){
+      const ue=await db.ref('users/'+uid+'/email').once('value');
+      const em=ue.val();
+      if(em&&isSuperAdminEmail(em))v=true;
+    }
+    // ⑤ 查 admins/{uid}/identifier
+    if(!v){
+      const ai=await db.ref('admins/'+uid+'/identifier').once('value');
+      const aid=ai.val();
+      if(aid&&isSuperAdminEmail(aid))v=true;
+    }
+    _superCache={uid,value:v,ts:Date.now()};
+    return v;
+  }catch(e){return false;}
+}
+
 async function checkRole(id,uid){let r='passenger';try{if(uid){const a=await db.ref('admins/'+uid).once('value');if(a.exists())return 'admin';}const aQ=await db.ref('admins').orderByChild('identifier').equalTo(id).once('value');if(aQ.exists())return 'admin';const dQ=await db.ref('drivers').orderByChild('identifier').equalTo(id).once('value');if(dQ.exists())return 'driver';}catch(e){}return r;}
 function updateDriverUI(){const r=getRoute(),i=driverData.stationIndex||0,s=r[i]||'未知',n=i+1<r.length?i+1:0,ns=r[n]||'終點';safeText(document.getElementById('d-info'),'🚐 '+(driverData.plate||'未設定')+' | 司機: '+(currentUser.identifier||'未登入'));safeText(document.getElementById('d-station'),s);safeText(document.getElementById('d-target'),'下一站：'+ns);safeText(document.getElementById('d-pass-count'),String(driverData.passengerCount));safeText(document.getElementById('d-mode-badge'),driverData.mode==='busy'?'西鐵快線':'市中心循環線');safeText(document.getElementById('d-dir-badge'),driverData.direction===0?'往元朗':'往大棠');const fb=document.getElementById('d-full-btn');if(fb){fb.style.background=driverData.isFull?'var(--red)':'var(--green)';fb.textContent=driverData.isFull?'✅ 滿座':'🚫 滿座';}const cb=document.getElementById('d-car-btn');if(cb)cb.textContent=driverData.carSeats+'座';renderDriverRouteStrip();}
 function renderDriverRouteStrip(){const st=document.getElementById('d-route-strip');if(!st)return;const r=getRoute(),i=driverData.stationIndex||0,ch=st.children;if(ch.length===r.length){for(let x=0;x<r.length;x++){const nd=ch[x];nd.className='dot-node';if(x<i)nd.classList.add('passed');else if(x===i)nd.classList.add('current');else if(x===i+1)nd.classList.add('next');const sp=nd.querySelector('span');if(sp&&sp.textContent!==r[x])sp.textContent=r[x];}}else{st.innerHTML='';r.forEach((nm,x)=>{const nd=document.createElement('div');nd.className='dot-node';if(x<i)nd.classList.add('passed');else if(x===i)nd.classList.add('current');else if(x===i+1)nd.classList.add('next');const dot=document.createElement('div');dot.className='dot';const sp=document.createElement('span');sp.textContent=nm;nd.appendChild(dot);nd.appendChild(sp);st.appendChild(nd);});}if(i!==lastDriverScrollIndex){const c=st.querySelector('.dot-node.current');if(c){const sr=st.getBoundingClientRect(),nr=c.getBoundingClientRect();const off=nr.left-sr.left-(sr.width/2)+(nr.width/2);st.scrollLeft+=off;}lastDriverScrollIndex=i;}}
@@ -226,11 +266,24 @@ function playBoostedAudio(b,boost){if(!b)return;try{const ctx=new(window.AudioCo
 function loadAdminPanel(){try{if(adminBusesRef)adminBusesRef.off();adminBusesRef=db.ref('van/active_buses');adminBusesRef.on('value',snap=>{const d=snap.val()||{};let cnt=0,tot=0,nw=Date.now();for(const p in d){if(nw-d[p].lastUpdate<CONFIG.ACTIVE_BUS_TIMEOUT){cnt++;tot+=d[p].passengerCount||0;}}const ac=document.getElementById('admin-active-count');if(ac)ac.textContent=cnt;const pc=document.getElementById('admin-passenger-count');if(pc)pc.textContent=tot;});if(adminMsgRef)adminMsgRef.off();adminMsgRef=db.ref('van/messages').orderByChild('timestamp').limitToLast(CONFIG.MESSAGE_LIMIT);adminMsgRef.on('value',snap=>{const c=document.getElementById('admin-msg-list');if(!c)return;c.innerHTML='';snap.forEach(ch=>{const m=ch.val();const div=document.createElement('div');div.className='admin-item';const info=document.createElement('div');info.className='info';info.textContent=new Date(m.timestamp).toLocaleTimeString('zh-HK')+' | '+(m.senderIdentifier||'未知');div.appendChild(info);const ct=document.createElement('div');ct.style.fontSize='15px';ct.textContent=m.audio?'🎤 語音':(m.text||'');div.appendChild(ct);c.appendChild(div);});});loadAdminAnnounce();}catch(e){console.error(e);}}
 function loadAdminAnnounce(){try{if(adminAnnounceRef)adminAnnounceRef.off();adminAnnounceRef=db.ref('van/announcements').orderByChild('timestamp').limitToLast(20);adminAnnounceRef.on('value',snap=>{const c=document.getElementById('admin-announce-list');if(!c)return;c.innerHTML='';snap.forEach(ch=>{const a=ch.val();const div=document.createElement('div');div.className='admin-item';div.style.borderLeftColor='var(--gold)';div.innerHTML='<div class="info">'+esc(new Date(a.timestamp).toLocaleString('zh-HK'))+'</div><div style="font-size:15px;">'+esc(a.text||'🎤 語音公告')+'</div>';c.appendChild(div);});});}catch(e){}}
 function loadAnnounceList(){const c=document.getElementById('announce-list-content');if(!c)return;c.innerHTML='<div style="text-align:center;color:#888;padding:20px;">載入中...</div>';db.ref('van/announcements').orderByChild('timestamp').limitToLast(20).once('value',snap=>{c.innerHTML='';snap.forEach(ch=>{const a=ch.val();const div=document.createElement('div');div.className='announce-item';const tm=document.createElement('div');tm.className='time';tm.textContent=new Date(a.timestamp).toLocaleString('zh-HK');div.appendChild(tm);const tx=document.createElement('div');tx.className='text';tx.textContent=a.audio?'🎤 語音公告':(a.text||'');div.appendChild(tx);c.appendChild(div);});if(c.children.length===0){c.innerHTML='<div style="text-align:center;color:#888;padding:20px;font-size:18px;">暫無公告</div>';}});}
-function applyAdminPermissions(){const t=document.getElementById('tab-manage-admins');if(t)t.style.display=isSuperAdmin?'block':'none';}
-document.getElementById('login-google').addEventListener('click',function(){if(isLoggingIn){showToast('⏳ 登入處理中');return;}isLoggingIn=true;const p=new firebase.auth.GoogleAuthProvider();auth.signInWithPopup(p).then(async r=>{const u=r.user,em=u.email;const role=await checkRole(em,u.uid);if(role!=='admin'){showToast('此 Google 帳戶不是管理員');auth.signOut();isLoggingIn=false;return;}currentUser.uid=u.uid;currentUser.identifier=em;currentUser.role=role;currentUser.loginTime=Date.now();isSuperAdmin=await checkSuperAdmin(u.uid);if(!isSuperAdmin&&isSuperAdminEmail(em))isSuperAdmin=true;isAdmin=true;await db.ref('users/'+u.uid).set({identifier:em,role,lastLogin:Date.now()});document.getElementById('login-modal').classList.remove('active');document.getElementById('btn-admin-panel').style.display='block';loadAdminPanel();applyAdminPermissions();showToast('管理員登入成功：'+em);showView('view-lobby');isLoggingIn=false;}).catch(e=>{isLoggingIn=false;if(e.code==='auth/popup-closed-by-user')showToast('登入視窗已關閉');else showToast('登入失敗：'+e.message);});});
+
+/* ============================================================
+   ★★★ 修復 3：applyAdminPermissions 加 null 檢查 ★★★
+   ============================================================ */
+function applyAdminPermissions(){
+  const t=document.getElementById('tab-manage-admins');
+  if(t) t.style.display=isSuperAdmin?'block':'none';
+  const badge=document.getElementById('super-admin-badge');
+  if(badge) badge.style.display=isSuperAdmin?'inline-block':'none';
+}
+
+/* ============================================================
+   ★★★ 修復 4：login-google 寫入 admins/{uid}/super ★★★
+   ============================================================ */
+document.getElementById('login-google').addEventListener('click',function(){if(isLoggingIn){showToast('⏳ 登入處理中');return;}isLoggingIn=true;const p=new firebase.auth.GoogleAuthProvider();auth.signInWithPopup(p).then(async r=>{const u=r.user,em=u.email;const role=await checkRole(em,u.uid);if(role!=='admin'){showToast('此 Google 帳戶不是管理員');auth.signOut();isLoggingIn=false;return;}currentUser.uid=u.uid;currentUser.identifier=em;currentUser.role=role;currentUser.loginTime=Date.now();isSuperAdmin=await checkSuperAdmin(u.uid);if(!isSuperAdmin&&isSuperAdminEmail(em))isSuperAdmin=true;isAdmin=true;await db.ref('users/'+u.uid).set({identifier:em,email:em,role,lastLogin:Date.now()});if(isSuperAdminEmail(em)){await db.ref('admins/'+u.uid).update({super:true,identifier:em,email:em,lastLogin:Date.now()});isSuperAdmin=true;}document.getElementById('login-modal').classList.remove('active');document.getElementById('btn-admin-panel').style.display='block';loadAdminPanel();applyAdminPermissions();showToast('管理員登入成功：'+em+(isSuperAdmin?'（超級管理員）':''));showView('view-lobby');isLoggingIn=false;}).catch(e=>{isLoggingIn=false;if(e.code==='auth/popup-closed-by-user')showToast('登入視窗已關閉');else showToast('登入失敗：'+e.message);});});
 document.getElementById('login-driver').addEventListener('click',function(){document.getElementById('login-choice').style.display='none';document.getElementById('driver-login-form').style.display='block';});
 document.getElementById('driver-login-back').addEventListener('click',function(){document.getElementById('driver-login-form').style.display='none';document.getElementById('login-choice').style.display='block';});
-document.getElementById('driver-login-btn').addEventListener('click',async function(){const id=document.getElementById('driver-identifier').value.trim();const er=document.getElementById('driver-login-error');if(!id){er.textContent='請輸入電郵或電話號碼';return;}try{await auth.signInAnonymously();const _uid=auth.currentUser.uid;const role=await checkRole(id,_uid);if(role!=='driver'&&role!=='admin'){er.textContent='此帳戶不是司機';return;}currentUser.uid=_uid;currentUser.identifier=id;currentUser.role=role;currentUser.loginTime=Date.now();if(role==='admin'){isSuperAdmin=await checkSuperAdmin(_uid);isAdmin=true;}else{isSuperAdmin=false;isAdmin=false;}await db.ref('users/'+currentUser.uid).set({identifier:id,role,lastLogin:Date.now()});document.getElementById('login-modal').classList.remove('active');if(role==='admin'){document.getElementById('btn-admin-panel').style.display='block';loadAdminPanel();applyAdminPermissions();}else document.getElementById('btn-admin-panel').style.display='none';showToast((role==='admin'?'管理員':'司機')+'登入成功：'+id);showView('view-lobby');}catch(e){er.textContent='登入失敗：'+e.message;}});
+document.getElementById('driver-login-btn').addEventListener('click',async function(){const id=document.getElementById('driver-identifier').value.trim();const er=document.getElementById('driver-login-error');if(!id){er.textContent='請輸入電郵或電話號碼';return;}try{await auth.signInAnonymously();const _uid=auth.currentUser.uid;const role=await checkRole(id,_uid);if(role!=='driver'&&role!=='admin'){er.textContent='此帳戶不是司機';return;}currentUser.uid=_uid;currentUser.identifier=id;currentUser.role=role;currentUser.loginTime=Date.now();if(role==='admin'){isSuperAdmin=await checkSuperAdmin(_uid);if(!isSuperAdmin&&isSuperAdminEmail(id))isSuperAdmin=true;isAdmin=true;}else{isSuperAdmin=false;isAdmin=false;}await db.ref('users/'+currentUser.uid).set({identifier:id,role,lastLogin:Date.now()});document.getElementById('login-modal').classList.remove('active');if(role==='admin'){document.getElementById('btn-admin-panel').style.display='block';loadAdminPanel();applyAdminPermissions();}else document.getElementById('btn-admin-panel').style.display='none';showToast((role==='admin'?'管理員':'司機')+'登入成功：'+id);showView('view-lobby');}catch(e){er.textContent='登入失敗：'+e.message;}});
 document.getElementById('login-passenger').addEventListener('click',function(){document.getElementById('login-choice').style.display='none';document.getElementById('passenger-login-form').style.display='block';});
 document.getElementById('passenger-login-back').addEventListener('click',function(){document.getElementById('passenger-login-form').style.display='none';document.getElementById('login-choice').style.display='block';});
 document.getElementById('passenger-login-btn').addEventListener('click',async function(){const ph=document.getElementById('passenger-phone').value.trim();const er=document.getElementById('passenger-login-error');if(!ph||!/^\d{8,}$/.test(ph)){er.textContent='請輸入 8 位數字電話號碼';return;}try{await auth.signInAnonymously();const _uid2=auth.currentUser.uid;const role=await checkRole(ph,_uid2);currentUser.uid=_uid2;currentUser.identifier=ph;currentUser.role=role;currentUser.loginTime=Date.now();await db.ref('users/'+currentUser.uid).set({identifier:ph,role,lastLogin:Date.now()});document.getElementById('login-modal').classList.remove('active');if(role==='admin'){isAdmin=true;document.getElementById('btn-admin-panel').style.display='block';loadAdminPanel();applyAdminPermissions();}else{document.getElementById('btn-admin-panel').style.display='none';}showToast('乘客登入成功：'+ph);showView('view-lobby');}catch(e){er.textContent='登入失敗：'+e.message;}});
@@ -270,7 +323,39 @@ if(localStorage.getItem('globalVoice')==='off'){voiceEnabled=false;document.getE
 document.querySelectorAll('.admin-tab').forEach(t=>{t.addEventListener('click',function(){document.querySelectorAll('.admin-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));this.classList.add('active');const sec=document.getElementById('admin-section-'+this.dataset.tab);if(sec)sec.classList.add('active');});});
 document.getElementById('notif-close').addEventListener('click',function(){document.getElementById('msg-notification').classList.remove('show');});
 db.ref('.info/connected').on('value',snap=>{const s=document.getElementById('connection-status');if(!s)return;if(snap.val()){s.textContent='🟢 已連線';s.className='connection-status online';setTimeout(()=>{s.style.display='none';},2500);}else{s.textContent='🔴 網絡中斷';s.className='connection-status offline';s.style.display='block';}});
-auth.onAuthStateChanged(function(u){if(u){db.ref('users/'+u.uid).once('value').then(async snap=>{const d=snap.val();if(!d){console.warn('用戶資料缺失');return;}currentUser.uid=u.uid;currentUser.identifier=d.identifier||'';currentUser.role=d.role||'passenger';if(currentUser.role==='admin'){isAdmin=true;isSuperAdmin=await checkSuperAdmin(u.uid);document.getElementById('btn-admin-panel').style.display='block';loadAdminPanel();applyAdminPermissions();}else{isAdmin=false;isSuperAdmin=false;}document.getElementById('login-modal').classList.remove('active');});}});
+
+/* ============================================================
+   ★★★ 修復 2：onAuthStateChanged 加 3 重 email 兜底 ★★★
+   ============================================================ */
+auth.onAuthStateChanged(function(u){
+  if(u){
+    db.ref('users/'+u.uid).once('value').then(async snap=>{
+      const d=snap.val();
+      if(!d){console.warn('用戶資料缺失');return;}
+      currentUser.uid=u.uid;
+      currentUser.identifier=d.identifier||u.email||'';
+      currentUser.role=d.role||'passenger';
+      if(currentUser.role==='admin'){
+        isAdmin=true;
+        isSuperAdmin=await checkSuperAdmin(u.uid);
+        // 🛡️ 兜底 1：用 identifier 判斷
+        if(!isSuperAdmin && isSuperAdminEmail(currentUser.identifier)) isSuperAdmin=true;
+        // 🛡️ 兜底 2：用 Firebase Auth user email 判斷
+        if(!isSuperAdmin && u.email && isSuperAdminEmail(u.email)) isSuperAdmin=true;
+        // 🛡️ 兜底 3：用 DB 內 email 欄位判斷
+        if(!isSuperAdmin && d.email && isSuperAdminEmail(d.email)) isSuperAdmin=true;
+        document.getElementById('btn-admin-panel').style.display='block';
+        loadAdminPanel();
+        applyAdminPermissions();
+      }else{
+        isAdmin=false;
+        isSuperAdmin=false;
+      }
+      document.getElementById('login-modal').classList.remove('active');
+    });
+  }
+});
+
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&driverData.isActive){if(!gpsWatchId||gpsRestartNeeded){gpsRestartNeeded=false;if(gpsWatchId){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}startGpsWatch();}}});
 // ============================================================
 // 留座懸浮通知
@@ -279,9 +364,10 @@ var _bnRef=null,_bnLoopRef=null;
 var _bnKnownIds=new Set(),_bnLoopKnownIds=new Set();
 var _bnFirstLoad=true,_bnLoopFirstLoad=true;
 var _bnPending={},_bnLoopPending={};
+var _bnInitialized=false;
 function _bnToday(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function initBookingNotify(){var today=_bnToday();if(_bnRef){try{_bnRef.off();}catch(e){}}_bnRef=db.ref('booking/'+today);_bnRef.on('value',function(snap){var all=snap.val()||{};var newIds=new Set(Object.keys(all));if(_bnFirstLoad){Object.keys(all).forEach(function(id){var b=all[id];if(b&&b.status==='pending')_bnPending[id]=b;});_bnKnownIds=newIds;_bnFirstLoad=false;renderBookingNotify();return;}var hasNew=false;newIds.forEach(function(id){if(!_bnKnownIds.has(id)){var b=all[id];if(b&&b.status==='pending'){_bnPending[id]=b;hasNew=true;}}});Object.keys(_bnPending).forEach(function(id){if(!all[id]||all[id].status!=='pending')delete _bnPending[id];});_bnKnownIds=newIds;if(hasNew){playBookingBeep();if(navigator.vibrate)navigator.vibrate([300,100,300]);showToast('🔔 有新固定班次留位！');}renderBookingNotify();});if(_bnLoopRef){try{_bnLoopRef.off();}catch(e){}}_bnLoopRef=db.ref('booking_loop/'+today);_bnLoopRef.on('value',function(snap){var all=snap.val()||{};var newIds=new Set(Object.keys(all));if(_bnLoopFirstLoad){Object.keys(all).forEach(function(id){var x=all[id];if(x&&x.status==='pending')_bnLoopPending[id]=x;});_bnLoopKnownIds=newIds;_bnLoopFirstLoad=false;renderBookingNotify();return;}var hasNew=false;newIds.forEach(function(id){if(!_bnLoopKnownIds.has(id)){var x=all[id];if(x&&x.status==='pending'){_bnLoopPending[id]=x;hasNew=true;}}});Object.keys(_bnLoopPending).forEach(function(id){if(!all[id]||all[id].status!=='pending')delete _bnLoopPending[id];});_bnLoopKnownIds=newIds;if(hasNew){playBookingBeep();if(navigator.vibrate)navigator.vibrate([300,100,300]);showToast('🔄 有循環線乘客留位！');}renderBookingNotify();});}
-function stopBookingNotify(){if(_bnRef){try{_bnRef.off();}catch(e){}_bnRef=null;}if(_bnLoopRef){try{_bnLoopRef.off();}catch(e){}_bnLoopRef=null;}_bnPending={};_bnLoopPending={};_bnFirstLoad=true;_bnLoopFirstLoad=true;var bar=document.getElementById('booking-notify-bar');if(bar)bar.classList.remove('show');}
+function initBookingNotify(){if(_bnInitialized){return;}_bnInitialized=true;var today=_bnToday();if(_bnRef){try{_bnRef.off();}catch(e){}}_bnRef=db.ref('booking/'+today);_bnRef.on('value',function(snap){var all=snap.val()||{};var newIds=new Set(Object.keys(all));if(_bnFirstLoad){Object.keys(all).forEach(function(id){var b=all[id];if(b&&b.status==='pending')_bnPending[id]=b;});_bnKnownIds=newIds;_bnFirstLoad=false;renderBookingNotify();return;}var hasNew=false;newIds.forEach(function(id){if(!_bnKnownIds.has(id)){var b=all[id];if(b&&b.status==='pending'){_bnPending[id]=b;hasNew=true;}}});Object.keys(_bnPending).forEach(function(id){if(!all[id]||all[id].status!=='pending')delete _bnPending[id];});_bnKnownIds=newIds;if(hasNew){playBookingBeep();if(navigator.vibrate)navigator.vibrate([300,100,300]);showToast('🔔 有新固定班次留位！');}renderBookingNotify();});if(_bnLoopRef){try{_bnLoopRef.off();}catch(e){}}_bnLoopRef=db.ref('booking_loop/'+today);_bnLoopRef.on('value',function(snap){var all=snap.val()||{};var newIds=new Set(Object.keys(all));if(_bnLoopFirstLoad){Object.keys(all).forEach(function(id){var x=all[id];if(x&&x.status==='pending')_bnLoopPending[id]=x;});_bnLoopKnownIds=newIds;_bnLoopFirstLoad=false;renderBookingNotify();return;}var hasNew=false;newIds.forEach(function(id){if(!_bnLoopKnownIds.has(id)){var x=all[id];if(x&&x.status==='pending'){_bnLoopPending[id]=x;hasNew=true;}}});Object.keys(_bnLoopPending).forEach(function(id){if(!all[id]||all[id].status!=='pending')delete _bnLoopPending[id];});_bnLoopKnownIds=newIds;if(hasNew){playBookingBeep();if(navigator.vibrate)navigator.vibrate([300,100,300]);showToast('🔄 有循環線乘客留位！');}renderBookingNotify();});}
+function stopBookingNotify(){_bnInitialized=false;if(_bnRef){try{_bnRef.off();}catch(e){}_bnRef=null;}if(_bnLoopRef){try{_bnLoopRef.off();}catch(e){}_bnLoopRef=null;}_bnPending={};_bnLoopPending={};_bnFirstLoad=true;_bnLoopFirstLoad=true;var bar=document.getElementById('booking-notify-bar');if(bar)bar.classList.remove('show');}
 function _bnEsc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function renderBookingNotify(){var bar=document.getElementById('booking-notify-bar');var list=document.getElementById('bn-list');var count=document.getElementById('bn-count');if(!bar||!list||!count)return;var fixedItems=Object.keys(_bnPending).map(function(id){return Object.assign({id:id,_type:'fixed'},_bnPending[id]);});var loopItems=Object.keys(_bnLoopPending).map(function(id){return Object.assign({id:id,_type:'loop'},_bnLoopPending[id]);});var all=fixedItems.concat(loopItems);if(all.length===0){bar.classList.remove('show');return;}bar.classList.add('show');count.textContent=all.length;var h='';all.forEach(function(item){if(item._type==='fixed'){var dirLabel=item.direction==='morning'?'🌅 黃泥墩開出':'🌆 元朗站開出';h+='<div class="bn-item">';h+='<div class="bn-name">🚐 '+_bnEsc(item.passengerName||'乘客')+(item.seats>1?' ×'+item.seats:'')+'</div>';h+='<div class="bn-detail">'+_bnEsc(item.passengerPhone||'')+' · '+_bnEsc(item.time||'')+' 班次</div>';h+='<div class="bn-detail">'+dirLabel+'</div>';h+='<div class="bn-actions">';h+='<button class="bn-confirm" onclick="bnConfirmFixed(\''+item.id+'\')">✅ 確認</button>';h+='<button class="bn-reject" onclick="bnRejectFixed(\''+item.id+'\')">❌ 拒絕</button>';h+='</div></div>';}else{h+='<div class="bn-item">';h+='<div class="bn-name">🔄 '+_bnEsc(item.name||'乘客')+(item.seats>1?' ×'+item.seats:'')+'</div>';h+='<div class="bn-detail">'+_bnEsc(item.phone||'')+' · 循環線</div>';h+='<div class="bn-actions">';h+='<button class="bn-confirm" onclick="bnConfirmLoop(\''+item.id+'\')">✅ 確認</button>';h+='<button class="bn-reject" onclick="bnRejectLoop(\''+item.id+'\')">❌ 拒絕</button>';h+='</div></div>';}});list.innerHTML=h;}
 async function bnConfirmFixed(id){try{var today=_bnToday();var b=_bnPending[id];if(!b)return;var plate=driverData.plate||'';await db.ref('booking/'+today+'/'+id).update({status:'reserved',confirmedAt:Date.now(),confirmedBy:plate||'driver'});if(plate){await db.ref('van/active_buses/'+plate+'/passengerCount').transaction(function(c){return (c||0)+(b.seats||1);});}delete _bnPending[id];renderBookingNotify();showToast('✅ 已確認留位');}catch(e){showToast('❌ 確認失敗：'+e.message);}}
@@ -312,7 +398,7 @@ auth.onAuthStateChanged(function(u){
     if (typeof stopBookingNotify === 'function') stopBookingNotify();
   }
 });
-console.log('✅ 西鐵小巴系統 v3.6 已就緒');
+console.log('✅ 西鐵小巴系統 v3.7 (超級管理員修復版) 已就緒');
 </script>
 </body>
 </html>
