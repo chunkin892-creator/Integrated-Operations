@@ -8,123 +8,32 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-  background: #0a0f1a;
-  color: #e2e8f0;
-  min-height: 100vh;
-}
-.app {
-  max-width: 480px;
-  margin: 0 auto;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.header {
-  background: linear-gradient(135deg, #0f172a, #1e293b);
-  padding: 18px 16px;
-  text-align: center;
-  border-bottom: 1px solid #1e293b;
-}
-.header h1 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #38bdf8;
-}
-.header .sub {
-  font-size: 11px;
-  color: #64748b;
-  margin-top: 4px;
-}
-.header .company {
-  font-size: 13px;
-  color: #94a3b8;
-  font-weight: 600;
-}
-.screen {
-  display: none;
-  flex: 1;
-  padding: 16px;
-}
-.screen.active {
-  display: block;
-}
-.btn {
-  display: block;
-  width: 100%;
-  padding: 16px;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif; background: #0a0f1a; color: #e2e8f0; min-height: 100vh; }
+.app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+.header { background: linear-gradient(135deg, #0f172a, #1e293b); padding: 18px 16px; text-align: center; border-bottom: 1px solid #1e293b; }
+.header h1 { font-size: 16px; font-weight: 700; color: #38bdf8; }
+.header .sub { font-size: 11px; color: #64748b; margin-top: 4px; }
+.header .company { font-size: 13px; color: #94a3b8; font-weight: 600; }
+.screen { display: none; flex: 1; padding: 16px; }
+.screen.active { display: block; }
+.btn { display: block; width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; }
 .btn-primary { background: #0ea5e9; color: #fff; }
 .btn-success { background: #22c55e; color: #fff; }
 .btn-danger { background: #ef4444; color: #fff; }
-.btn-outline {
-  background: transparent;
-  border: 1px solid #334155;
-  color: #94a3b8;
-}
-.btn-sm {
-  padding: 10px 16px;
-  font-size: 14px;
-  border-radius: 8px;
-  width: auto;
-  display: inline-block;
-}
+.btn-warn { background: #f59e0b; color: #fff; }
+.btn-outline { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+.btn-sm { padding: 10px 16px; font-size: 14px; border-radius: 8px; width: auto; display: inline-block; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.card {
-  background: #1e293b;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 12px;
-  border: 1px solid #334155;
-}
-.card-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #94a3b8;
-  margin-bottom: 8px;
-}
-.module-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.module-card {
-  background: #1e293b;
-  border-radius: 16px;
-  padding: 20px 16px;
-  border: 1px solid #334155;
-  text-align: center;
-  cursor: pointer;
-}
+.card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 12px; border: 1px solid #334155; }
+.card-title { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 8px; }
+.module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.module-card { background: #1e293b; border-radius: 16px; padding: 20px 16px; border: 1px solid #334155; text-align: center; cursor: pointer; }
 .module-card:active { background: #334155; }
 .module-card .icon { font-size: 32px; margin-bottom: 8px; }
 .module-card .name { font-size: 14px; font-weight: 600; color: #f1f5f9; }
 .module-card .desc { font-size: 11px; color: #64748b; margin-top: 4px; }
-.shift-card {
-  background: #1e293b;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 10px;
-  border: 1px solid #334155;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
+.shift-card { background: #1e293b; border-radius: 14px; padding: 16px; margin-bottom: 10px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 .shift-card.full { opacity: 0.5; }
 .shift-time { font-size: 22px; font-weight: 700; color: #f1f5f9; }
 .shift-info { font-size: 12px; color: #64748b; margin-top: 4px; }
@@ -135,145 +44,39 @@ body {
 .shift-seats .num.low { color: #f59e0b; }
 .shift-seats .num.zero { color: #ef4444; }
 .shift-seats .label { font-size: 11px; color: #64748b; }
-.badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-}
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
 .badge-green { background: #052e16; color: #4ade80; }
 .badge-yellow { background: #422006; color: #fbbf24; }
 .badge-red { background: #450a0a; color: #f87171; }
 .badge-blue { background: #082f49; color: #38bdf8; }
 .badge-orange { background: #431407; color: #fdba74; }
 .input-group { margin-bottom: 14px; }
-.input-group label {
-  display: block;
-  font-size: 13px;
-  color: #94a3b8;
-  margin-bottom: 6px;
-}
-.input-group input,
-.input-group select {
-  width: 100%;
-  padding: 14px;
-  border-radius: 10px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #f1f5f9;
-  font-size: 16px;
-  outline: none;
-}
-.toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1e293b;
-  color: #f1f5f9;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-size: 14px;
-  z-index: 9999;
-  opacity: 0;
-  transition: opacity 0.3s;
-  border: 1px solid #334155;
-  max-width: 90%;
-  text-align: center;
-}
+.input-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
+.input-group input, .input-group select, .input-group textarea { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: #f1f5f9; font-size: 16px; outline: none; font-family: inherit; }
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #f1f5f9; padding: 12px 24px; border-radius: 10px; font-size: 14px; z-index: 9999; opacity: 0; transition: opacity 0.3s; border: 1px solid #334155; max-width: 90%; text-align: center; }
 .toast.show { opacity: 1; }
-.bottom-nav {
-  display: flex;
-  background: #1e293b;
-  border-top: 1px solid #334155;
-  position: sticky;
-  bottom: 0;
-}
-.nav-item {
-  flex: 1;
-  padding: 12px;
-  text-align: center;
-  font-size: 11px;
-  color: #64748b;
-  cursor: pointer;
-  border: none;
-  background: none;
-}
+.bottom-nav { display: flex; background: #1e293b; border-top: 1px solid #334155; position: sticky; bottom: 0; }
+.nav-item { flex: 1; padding: 12px; text-align: center; font-size: 11px; color: #64748b; cursor: pointer; border: none; background: none; }
 .nav-item.active { color: #38bdf8; }
 .nav-item .icon { font-size: 20px; display: block; margin-bottom: 2px; }
-.booking-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  border-radius: 10px;
-  margin-bottom: 8px;
-  background: #0f172a;
-  border-left: 4px solid #334155;
-}
+.booking-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 10px; margin-bottom: 8px; background: #0f172a; border-left: 4px solid #334155; }
 .booking-item.arrived { border-left-color: #22c55e; }
 .booking-item.not-arrived { border-left-color: #f59e0b; }
 .booking-name { font-size: 15px; font-weight: 600; }
 .booking-phone { font-size: 12px; color: #64748b; }
-.driver-top {
-  background: linear-gradient(135deg, #052e16, #065f46);
-  border: 2px solid #22c55e;
-  border-radius: 14px;
-  padding: 18px;
-  text-align: center;
-  margin-bottom: 16px;
-}
-.driver-top .plate {
-  font-size: 42px;
-  font-weight: 900;
-  color: #4ade80;
-  letter-spacing: 4px;
-  line-height: 1;
-}
-.driver-top .seats {
-  font-size: 18px;
-  color: #86efac;
-  margin-top: 8px;
-  font-weight: 700;
-}
-.driver-top .status {
-  font-size: 14px;
-  color: #86efac;
-  margin-top: 6px;
-}
-.driver-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  margin-top: 12px;
-}
-.driver-info-grid .cell {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-  padding: 8px;
-  text-align: center;
-}
+.driver-top { background: linear-gradient(135deg, #052e16, #065f46); border: 2px solid #22c55e; border-radius: 14px; padding: 18px; text-align: center; margin-bottom: 16px; }
+.driver-top .plate { font-size: 42px; font-weight: 900; color: #4ade80; letter-spacing: 4px; line-height: 1; }
+.driver-top .seats { font-size: 18px; color: #86efac; margin-top: 8px; font-weight: 700; }
+.driver-top .status { font-size: 14px; color: #86efac; margin-top: 6px; }
+.driver-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+.driver-info-grid .cell { background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 8px; text-align: center; }
 .driver-info-grid .cell .num { font-size: 24px; font-weight: 900; }
 .driver-info-grid .cell .lbl { font-size: 10px; color: #86efac; margin-top: 2px; }
-.alert-banner {
-  background: linear-gradient(135deg, #7c2d12, #c2410c);
-  border: 2px solid #fb923c;
-  border-radius: 14px;
-  padding: 16px;
-  text-align: center;
-  margin-bottom: 16px;
-}
+.alert-banner { background: linear-gradient(135deg, #7c2d12, #c2410c); border: 2px solid #fb923c; border-radius: 14px; padding: 16px; text-align: center; margin-bottom: 16px; }
 .alert-banner .icon { font-size: 36px; margin-bottom: 8px; }
 .alert-banner .text { font-size: 18px; font-weight: 900; color: #fff; }
 .alert-banner .sub { font-size: 13px; color: #fed7aa; margin-top: 4px; }
-.big-shift {
-  background: #1e293b;
-  border-radius: 16px;
-  padding: 18px;
-  margin-bottom: 14px;
-  border: 2px solid #334155;
-}
+.big-shift { background: #1e293b; border-radius: 16px; padding: 18px; margin-bottom: 14px; border: 2px solid #334155; }
 .big-shift .time { font-size: 36px; font-weight: 900; color: #38bdf8; line-height: 1; }
 .big-shift .origin { font-size: 16px; color: #94a3b8; margin-top: 6px; font-weight: 600; }
 .big-shift .counts { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
@@ -286,98 +89,42 @@ body {
 .big-shift.full { border-color: #ef4444; background: #450a0a; }
 .big-shift.full .seat-num { color: #f87171; }
 .big-shift.full .time { color: #f87171; }
-.full-label {
-  display: block;
-  text-align: center;
-  font-size: 28px;
-  font-weight: 900;
-  color: #f87171;
-  margin-top: 10px;
-  letter-spacing: 4px;
-}
-.pending-box {
-  background: #1c1917;
-  border: 2px solid #fb923c;
-  border-radius: 12px;
-  padding: 12px;
-  margin-top: 10px;
-}
+.full-label { display: block; text-align: center; font-size: 28px; font-weight: 900; color: #f87171; margin-top: 10px; letter-spacing: 4px; }
+.pending-box { background: #1c1917; border: 2px solid #fb923c; border-radius: 12px; padding: 12px; margin-top: 10px; }
 .pending-box .pending-title { font-size: 14px; font-weight: 700; color: #fdba74; margin-bottom: 8px; }
-.pending-item {
-  background: #0f172a;
-  border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 8px;
-  border-left: 4px solid #fb923c;
-}
+.pending-item { background: #0f172a; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-left: 4px solid #fb923c; }
 .pending-item .name { font-size: 16px; font-weight: 700; color: #fff; }
 .pending-item .phone { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.pending-item .pickup { font-size: 13px; color: #4ade80; margin-top: 4px; font-weight: 600; }
+.pending-item .booktime { font-size: 11px; color: #64748b; margin-top: 4px; }
 .pending-item .actions { display: flex; gap: 8px; margin-top: 10px; }
-.pending-item .actions button {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
+.pending-item .actions button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
 .pending-item .actions .btn-confirm { background: #22c55e; color: #fff; }
 .pending-item .actions .btn-reject { background: #ef4444; color: #fff; }
-.waiting-big {
-  text-align: center;
-  padding: 48px 16px;
-  background: #1e293b;
-  border-radius: 16px;
-  border: 2px dashed #475569;
-}
+.waiting-big { text-align: center; padding: 48px 16px; background: #1e293b; border-radius: 16px; border: 2px dashed #475569; }
 .waiting-big .icon { font-size: 64px; margin-bottom: 16px; }
 .waiting-big h3 { font-size: 20px; color: #94a3b8; margin-bottom: 8px; }
 .waiting-big p { font-size: 14px; color: #64748b; line-height: 1.6; }
-.bus-pick {
-  background: #1e293b;
-  border-radius: 14px;
-  padding: 18px;
-  margin-bottom: 12px;
-  border: 2px solid #38bdf8;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.bus-pick { background: #1e293b; border-radius: 14px; padding: 18px; margin-bottom: 12px; border: 2px solid #38bdf8; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
 .bus-pick .plate { font-size: 26px; font-weight: 900; color: #38bdf8; }
 .bus-pick .info { font-size: 13px; color: #94a3b8; margin-top: 4px; }
 .bus-pick .arrow { font-size: 28px; color: #38bdf8; }
-.loop-card {
-  background: linear-gradient(135deg, #0c4a6e, #075985);
-  border: 2px solid #0ea5e9;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 12px;
-}
+.loop-card { background: linear-gradient(135deg, #0c4a6e, #075985); border: 2px solid #0ea5e9; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
 .loop-card .title { font-size: 16px; font-weight: 900; color: #7dd3fc; }
-.loop-card .sub { font-size: 12px; color: #bae6fd; margin-top: 4px; }
-.loop-wait {
-  background: #0f172a;
-  border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 8px;
-  border-left: 4px solid #0ea5e9;
-}
+.loop-card .sub { font-size: 12px; color: #bae6fd; margin-top: 4px; line-height: 1.6; }
+.loop-wait { background: #0f172a; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-left: 4px solid #0ea5e9; }
 .loop-wait .name { font-size: 16px; font-weight: 700; color: #fff; }
 .loop-wait .phone { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.loop-wait .pickup { font-size: 13px; color: #4ade80; margin-top: 4px; font-weight: 600; }
+.loop-wait .booktime { font-size: 11px; color: #64748b; margin-top: 4px; }
 .loop-wait .actions { display: flex; gap: 8px; margin-top: 10px; }
-.loop-wait .actions button {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
+.loop-wait .actions button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
 .loop-wait .actions .btn-board { background: #22c55e; color: #fff; }
 .loop-wait .actions .btn-cancel { background: #ef4444; color: #fff; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.stat-card { background: #1e293b; border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #334155; }
+.stat-card .num { font-size: 24px; font-weight: 700; color: #38bdf8; }
+.stat-card .lbl { font-size: 11px; color: #64748b; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -387,6 +134,34 @@ body {
 <h1>小巴留座系統</h1>
 <div class="sub">大棠黃泥墩 ↔ 元朗港鐵站 H 出口</div>
 </div>
+
+<!-- 快速上車地點選單 -->
+<datalist id="pickup-list">
+  <option value="大棠黃泥墩"></option>
+  <option value="大棠山路巴士站"></option>
+  <option value="大棠村迴旋處"></option>
+  <option value="群潤花園"></option>
+  <option value="曉門"></option>
+  <option value="南坑排巴士站"></option>
+  <option value="南坑村"></option>
+  <option value="紅棗田"></option>
+  <option value="水喉頭"></option>
+  <option value="崇正公立學校"></option>
+  <option value="崇正新村"></option>
+  <option value="天龍花園"></option>
+  <option value="深涌村"></option>
+  <option value="禮修村巴士站"></option>
+  <option value="蝶翠峰巴士站"></option>
+  <option value="大旗嶺浸信會教堂"></option>
+  <option value="富達廣場巴士站"></option>
+  <option value="合益路"></option>
+  <option value="鳳翔路"></option>
+  <option value="元朗港鐵站 H 出口"></option>
+  <option value="朗和路"></option>
+  <option value="教育路麥當勞"></option>
+  <option value="元朗廣場"></option>
+</datalist>
+
 <div class="screen active" id="screen-home">
 <div class="module-grid">
 <div class="module-card" onclick="openModule('booking')"><div class="icon">🚐</div><div class="name">小巴留座</div><div class="desc">乘客預約</div></div>
@@ -412,10 +187,12 @@ body {
 </div>
 </div>
 </div>
+
 <div class="screen" id="screen-booking"><div id="booking-content"></div></div>
 <div class="screen" id="screen-driver"><div id="driver-content"></div></div>
 <div class="screen" id="screen-admin"><div id="admin-content"></div></div>
 <div class="screen" id="screen-info"><div id="info-content"></div></div>
+
 <div class="bottom-nav" id="bottom-nav" style="display:none;">
 <button class="nav-item active" onclick="navTo('home')"><span class="icon">🏠</span>首頁</button>
 <button class="nav-item" onclick="navTo('booking')"><span class="icon">🚐</span>留座</button>
@@ -441,13 +218,14 @@ const GPS_WONG = { lat: 22.416280, lng: 114.021977 };
 const GPS_YUEN = { lat: 22.445847, lng: 114.037022 };
 const SM = ['06:20','06:30','06:40','06:50'];
 const SE = ['18:15','18:30','18:45','19:00','19:15','19:30','19:45','20:00','20:20'];
-const GPS_R = 80;
+const GPS_R = 150;                          // ✅ 修復 #3：由 80 放寬到 150 米
 const AW = 15 * 60 * 1000;
 const AT = 5 * 60 * 1000;
 const LS = 7;
 const LE = 18;
 const LOOP_TIMEOUT = 30 * 60 * 1000;
-const LOOP_NOSHOW = 4 * 60 * 60 * 1000;
+const LOOP_NOSHOW = 1 * 60 * 60 * 1000;     // ✅ 修復 #14：由 4 小時縮短至 1 小時
+const MAX_CANCEL_PER_DAY = 3;               // ✅ 修復 #8：每日取消上限
 
 function toast(m, d = 3000) {
   const e = document.getElementById('toast');
@@ -492,6 +270,7 @@ function isLoopHour() {
   const h = new Date().getHours();
   return isWeekday() && h >= LS && h < LE;
 }
+
 const DL = {
   async getActiveBuses() {
     const s = await db.ref('van/active_buses').once('value');
@@ -551,6 +330,47 @@ const DL = {
   },
   async removeLoopQueue(d, i) {
     return db.ref('booking_loop/' + d + '/' + i).remove();
+  },
+  /* ✅ 修復 #1：原子座位計數器，防止超賣 */
+  async reserveSeatCounter(sid, seats, quota) {
+    const ref = db.ref('booking_counters/' + sid);
+    const result = await ref.transaction(current => {
+      const used = current || 0;
+      if (used + seats > quota) return;
+      return used + seats;
+    });
+    return result.committed;
+  },
+  async releaseSeatCounter(sid, seats) {
+    const ref = db.ref('booking_counters/' + sid);
+    await ref.transaction(current => {
+      const used = current || 0;
+      return Math.max(0, used - seats);
+    });
+  },
+  /* ✅ 修復 #9：信用分用 Transaction，防並發覆蓋 */
+  async updateCreditScore(phone, delta, extraPatch) {
+    const ref = db.ref('booking_passengers/' + phone);
+    await ref.transaction(current => {
+      const pd = current || {};
+      const cs = pd.creditScore != null ? pd.creditScore : 100;
+      const ns = Math.max(0, Math.min(100, cs + delta));
+      const patch = Object.assign({}, pd, { creditScore: ns, lastCreditUpdate: now() });
+      if (extraPatch) Object.assign(patch, extraPatch);
+      if (ns < 30) patch.suspendedUntil = now() + 30 * 24 * 60 * 60 * 1000;
+      else if (ns < 60) patch.suspendedUntil = now() + 7 * 24 * 60 * 60 * 1000;
+      else delete patch.suspendedUntil;
+      return patch;
+    });
+  },
+  /* ✅ 修復 #8：取消次數記錄 */
+  async incrCancelCount(phone, date) {
+    const ref = db.ref('booking_cancel_count/' + date + '/' + phone);
+    await ref.transaction(c => (c || 0) + 1);
+  },
+  async getCancelCount(phone, date) {
+    const s = await db.ref('booking_cancel_count/' + date + '/' + phone).once('value');
+    return s.val() || 0;
   }
 };
 
@@ -605,9 +425,10 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
   currentScreen = id.replace('screen-', '');
 }
-function navTo(m) {
+function navTo(m, ev) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  event.target.closest('.nav-item').classList.add('active');
+  const target = (ev || window.event).target.closest('.nav-item');
+  if (target) target.classList.add('active');
   openModule(m);
 }
 function openModule(m) {
@@ -638,6 +459,10 @@ async function updateHomeStats() {
     document.getElementById('home-loop').textContent = lc;
   } catch (e) {}
 }
+
+/* ============================================================
+   乘客端
+   ============================================================ */
 async function renderPassengerHome() {
   const c = document.getElementById('booking-content');
   if (waitingRoomListener) { try { waitingRoomListener.off(); } catch (e) {} waitingRoomListener = null; }
@@ -680,7 +505,9 @@ async function renderPassengerHome() {
           'no-show': { text: '❌ 未到站', color: '#f87171', border: '#ef4444' }
         };
         const s = m[b.status] || { text: b.status, color: '#94a3b8', border: '#334155' };
-        h += '<div class="card" style="padding:12px;border-color:' + s.border + ';cursor:pointer;" onclick="openWaitingRoom(\'' + b.id + '\',\'' + b.date + '\',\'' + b.time + '\')"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:15px;font-weight:600;">' + esc(b.time) + ' 班次</div><div style="font-size:12px;color:#64748b;">' + esc(getOrig(b.time)) + ' · ' + b.seats + ' 人</div></div><div style="font-size:13px;color:' + s.color + ';font-weight:700;">' + s.text + '</div></div></div>';
+        /* ✅ 修復 #7：顯示上車地點 */
+        const pickupLine = b.pickupLocation ? '<div style="font-size:12px;color:#4ade80;margin-top:2px;">📍 ' + esc(b.pickupLocation) + '</div>' : '';
+        h += '<div class="card" style="padding:12px;border-color:' + s.border + ';cursor:pointer;" onclick="openWaitingRoom(\'' + b.id + '\',\'' + b.date + '\',\'' + b.time + '\')"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:15px;font-weight:600;">' + esc(b.time) + ' 班次</div><div style="font-size:12px;color:#64748b;">' + esc(getOrig(b.time)) + ' · ' + b.seats + ' 人</div>' + pickupLine + '</div><div style="font-size:13px;color:' + s.color + ';font-weight:700;">' + s.text + '</div></div></div>';
       });
     }
     h += '<button class="btn btn-outline" style="margin-top:20px;" onclick="passengerLogout()">登出</button>';
@@ -690,6 +517,7 @@ async function renderPassengerHome() {
     c.innerHTML = '<div class="card" style="border-color:#ef4444;"><div style="color:#f87171;">⚠️ ' + esc(e.message) + '</div></div><button class="btn btn-primary" onclick="renderPassengerHome()">🔄 重試</button>';
   }
 }
+
 async function loadLoopSection() {
   const s = document.getElementById('loop-section');
   if (!s) return;
@@ -710,18 +538,23 @@ async function loadLoopSection() {
     if (!el) return;
     if (my) {
       if (my.status === 'pending') {
-        el.innerHTML = '<div class="loop-card" style="background:linear-gradient(135deg,#431407,#7c2d12);border-color:#fb923c;"><div class="title" style="color:#fdba74;">⏳ 等待司機確認</div><div class="sub" style="color:#fed7aa;">你嘅循環線留位已送出<br>司機確認後會即時通知你<br>前面仲有 <strong>' + Math.max(0, waitingCount - 1) + '</strong> 位乘客</div><button class="btn btn-danger" style="margin-top:12px;" onclick="loopCancel()">取消留位</button></div>';
+        const bookTime = my.createdAt ? new Date(my.createdAt).toLocaleString('zh-HK', {hour:'2-digit',minute:'2-digit',hour12:false}) : '';
+        el.innerHTML = '<div class="loop-card" style="background:linear-gradient(135deg,#431407,#7c2d12);border-color:#fb923c;"><div class="title" style="color:#fdba74;">⏳ 等待司機確認</div><div class="sub" style="color:#fed7aa;">你嘅循環線留位已送出' + (my.pickupLocation ? '<br>📍 上車地點：' + esc(my.pickupLocation) : '') + (bookTime ? '<br>⏰ 留位時間：' + bookTime : '') + '<br>司機確認後會即時通知你<br>前面仲有 <strong>' + Math.max(0, waitingCount - 1) + '</strong> 位乘客</div><button class="btn btn-danger" style="margin-top:12px;" onclick="loopCancel()">取消留位</button></div>';
       } else if (my.status === 'reserved') {
-        el.innerHTML = '<div class="loop-card" style="background:linear-gradient(135deg,#052e16,#065f46);border-color:#22c55e;"><div class="title" style="color:#4ade80;">✅ 已確認留位</div><div class="sub" style="color:#86efac;">司機已確認你嘅留位<br>請到站頭等候上車<br>上車後撳「我已上車」</div><button class="btn btn-success" style="margin-top:12px;" onclick="loopBoarded()">🚐 我已上車</button><button class="btn btn-outline" style="margin-top:8px;" onclick="loopCancel()">取消留位</button></div>';
+        const bookTime = my.createdAt ? new Date(my.createdAt).toLocaleString('zh-HK', {hour:'2-digit',minute:'2-digit',hour12:false}) : '';
+        el.innerHTML = '<div class="loop-card" style="background:linear-gradient(135deg,#052e16,#065f46);border-color:#22c55e;"><div class="title" style="color:#4ade80;">✅ 已確認留位</div><div class="sub" style="color:#86efac;">司機已確認你嘅留位' + (my.pickupLocation ? '<br>📍 上車地點：' + esc(my.pickupLocation) : '') + (bookTime ? '<br>⏰ 留位時間：' + bookTime : '') + '<br>請到站頭等候上車<br>上車後撳「我已上車」</div><button class="btn btn-success" style="margin-top:12px;" onclick="loopBoarded()">🚐 我已上車</button><button class="btn btn-outline" style="margin-top:8px;" onclick="loopCancel()">取消留位</button></div>';
+      } else if (my.status === 'expired') {
+        el.innerHTML = '<div class="loop-card" style="background:#431407;border-color:#fb923c;"><div class="title" style="color:#fdba74;">⏰ 留位已超時</div><div class="sub" style="color:#fed7aa;">司機未能在時限內確認，請重新留位。</div><button class="btn btn-primary" style="margin-top:12px;" onclick="loopReJoin()">🔄 重新留位</button></div>';
       }
     } else {
-      el.innerHTML = '<div class="loop-card"><div class="title" style="color:#7dd3fc;">🔄 循環線留位</div><div class="sub" style="color:#bae6fd;">而家循環線時段（07:00 - 18:00）<br>可留位座位：<strong style="font-size:18px;color:#4ade80;">' + availSeats + '</strong> 個<br>候補中：<strong>' + waitingCount + '</strong> 人 · 已確認：<strong>' + reservedCount + '</strong> 人<br><br>留位後司機確認，有位就上車</div><button class="btn btn-primary" style="margin-top:12px;" onclick="loopJoin()" ' + (availSeats <= 0 ? 'disabled' : '') + '>' + (availSeats <= 0 ? '❌ 暫無座位' : '✅ 立即留位') + '</button></div>';
+      el.innerHTML = '<div class="loop-card"><div class="title" style="color:#7dd3fc;">🔄 循環線留位</div><div class="sub" style="color:#bae6fd;">而家循環線時段（07:00 - 18:00）<br>可留位座位：<strong style="font-size:18px;color:#4ade80;">' + availSeats + '</strong> 個<br>候補中：<strong>' + waitingCount + '</strong> 人 · 已確認：<strong>' + reservedCount + '</strong> 人</div><div style="margin-top:10px;"><label style="color:#bae6fd;font-size:13px;font-weight:600;display:block;margin-bottom:6px;">📍 上車地點</label><input type="text" id="loop-pickup" list="pickup-list" placeholder="例如：大棠黃泥墩" maxlength="40" style="padding:12px;border-radius:10px;border:1px solid #0ea5e9;background:#0f172a;color:#fff;width:100%;font-size:16px;"></div><button class="btn btn-primary" style="margin-top:12px;" onclick="loopJoin()" ' + (availSeats <= 0 ? 'disabled' : '') + '>' + (availSeats <= 0 ? '❌ 暫無座位' : '✅ 立即留位') + '</button></div>';
     }
   };
   r.on('value', h);
   loopPassengerRef = r;
   loopPassengerHandler = h;
 }
+
 async function loopJoin() {
   try {
     await ensureAuth();
@@ -729,23 +562,43 @@ async function loopJoin() {
     const all = await DL.getLoopQueue(t);
     const ex = Object.values(all).find(x => x.phone === currentPassenger.phone && (x.status === 'pending' || x.status === 'reserved'));
     if (ex) { toast('⚠️ 你已經留咗位'); return; }
+    const pickupLocation = document.getElementById('loop-pickup')?.value.trim();
+    if (!pickupLocation) { toast('請輸入上車地點'); return; }
     const pd = await DL.getPassenger(currentPassenger.phone) || {};
     const cs = pd.creditScore != null ? pd.creditScore : 100;
     if (cs < 50) { toast('⚠️ 信用分不足'); return; }
-    await DL.addLoopQueue(t, { phone: currentPassenger.phone, name: pd.name || currentPassenger.name, seats: 1, status: 'pending', date: t });
+    const today = getToday();
+    const cancelCount = await DL.getCancelCount(currentPassenger.phone, today);
+    if (cancelCount >= MAX_CANCEL_PER_DAY) { toast('⚠️ 今日取消次數已達上限（' + MAX_CANCEL_PER_DAY + ' 次），請明日再試'); return; }
+    await DL.addLoopQueue(t, { phone: currentPassenger.phone, name: pd.name || currentPassenger.name, seats: 1, status: 'pending', date: t, pickupLocation: pickupLocation });
     toast('✅ 已送出，等待司機確認', 3000);
   } catch (e) { toast('❌ 留位失敗：' + e.message); }
 }
+
+async function loopReJoin() {
+  try {
+    const t = getToday();
+    const all = await DL.getLoopQueue(t);
+    const my = Object.values(all).find(x => x.phone === currentPassenger.phone && x.status === 'expired');
+    if (my) await DL.removeLoopQueue(t, my.id);
+    loadLoopSection();
+  } catch (e) { toast('重試失敗：' + e.message); }
+}
+
 async function loopCancel() {
   if (!confirm('確定取消留位？')) return;
   try {
     const t = getToday();
     const all = await DL.getLoopQueue(t);
     const my = Object.values(all).find(x => x.phone === currentPassenger.phone && (x.status === 'pending' || x.status === 'reserved'));
-    if (my) await DL.removeLoopQueue(t, my.id);
+    if (my) {
+      await DL.removeLoopQueue(t, my.id);
+      await DL.incrCancelCount(currentPassenger.phone, t);
+    }
     toast('已取消留位');
   } catch (e) { toast('取消失敗：' + e.message); }
 }
+
 async function loopBoarded() {
   if (!confirm('確定你已上車？')) return;
   try {
@@ -761,6 +614,7 @@ async function loopBoarded() {
     toast('✅ 已上車，祝旅途愉快', 3000);
   } catch (e) { toast('❌ 失敗：' + e.message); }
 }
+
 function renderShiftCard(d, t, ab, sc) {
   const sid = getSid(d, t);
   const cfg = sc[t.replace(':', '')];
@@ -783,9 +637,11 @@ function renderShiftCard(d, t, ab, sc) {
   const clk = !full || my;
   return '<div class="shift-card ' + (full && !my ? 'full' : '') + '" ' + (clk ? 'onclick="selectShift(\'' + d + '\',\'' + t + '\')"' : '') + '><div><div class="shift-time">' + esc(t) + '</div><div class="shift-info ' + (dir === 'morning' ? 'morning' : 'evening') + '">' + esc(getOrigL(t)) + '</div>' + (bg ? '<div style="margin-top:6px;">' + bg + '</div>' : '') + '<div style="font-size:10px;color:#64748b;margin-top:4px;">留位額：' + quota + ' 個</div></div><div class="shift-seats"><div class="num ' + (rem <= 0 ? 'zero' : rem <= 2 ? 'low' : '') + '">' + rem + '</div><div class="label">剩餘留位</div></div></div>';
 }
+
 function renderPassengerLogin(c) {
   c.innerHTML = '<div class="card"><div class="card-title">📱 輸入電話號碼開始預約</div><div class="input-group"><label>電話號碼（8 位數字）</label><input type="tel" id="login-phone" placeholder="例如：91234567" maxlength="8" inputmode="numeric"></div><div class="input-group"><label>姓名</label><input type="text" id="login-name" placeholder="例如：陳先生" maxlength="20"></div><button class="btn btn-primary" id="passenger-login-btn" onclick="passengerLogin()">確認</button></div>';
 }
+
 async function passengerLogin() {
   const btn = document.getElementById('passenger-login-btn');
   if (btn) { btn.disabled = true; btn.textContent = '處理中...'; }
@@ -807,6 +663,7 @@ async function passengerLogin() {
       creditScore: ex.creditScore != null ? ex.creditScore : 100,
       totalBookings: ex.totalBookings || 0,
       totalNoShows: ex.totalNoShows || 0,
+      streakCount: ex.streakCount || 0,
       lastLogin: now()
     });
     currentPassenger = { phone: phone, name: name };
@@ -818,6 +675,7 @@ async function passengerLogin() {
     if (btn) { btn.disabled = false; btn.textContent = '確認'; }
   }
 }
+
 function passengerLogout() {
   currentPassenger = null;
   clearPassengerSession();
@@ -826,6 +684,7 @@ function passengerLogout() {
   if (loopPassengerRef && loopPassengerHandler) { try { loopPassengerRef.off('value', loopPassengerHandler); } catch (e) {} loopPassengerRef = null; loopPassengerHandler = null; }
   renderPassengerHome();
 }
+
 async function selectShift(d, t) {
   const c = document.getElementById('booking-content');
   try {
@@ -839,25 +698,35 @@ async function selectShift(d, t) {
     const my = Object.values(tb).find(b => b.scheduleId === sid && b.passengerPhone === currentPassenger.phone && b.status !== 'cancelled' && b.status !== 'rejected' && b.status !== 'no-show');
     if (my) { toast('你已經預約咗呢個班次'); return; }
     const pd = await DL.getPassenger(currentPassenger.phone) || {};
-    c.innerHTML = '<div style="display:flex;align-items:center;margin-bottom:16px;"><button class="btn btn-outline btn-sm" onclick="renderPassengerHome()">← 返回</button></div><div class="card"><div class="card-title">🚐 預約班次</div><div style="font-size:28px;font-weight:700;color:#38bdf8;">' + esc(t) + '</div><div style="font-size:13px;color:#64748b;margin-top:4px;">' + esc(d) + '</div><div style="font-size:13px;margin-top:6px;font-weight:600;color:' + (getDir(t) === 'morning' ? '#4ade80' : '#fdba74') + ';">' + esc(getOrigL(t)) + '</div><div style="font-size:13px;color:#94a3b8;margin-top:4px;">→ ' + esc(getDest(t)) + '</div><div style="font-size:13px;color:#22c55e;margin-top:8px;">剩餘留位額：' + rem + ' 個（總共 ' + quota + '）</div></div><div class="card"><div class="input-group"><label>姓名</label><input type="text" id="book-name" value="' + esc(pd.name || currentPassenger.name) + '" maxlength="20"></div><div class="input-group"><label>人數</label><select id="book-seats"><option value="1">1 人</option><option value="2">2 人</option></select></div><button class="btn btn-primary" id="confirm-booking-btn" onclick="confirmBooking(\'' + d + '\',\'' + t + '\')">送出預約（待司機確認）</button><div style="font-size:12px;color:#94a3b8;margin-top:10px;text-align:center;line-height:1.6;">⚠️ 送出後需要司機確認<br>司機確認後才作實留位</div></div>';
+    c.innerHTML = '<div style="display:flex;align-items:center;margin-bottom:16px;"><button class="btn btn-outline btn-sm" onclick="renderPassengerHome()">← 返回</button></div><div class="card"><div class="card-title">🚐 預約班次</div><div style="font-size:28px;font-weight:700;color:#38bdf8;">' + esc(t) + '</div><div style="font-size:13px;color:#64748b;margin-top:4px;">' + esc(d) + '</div><div style="font-size:13px;margin-top:6px;font-weight:600;color:' + (getDir(t) === 'morning' ? '#4ade80' : '#fdba74') + ';">' + esc(getOrigL(t)) + '</div><div style="font-size:13px;color:#94a3b8;margin-top:4px;">→ ' + esc(getDest(t)) + '</div><div style="font-size:13px;color:#22c55e;margin-top:8px;">剩餘留位額：' + rem + ' 個（總共 ' + quota + '）</div></div><div class="card"><div class="input-group"><label>姓名</label><input type="text" id="book-name" value="' + esc(pd.name || currentPassenger.name) + '" maxlength="20"></div><div class="input-group"><label>人數</label><select id="book-seats"><option value="1">1 人</option><option value="2">2 人</option></select></div><div class="input-group"><label>📍 上車地點</label><input type="text" id="book-pickup" list="pickup-list" placeholder="例如：大棠黃泥墩" maxlength="40"></div><button class="btn btn-primary" id="confirm-booking-btn" onclick="confirmBooking(\'' + d + '\',\'' + t + '\')">送出預約（待司機確認）</button><div style="font-size:12px;color:#94a3b8;margin-top:10px;text-align:center;line-height:1.6;">⚠️ 送出後需要司機確認<br>司機確認後才作實留位</div></div>';
   } catch (e) { toast('載入失敗：' + e.message); }
 }
+
 async function confirmBooking(d, t) {
   const btn = document.getElementById('confirm-booking-btn');
   if (btn) { btn.disabled = true; btn.textContent = '處理中...'; }
   const name = document.getElementById('book-name').value.trim();
   const seats = parseInt(document.getElementById('book-seats').value);
+  const pickupLocation = document.getElementById('book-pickup').value.trim();
   if (!name || name.length > 20) { toast('請輸入姓名'); if (btn) { btn.disabled = false; btn.textContent = '送出預約'; } return; }
+  if (!pickupLocation) { toast('請輸入上車地點'); if (btn) { btn.disabled = false; btn.textContent = '送出預約'; } return; }
   try {
     await ensureAuth();
     const cfg = await DL.getSeatConfig(d, t);
     if (!cfg || !cfg.seats) throw new Error('此班次未開放');
     const quota = cfg.quota || cfg.seats;
-    const tb = await DL.getBookings(d);
     const sid = getSid(d, t);
-    const used = Object.values(tb).filter(b => b.scheduleId === sid && ['pending', 'reserved', 'arrived', 'boarded'].includes(b.status)).reduce((s, b) => s + (b.seats || 0), 0);
-    if (used + seats > quota) throw new Error('剩餘留位額不足');
-    const b = { scheduleId: sid, date: d, time: t, passengerName: name, passengerPhone: currentPassenger.phone, seats: seats, status: 'pending', direction: getDir(t) };
+    const today = getToday();
+    const cancelCount = await DL.getCancelCount(currentPassenger.phone, today);
+    if (cancelCount >= MAX_CANCEL_PER_DAY) throw new Error('今日取消次數已達上限（' + MAX_CANCEL_PER_DAY + ' 次），請明日再試');
+    const committed = await DL.reserveSeatCounter(sid, seats, quota);
+    if (!committed) throw new Error('剩餘留位額不足');
+    const b = {
+      scheduleId: sid, date: d, time: t,
+      passengerName: name, passengerPhone: currentPassenger.phone,
+      seats: seats, status: 'pending', direction: getDir(t),
+      pickupLocation: pickupLocation, counterReserved: true
+    };
     const sv = await DL.addBooking(d, b);
     try {
       const pd = await DL.getPassenger(currentPassenger.phone) || {};
@@ -870,7 +739,9 @@ async function confirmBooking(d, t) {
     if (btn) { btn.disabled = false; btn.textContent = '送出預約'; }
   }
 }
+
 function openWaitingRoom(id, d, t) { renderWaitingRoom(id, d, t); }
+
 async function renderWaitingRoom(id, d, t) {
   if (waitingRoomListener) { try { waitingRoomListener.off(); } catch (e) {} waitingRoomListener = null; }
   const r = db.ref('booking/' + d + '/' + id);
@@ -882,6 +753,7 @@ async function renderWaitingRoom(id, d, t) {
   if (!b) { renderPassengerHome(); return; }
   renderWaitingRoomUI(b, d, id);
 }
+
 function renderWaitingRoomUI(b, d, id) {
   const c = document.getElementById('booking-content');
   const st = getShiftTime(b.date, b.time);
@@ -902,15 +774,18 @@ function renderWaitingRoomUI(b, d, id) {
   } else if (b.status === 'no-show') {
     sb = '<div class="card" style="text-align:center;border-color:#ef4444;background:#450a0a;"><div style="color:#f87171;font-weight:600;">❌ 未到站</div></div>';
   }
-  let h = '<div style="display:flex;align-items:center;margin-bottom:16px;"><button class="btn btn-outline btn-sm" onclick="renderPassengerHome()">← 返回</button></div>' + sb + '<div class="card" style="text-align:center;"><div style="font-size:14px;color:#64748b;">預約編號</div><div style="font-size:20px;font-weight:700;color:#38bdf8;letter-spacing:2px;margin:8px 0;">' + esc(b.id.substring(0, 8).toUpperCase()) + '</div><div style="font-size:13px;color:#94a3b8;">' + esc(b.time) + ' 班次 · ' + b.seats + ' 人</div><div style="font-size:13px;margin-top:6px;font-weight:600;color:' + (getDir(b.time) === 'morning' ? '#4ade80' : '#fdba74') + ';">' + esc(getOrigL(b.time)) + '</div><div style="font-size:12px;color:#64748b;margin-top:4px;">乘客：' + esc(b.passengerName) + '</div></div>';
+  const bookTime = b.createdAt ? new Date(b.createdAt).toLocaleString('zh-HK', {hour:'2-digit',minute:'2-digit',hour12:false}) : '';
+  let h = '<div style="display:flex;align-items:center;margin-bottom:16px;"><button class="btn btn-outline btn-sm" onclick="renderPassengerHome()">← 返回</button></div>' + sb + '<div class="card" style="text-align:center;"><div style="font-size:14px;color:#64748b;">預約編號</div><div style="font-size:20px;font-weight:700;color:#38bdf8;letter-spacing:2px;margin:8px 0;">' + esc(b.id.substring(0, 8).toUpperCase()) + '</div><div style="font-size:13px;color:#94a3b8;">' + esc(b.time) + ' 班次 · ' + b.seats + ' 人</div><div style="font-size:13px;margin-top:6px;font-weight:600;color:' + (getDir(b.time) === 'morning' ? '#4ade80' : '#fdba74') + ';">' + esc(getOrigL(b.time)) + '</div>' + (b.pickupLocation ? '<div style="font-size:14px;color:#4ade80;margin-top:6px;font-weight:600;">📍 上車地點：' + esc(b.pickupLocation) + '</div>' : '') + (bookTime ? '<div style="font-size:12px;color:#64748b;margin-top:6px;">⏰ 留位時間：' + bookTime + '</div>' : '') + '<div style="font-size:12px;color:#64748b;margin-top:4px;">乘客：' + esc(b.passengerName) + '</div></div>';
   if (b.status === 'reserved') {
     h += '<div class="card" style="text-align:center;padding:16px;border:2px dashed #f59e0b;background:#422006;" id="gps-box"><div style="font-size:40px;">📍</div><div style="font-size:14px;font-weight:600;" id="gps-text">等待開始定位...</div><div style="font-size:12px;color:#94a3b8;margin-top:4px;" id="gps-sub">發車前 15 分鐘開始追蹤</div></div><div class="card" style="text-align:center;"><div style="font-size:13px;color:#f59e0b;font-weight:600;" id="countdown">距離發車：--:--</div></div>';
   }
   if (b.status === 'pending' || b.status === 'reserved') {
-    h += '<button class="btn btn-outline" onclick="cancelBooking(\'' + b.id + '\',\'' + b.date + '\')">取消預約</button>';
     if (b.status === 'reserved') {
-      h += '<button class="btn btn-success" style="margin-top:10px;" onclick="passengerBoardFixed(\'' + b.id + '\',\'' + b.date + '\')">🚐 我已上車</button><button class="btn btn-primary" style="margin-top:10px;" onclick="renderPassengerHome()">返回主頁</button>';
+      h += '<button class="btn btn-warn" style="margin-top:10px;" onclick="manualArrive(\'' + b.id + '\',\'' + b.date + '\')">📍 我已經到站（手動）</button>';
+      h += '<button class="btn btn-success" style="margin-top:10px;" onclick="passengerBoardFixed(\'' + b.id + '\',\'' + b.date + '\')">🚐 我已上車</button>';
+      h += '<button class="btn btn-primary" style="margin-top:10px;" onclick="renderPassengerHome()">返回主頁</button>';
     }
+    h += '<button class="btn btn-outline" style="margin-top:10px;" onclick="cancelBooking(\'' + b.id + '\',\'' + b.date + '\')">取消預約</button>';
   }
   c.innerHTML = h;
   if (b.status === 'reserved') {
@@ -922,6 +797,7 @@ function renderWaitingRoomUI(b, d, id) {
     }
   }
 }
+
 async function passengerBoardFixed(id, d) {
   if (!confirm('確定你已上車？')) return;
   try {
@@ -930,6 +806,18 @@ async function passengerBoardFixed(id, d) {
     renderPassengerHome();
   } catch (e) { toast('失敗：' + e.message); }
 }
+
+async function manualArrive(id, d) {
+  if (!confirm('確定你已經到達站頭？\n（如非必要，請讓 GPS 自動確認）')) return;
+  try {
+    const b = await DL.getBookings(d);
+    const x = b[id];
+    if (!x || x.status !== 'reserved') { toast('狀態錯誤'); return; }
+    await DL.updateBooking(d, id, { status: 'arrived', arrivedAt: now(), arrivedManually: true });
+    toast('✅ 已確認到站');
+  } catch (e) { toast('確認失敗：' + e.message); }
+}
+
 async function checkAndStartGPS(id, d, t) {
   try {
     const b = await DL.getBookings(d);
@@ -937,6 +825,7 @@ async function checkAndStartGPS(id, d, t) {
     if (x && x.status === 'reserved') startGPS(id, d, t);
   } catch (e) {}
 }
+
 function updateCountdown(d, t) {
   const el = document.getElementById('countdown');
   if (!el) return;
@@ -947,23 +836,30 @@ function updateCountdown(d, t) {
   el.textContent = '距離發車：' + m + ':' + String(s).padStart(2, '0');
   setTimeout(() => { if (document.getElementById('countdown')) updateCountdown(d, t); }, 1000);
 }
+
 async function cancelBooking(id, d) {
   if (!confirm('確定取消預約？')) return;
   try {
     const b = (await DL.getBookings(d))[id];
     await DL.cancelBooking(d || getToday(), id);
+    if (b && b.counterReserved && b.scheduleId) {
+      await DL.releaseSeatCounter(b.scheduleId, b.seats || 1);
+      await db.ref('booking/' + (d || getToday()) + '/' + id).update({ counterReserved: false });
+    }
     if (b && b.status === 'reserved') {
       const cfg = await DL.getSeatConfig(d, b.time);
       if (cfg && cfg.plate) {
         await db.ref('van/active_buses/' + cfg.plate + '/passengerCount').transaction(c => Math.max(0, (c || 0) - (b.seats || 1)));
       }
     }
+    await DL.incrCancelCount(currentPassenger.phone, d || getToday());
     stopGPS();
     toast('已取消預約');
     if (waitingRoomListener) { try { waitingRoomListener.off(); } catch (e) {} waitingRoomListener = null; }
     renderPassengerHome();
   } catch (e) { toast('取消失敗：' + e.message); }
 }
+
 function startGPS(id, d, t) {
   if (!navigator.geolocation) { const x = document.getElementById('gps-text'); if (x) x.textContent = '不支援 GPS'; return; }
   const g = getGPS(t);
@@ -995,6 +891,7 @@ function startGPS(id, d, t) {
   );
 }
 function stopGPS() { if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; } }
+
 async function markArrived(id, d) {
   try {
     const b = await DL.getBookings(d);
@@ -1005,6 +902,9 @@ async function markArrived(id, d) {
     toast('✅ 已確認到站！');
   } catch (e) {}
 }
+/* ============================================================
+   司機端
+   ============================================================ */
 function clearDriverListeners() {
   driverListeners.forEach(({ ref, handler }) => { try { ref.off('value', handler); } catch (e) {} });
   driverListeners = [];
@@ -1012,6 +912,7 @@ function clearDriverListeners() {
   if (driverLoopListener && driverListenerDate) { try { db.ref('booking_loop/' + driverListenerDate).off('value', driverLoopListener); } catch (e) {} driverLoopListener = null; }
   driverListenerDate = null;
 }
+
 async function renderDriverHome() {
   const c = document.getElementById('driver-content');
   clearDriverListeners();
@@ -1048,6 +949,7 @@ async function renderDriverHome() {
   }
 }
 function pickBus(p) { saveSelectedBus(p); renderDriverHome(); }
+
 async function renderDriverDuty() {
   const c = document.getElementById('driver-content');
   const bus = currentDriver;
@@ -1065,6 +967,7 @@ async function renderDriverDuty() {
   driverListeners.push({ ref: br, handler: brH });
   switchDriverTab('fixed');
 }
+
 function updateDriverInfoGrid(d) {
   const g = document.getElementById('driver-info-grid');
   if (!g) return;
@@ -1075,12 +978,14 @@ function updateDriverInfoGrid(d) {
   const col = o ? '#ef4444' : f ? '#f59e0b' : '#22c55e';
   g.innerHTML = '<div class="cell"><div class="num" style="color:' + col + ';">' + p + '</div><div class="lbl">目前乘客</div></div><div class="cell"><div class="num" style="color:#22c55e;">' + Math.max(0, s - p) + '</div><div class="lbl">剩餘座位</div></div><div class="cell"><div class="num" style="color:#fdba74;">' + s + '</div><div class="lbl">總座位</div></div>';
 }
+
 function switchDriverTab(t) {
   const bf = document.getElementById('tab-btn-fixed'), bl = document.getElementById('tab-btn-loop'), df = document.getElementById('driver-tab-fixed'), dl = document.getElementById('driver-tab-loop');
   if (!bf || !bl) return;
   if (t === 'fixed') { bf.className = 'btn btn-primary'; bl.className = 'btn btn-outline'; df.style.display = 'block'; dl.style.display = 'none'; renderDriverFixedList(); }
   else { bf.className = 'btn btn-outline'; bl.className = 'btn btn-primary'; df.style.display = 'none'; dl.style.display = 'block'; renderDriverLoopList(); }
 }
+
 async function renderDriverFixedList() {
   const c = document.getElementById('driver-tab-fixed');
   if (!c) return;
@@ -1120,6 +1025,7 @@ async function renderDriverFixedList() {
   };
   r.on('value', driverBookingListener);
 }
+
 function renderDriverFixedHTML(ab, sc, t, allS) {
   const c = document.getElementById('driver-tab-fixed'), a = document.getElementById('alert-area');
   if (!c) return;
@@ -1141,10 +1047,14 @@ function renderDriverFixedHTML(ab, sc, t, allS) {
     const pl = sb.filter(b => b.status === 'pending');
     const cl = sb.filter(b => b.status === 'reserved');
     const al = sb.filter(b => b.status === 'arrived' || b.status === 'boarded');
-    h += '<div class="big-shift ' + (full ? 'full' : '') + '"><div class="time">' + esc(tm) + '</div><div class="origin" style="color:' + (dir === 'morning' ? '#4ade80' : '#fdba74') + ';font-weight:700;">' + esc(getOrigL(tm)) + '</div><div class="counts"><div><div class="pending-count">⏳ ' + pl.length + ' 待確認</div><div class="arrived-count" style="margin-top:4px;">🔴 ' + al.length + ' 已到 · ✅ ' + cl.length + ' 已確認</div></div><div style="text-align:right;"><div class="seat-num ' + (rem <= 0 ? 'zero' : rem <= 2 ? 'low' : '') + '">' + rem + '</div><div class="seat-label">剩餘留位額 / ' + quota + '</div></div></div>' + (full ? '<span class="full-label">🔴 滿座</span>' : '') + (pl.length > 0 ? '<div class="pending-box"><div class="pending-title">🔔 待你確認（' + pl.length + '）</div>' + pl.map(b => '<div class="pending-item"><div class="name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div><div class="phone">' + esc(b.passengerPhone) + '</div><div class="actions"><button class="btn-confirm" onclick="driverConfirm(\'' + b.date + '\',\'' + b.id + '\',\'' + esc(bus.plate) + '\')">✅ 確認</button><button class="btn-reject" onclick="driverReject(\'' + b.date + '\',\'' + b.id + '\',\'' + esc(bus.plate) + '\')">❌ 拒絕</button></div></div>').join('') + '</div>' : '') + (cl.length > 0 ? '<div style="margin-top:12px;"><div style="font-size:13px;color:#4ade80;font-weight:700;margin-bottom:6px;">✅ 已確認留位（' + cl.length + '）</div>' + cl.map(b => '<div class="booking-item arrived"><div><div class="booking-name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div><div class="booking-phone">' + esc(b.passengerPhone) + '</div></div><div style="font-size:12px;color:#4ade80;">已確認</div></div>').join('') + '</div>' : '') + (al.length > 0 ? '<div style="margin-top:12px;"><div style="font-size:13px;color:#22c55e;font-weight:700;margin-bottom:6px;">🔴 已到站（' + al.length + '）</div>' + al.map(b => '<div class="booking-item arrived"><div><div class="booking-name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div><div class="booking-phone">' + esc(b.passengerPhone) + '</div></div><div>' + (b.status === 'boarded' ? '<span class="badge badge-blue">已上車</span>' : '<span class="badge badge-yellow">等候上車</span>') + '</div></div>').join('') + '</div>' : '') + '</div>';
+    h += '<div class="big-shift ' + (full ? 'full' : '') + '"><div class="time">' + esc(tm) + '</div><div class="origin" style="color:' + (dir === 'morning' ? '#4ade80' : '#fdba74') + ';font-weight:700;">' + esc(getOrigL(tm)) + '</div><div class="counts"><div><div class="pending-count">⏳ ' + pl.length + ' 待確認</div><div class="arrived-count" style="margin-top:4px;">🔴 ' + al.length + ' 已到 · ✅ ' + cl.length + ' 已確認</div></div><div style="text-align:right;"><div class="seat-num ' + (rem <= 0 ? 'zero' : rem <= 2 ? 'low' : '') + '">' + rem + '</div><div class="seat-label">剩餘留位額 / ' + quota + '</div></div></div>' + (full ? '<span class="full-label">🔴 滿座</span>' : '') + (pl.length > 0 ? '<div class="pending-box"><div class="pending-title">🔔 待你確認（' + pl.length + '）</div>' + pl.map(b => {
+      const bookTime = b.createdAt ? new Date(b.createdAt).toLocaleString('zh-HK', {hour:'2-digit',minute:'2-digit',hour12:false}) : '';
+      return '<div class="pending-item"><div class="name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div><div class="phone">📞 ' + esc(b.passengerPhone) + '</div>' + (b.pickupLocation ? '<div class="pickup">📍 ' + esc(b.pickupLocation) + '</div>' : '<div class="pickup" style="color:#f87171;">📍 未填上車地點</div>') + (bookTime ? '<div class="booktime">⏰ 留位時間 ' + bookTime + '</div>' : '') + '<div class="actions"><button class="btn-confirm" onclick="driverConfirm(\'' + b.date + '\',\'' + b.id + '\',\'' + esc(bus.plate) + '\')">✅ 確認</button><button class="btn-reject" onclick="driverReject(\'' + b.date + '\',\'' + b.id + '\',\'' + esc(bus.plate) + '\')">❌ 拒絕</button></div></div>';
+    }).join('') + '</div>' : '') + (cl.length > 0 ? '<div style="margin-top:12px;"><div style="font-size:13px;color:#4ade80;font-weight:700;margin-bottom:6px;">✅ 已確認留位（' + cl.length + '）</div>' + cl.map(b => '<div class="booking-item arrived"><div><div class="booking-name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div><div class="booking-phone">' + esc(b.passengerPhone) + '</div>' + (b.pickupLocation ? '<div style="font-size:12px;color:#4ade80;margin-top:2px;">📍 ' + esc(b.pickupLocation) + '</div>' : '') + '</div><div style="font-size:12px;color:#4ade80;">已確認</div></div>').join('') + '</div>' : '') + (al.length > 0 ? '<div style="margin-top:12px;"><div style="font-size:13px;color:#22c55e;font-weight:700;margin-bottom:6px;">🔴 已到站（' + al.length + '）</div>' + al.map(b => '<div class="booking-item arrived"><div><div class="booking-name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div><div class="booking-phone">' + esc(b.passengerPhone) + '</div>' + (b.pickupLocation ? '<div style="font-size:12px;color:#4ade80;margin-top:2px;">📍 ' + esc(b.pickupLocation) + '</div>' : '') + '</div><div>' + (b.status === 'boarded' ? '<span class="badge badge-blue">已上車</span>' : '<span class="badge badge-yellow">等候上車</span>') + '</div></div>').join('') + '</div>' : '') + '</div>';
   });
   c.innerHTML = h;
 }
+
 async function renderDriverLoopList() {
   const c = document.getElementById('driver-tab-loop');
   if (!c) return;
@@ -1179,6 +1089,7 @@ async function renderDriverLoopList() {
   };
   r.on('value', driverLoopListener);
 }
+
 function renderDriverLoopHTML(all) {
   const c = document.getElementById('driver-tab-loop');
   if (!c) return;
@@ -1188,10 +1099,11 @@ function renderDriverLoopHTML(all) {
   const rl = Object.values(all).filter(x => x.status === 'reserved').sort((a, b) => (a.confirmedAt || 0) - (b.confirmedAt || 0));
   let h = '<div class="loop-card"><div class="title">🔄 循環線留位（07:00 - 18:00）</div><div class="sub">留位後請撳「✅ 確認」<br>確認後乘客會收到通知</div></div>';
   if (pl.length === 0 && rl.length === 0) { h += '<div class="waiting-big"><div class="icon">🔄</div><h3>暫時冇乘客留位</h3><p>循環線時段（07:00 - 18:00）<br>乘客留位後會即時顯示</p></div>'; }
-  if (pl.length > 0) { h += '<div class="card-title" style="margin-bottom:8px;color:#fdba74;">🔔 待你確認（' + pl.length + '）</div>'; pl.forEach((x, i) => { h += '<div class="loop-wait" style="border-left-color:#fb923c;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div class="name">#' + (i + 1) + ' ' + esc(x.name) + '</div><div class="phone">' + esc(x.phone) + ' · ' + (x.seats || 1) + ' 人</div></div></div><div class="actions"><button class="btn-board" onclick="driverConfirmLoop(\'' + x.id + '\')">✅ 確認</button><button class="btn-cancel" onclick="driverRejectLoop(\'' + x.id + '\')">❌ 拒絕</button></div></div>'; }); }
-  if (rl.length > 0) { h += '<div class="card-title" style="margin:16px 0 8px;color:#4ade80;">✅ 已確認留位（' + rl.length + '）</div>'; rl.forEach((x, i) => { h += '<div class="loop-wait"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div class="name">#' + (i + 1) + ' ' + esc(x.name) + '</div><div class="phone">' + esc(x.phone) + ' · ' + (x.seats || 1) + ' 人</div></div></div><div style="font-size:12px;color:#4ade80;margin-top:6px;">已確認，等候上車</div></div>'; }); }
+  if (pl.length > 0) { h += '<div class="card-title" style="margin-bottom:8px;color:#fdba74;">🔔 待你確認（' + pl.length + '）</div>'; pl.forEach((x, i) => { const bookTime = x.createdAt ? new Date(x.createdAt).toLocaleString('zh-HK', {hour:'2-digit',minute:'2-digit',hour12:false}) : ''; h += '<div class="loop-wait" style="border-left-color:#fb923c;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div class="name">#' + (i + 1) + ' ' + esc(x.name) + '</div><div class="phone">📞 ' + esc(x.phone) + ' · ' + (x.seats || 1) + ' 人</div>' + (x.pickupLocation ? '<div class="pickup">📍 ' + esc(x.pickupLocation) + '</div>' : '<div class="pickup" style="color:#f87171;">📍 未填上車地點</div>') + (bookTime ? '<div class="booktime">⏰ 留位時間 ' + bookTime + '</div>' : '') + '</div></div><div class="actions"><button class="btn-board" onclick="driverConfirmLoop(\'' + x.id + '\')">✅ 確認</button><button class="btn-cancel" onclick="driverRejectLoop(\'' + x.id + '\')">❌ 拒絕</button></div></div>'; }); }
+  if (rl.length > 0) { h += '<div class="card-title" style="margin:16px 0 8px;color:#4ade80;">✅ 已確認留位（' + rl.length + '）</div>'; rl.forEach((x, i) => { const bookTime = x.createdAt ? new Date(x.createdAt).toLocaleString('zh-HK', {hour:'2-digit',minute:'2-digit',hour12:false}) : ''; h += '<div class="loop-wait"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div class="name">#' + (i + 1) + ' ' + esc(x.name) + '</div><div class="phone">📞 ' + esc(x.phone) + ' · ' + (x.seats || 1) + ' 人</div>' + (x.pickupLocation ? '<div class="pickup">📍 ' + esc(x.pickupLocation) + '</div>' : '') + (bookTime ? '<div class="booktime">⏰ 留位時間 ' + bookTime + '</div>' : '') + '</div></div><div style="font-size:12px;color:#4ade80;margin-top:6px;">已確認，等候上車</div></div>'; }); }
   c.innerHTML = h;
 }
+
 async function driverConfirmLoop(id) {
   try {
     const t = getToday();
@@ -1202,6 +1114,7 @@ async function driverConfirmLoop(id) {
     toast('✅ 已確認留位', 2000);
   } catch (e) { toast('失敗：' + e.message); }
 }
+
 async function driverRejectLoop(id) {
   if (!confirm('確定拒絕呢位乘客？')) return;
   try {
@@ -1213,6 +1126,7 @@ async function driverRejectLoop(id) {
     toast('❌ 已拒絕', 2000);
   } catch (e) { toast('失敗：' + e.message); }
 }
+
 async function driverConfirm(d, id, p) {
   try {
     const bs = await DL.getBookings(d);
@@ -1223,13 +1137,24 @@ async function driverConfirm(d, id, p) {
     toast('✅ 已確認留位', 2000);
   } catch (e) { toast('確認失敗：' + e.message); }
 }
+
 async function driverReject(d, id, p) {
   const r = prompt('拒絕原因（可以留空）：', '') || '';
   try {
+    const bs = await DL.getBookings(d);
+    const b = bs[id];
     await DL.updateBooking(d, id, { status: 'rejected', rejectedAt: now(), rejectedBy: p, rejectReason: r });
+    if (b && b.counterReserved && b.scheduleId) {
+      await DL.releaseSeatCounter(b.scheduleId, b.seats || 1);
+      await db.ref('booking/' + d + '/' + id).update({ counterReserved: false });
+    }
     toast('❌ 已拒絕', 2000);
   } catch (e) { toast('操作失敗：' + e.message); }
 }
+
+/* ============================================================
+   管理端
+   ============================================================ */
 async function renderAdmin() {
   const c = document.getElementById('admin-content');
   const t = getToday();
@@ -1247,15 +1172,44 @@ async function renderAdmin() {
   } catch (e) { h += '<div class="card" style="color:#f87171;">載入失敗：' + esc(e.message) + '</div>'; }
   c.innerHTML = h;
 }
+
 function renderInfo() {
   const c = document.getElementById('info-content');
-  c.innerHTML = '<div class="card"><div class="card-title">🚐 服務資訊</div><div style="font-size:13px;line-height:1.8;"><strong style="color:#38bdf8;">路線：</strong>大棠黃泥墩 ↔ 元朗港鐵站 H 出口（途經大棠路）</div></div><div class="card"><div class="card-title">🕐 星期一至五</div><div style="font-size:13px;line-height:1.9;"><strong style="color:#22c55e;">🌅 早上固定班次（大棠黃泥墩開出）：</strong><br>06:20 ｜ 06:30 ｜ 06:40 ｜ 06:50<br><br><strong style="color:#0ea5e9;">🔄 循環線時段（07:00 - 18:00）：</strong><br>無固定班次，可使用「循環線留位」<br>留位後司機確認，有位就上車<br><br><strong style="color:#fdba74;">🌆 傍晚固定班次（元朗港鐵站 H 出口開出）：</strong><br>18:15 ｜ 18:30 ｜ 18:45 ｜ 19:00 ｜ 19:15<br>19:30 ｜ 19:45 ｜ 20:00 ｜ 20:20（尾班車）</div></div><div class="card"><div class="card-title">💡 循環線留位點運作？</div><div style="font-size:13px;line-height:1.9;">1. 乘客撳「立即留位」<br>2. 司機收到通知，撳「✅ 確認」<br>3. 乘客到站頭等候上車<br>4. 上車後，乘客自己撳「我已上車」<br>5. 冇上車會扣信用分</div></div><div class="card" style="text-align:center;font-size:12px;color:#64748b;">© 浚鍵管理有限公司<br>小巴留座系統 v6.0</div>';
+  c.innerHTML = '<div class="card"><div class="card-title">🚐 服務資訊</div><div style="font-size:13px;line-height:1.8;"><strong style="color:#38bdf8;">路線：</strong>大棠黃泥墩 ↔ 元朗港鐵站 H 出口（途經大棠路）</div></div><div class="card"><div class="card-title">🕐 星期一至五</div><div style="font-size:13px;line-height:1.9;"><strong style="color:#22c55e;">🌅 早上固定班次（大棠黃泥墩開出）：</strong><br>06:20 ｜ 06:30 ｜ 06:40 ｜ 06:50<br><br><strong style="color:#0ea5e9;">🔄 循環線時段（07:00 - 18:00）：</strong><br>無固定班次，可使用「循環線留位」<br>留位後司機確認，有位就上車<br><br><strong style="color:#fdba74;">🌆 傍晚固定班次（元朗港鐵站 H 出口開出）：</strong><br>18:15 ｜ 18:30 ｜ 18:45 ｜ 19:00 ｜ 19:15<br>19:30 ｜ 19:45 ｜ 20:00 ｜ 20:20（尾班車）</div></div><div class="card"><div class="card-title">💡 循環線留位點運作？</div><div style="font-size:13px;line-height:1.9;">1. 乘客填寫上車地點，撳「立即留位」<br>2. 司機收到通知，撳「✅ 確認」<br>3. 乘客到站頭等候上車<br>4. 上車後，乘客自己撳「我已上車」<br>5. 冇上車會扣信用分</div></div><div class="card"><div class="card-title">📊 信用分制度</div><div style="font-size:13px;line-height:1.9;">• 初始 100 分<br>• 未到站（no-show）-20 分<br>• 連續 5 次準時 +5 分<br>• 低於 60 分：暫停 7 日<br>• 低於 30 分：暫停 30 日<br>• 每日最多取消 3 次</div></div><div class="card" style="text-align:center;font-size:12px;color:#64748b;">© 浚鍵管理有限公司<br>小巴留座系統 v7.0</div>';
 }
-document.addEventListener('keydown', function (e) { if (e.key !== 'Enter') return; if (document.getElementById('login-phone')) passengerLogin(); });
-window.addEventListener('popstate', function (e) { if (currentScreen !== 'home') { openModule('home'); history.pushState(null, '', location.href); } });
-db.ref('.info/connected').on('value', snap => { if (snap.val() === true) console.log('☁️ Firebase 已連線'); else console.log('⚠️ Firebase 離線'); });
+
+/* ============================================================
+   自動清理 + 準時獎勵
+   ============================================================ */
+async function awardCreditForGoodBehavior() {
+  try {
+    const t = getToday();
+    const bs = await DL.getBookings(t);
+    for (const [id, b] of Object.entries(bs)) {
+      if (b.status !== 'boarded' && b.status !== 'arrived') continue;
+      if (b.creditAwarded) continue;
+      const st = getShiftTime(b.date, b.time);
+      if (now() < st + 30 * 60 * 1000) continue;
+      const pd = await DL.getPassenger(b.passengerPhone) || {};
+      const cs = pd.creditScore != null ? pd.creditScore : 100;
+      if (cs >= 100) {
+        await db.ref('booking/' + t + '/' + id).update({ creditAwarded: true });
+        continue;
+      }
+      const streak = (pd.streakCount || 0) + 1;
+      if (streak >= 5) {
+        await DL.updateCreditScore(b.passengerPhone, +5, { streakCount: 0 });
+        await db.ref('booking/' + t + '/' + id).update({ creditAwarded: true });
+        console.log('✅ 乘客 ' + b.passengerPhone + ' 連續 5 次準時，+5 分');
+      } else {
+        await DL.savePassenger(b.passengerPhone, { streakCount: streak });
+        await db.ref('booking/' + t + '/' + id).update({ creditAwarded: true });
+      }
+    }
+  } catch (e) { console.warn('獎勵信用分失敗:', e); }
+}
+
 async function autoCleanExpiredBookings() {
-  if (!isWeekday()) return;
   try {
     const t = getToday();
     const bs = await DL.getBookings(t);
@@ -1263,33 +1217,54 @@ async function autoCleanExpiredBookings() {
       if (b.status !== 'reserved' && b.status !== 'pending') continue;
       const st = getShiftTime(b.date, b.time);
       if (now() > st + 5 * 60 * 1000) {
-        await DL.updateBooking(b.date, id, { status: 'no-show', noShowAt: now() });
-        if (b.status === 'reserved') { const cfg = await DL.getSeatConfig(b.date, b.time); if (cfg && cfg.plate) { await db.ref('van/active_buses/' + cfg.plate + '/passengerCount').transaction(c => Math.max(0, (c || 0) - (b.seats || 1))); } }
-        const pd = await DL.getPassenger(b.passengerPhone) || {};
-        const ns = Math.max(0, (pd.creditScore != null ? pd.creditScore : 100) - 20);
-        const patch = { creditScore: ns, totalNoShows: (pd.totalNoShows || 0) + 1 };
-        if (ns < 30) patch.suspendedUntil = now() + 30 * 24 * 60 * 60 * 1000;
-        else if (ns < 60) patch.suspendedUntil = now() + 7 * 24 * 60 * 60 * 1000;
-        await DL.savePassenger(b.passengerPhone, patch);
+        if (b.status === 'pending') {
+          await DL.updateBooking(b.date, id, { status: 'cancelled', cancelledAt: now(), autoCancelled: 'pending_timeout' });
+          if (b.counterReserved && b.scheduleId) {
+            await DL.releaseSeatCounter(b.scheduleId, b.seats || 1);
+            await db.ref('booking/' + b.date + '/' + id).update({ counterReserved: false });
+          }
+          console.log('⏰ pending 超時自動取消（不扣分）:', id);
+        } else if (b.status === 'reserved') {
+          await DL.updateBooking(b.date, id, { status: 'no-show', noShowAt: now() });
+          const cfg = await DL.getSeatConfig(b.date, b.time);
+          if (cfg && cfg.plate) {
+            await db.ref('van/active_buses/' + cfg.plate + '/passengerCount').transaction(c => Math.max(0, (c || 0) - (b.seats || 1)));
+          }
+          if (b.counterReserved && b.scheduleId) {
+            await DL.releaseSeatCounter(b.scheduleId, b.seats || 1);
+            await db.ref('booking/' + b.date + '/' + id).update({ counterReserved: false });
+          }
+          await DL.updateCreditScore(b.passengerPhone, -20, { totalNoShows: (await DL.getPassenger(b.passengerPhone) || {}).totalNoShows + 1 || 1, streakCount: 0 });
+        }
       }
     }
     const l = await DL.getLoopQueue(t);
     for (const [id, x] of Object.entries(l)) {
-      if (x.status === 'pending' && now() - (x.createdAt || 0) > LOOP_TIMEOUT) { await DL.removeLoopQueue(t, id); }
+      if (x.status === 'pending' && now() - (x.createdAt || 0) > LOOP_TIMEOUT) {
+        /* ✅ 修復 #5：改為 expired 狀態，唔直接刪除 */
+        await DL.updateLoopQueue(t, id, { status: 'expired', expiredAt: now() });
+      }
       else if (x.status === 'reserved' && now() - (x.confirmedAt || 0) > LOOP_NOSHOW) {
         await DL.removeLoopQueue(t, id);
-        const pd = await DL.getPassenger(x.phone) || {};
-        const ns = Math.max(0, (pd.creditScore != null ? pd.creditScore : 100) - 10);
-        const patch = { creditScore: ns, totalNoShows: (pd.totalNoShows || 0) + 1 };
-        if (ns < 30) patch.suspendedUntil = now() + 30 * 24 * 60 * 60 * 1000;
-        else if (ns < 60) patch.suspendedUntil = now() + 7 * 24 * 60 * 60 * 1000;
-        await DL.savePassenger(x.phone, patch);
+        await DL.updateCreditScore(x.phone, -10, { totalNoShows: (await DL.getPassenger(x.phone) || {}).totalNoShows + 1 || 1, streakCount: 0 });
+      }
+      else if (x.status === 'expired' && now() - (x.expiredAt || 0) > 2 * 60 * 60 * 1000) {
+        await DL.removeLoopQueue(t, id);
       }
     }
-  } catch (e) {}
+    await awardCreditForGoodBehavior();
+  } catch (e) { console.warn('自動清理失敗:', e); }
 }
+
+/* ============================================================
+   初始化
+   ============================================================ */
+document.addEventListener('keydown', function (e) { if (e.key !== 'Enter') return; if (document.getElementById('login-phone')) passengerLogin(); });
+window.addEventListener('popstate', function (e) { if (currentScreen !== 'home') { openModule('home'); history.pushState(null, '', location.href); } });
+db.ref('.info/connected').on('value', snap => { if (snap.val() === true) console.log('☁️ Firebase 已連線'); else console.log('⚠️ Firebase 離線'); });
+
 (async function init() {
-  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v6.0 啟動');
+  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v7.0 啟動');
   currentPassenger = loadPassengerSession();
   try { await ensureAuth(); } catch (e) { console.warn(e); }
   updateHomeStats();
