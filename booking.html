@@ -61,7 +61,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC
 .nav-item .icon { font-size: 20px; display: block; margin-bottom: 2px; }
 .booking-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 10px; margin-bottom: 8px; background: #0f172a; border-left: 4px solid #334155; }
 .booking-item.arrived { border-left-color: #22c55e; }
-.booking-item.not-arrived { border-left-color: #f59e0b; }
 .booking-name { font-size: 15px; font-weight: 600; }
 .booking-phone { font-size: 12px; color: #64748b; }
 .driver-top { background: linear-gradient(135deg, #052e16, #065f46); border: 2px solid #22c55e; border-radius: 14px; padding: 18px; text-align: center; margin-bottom: 16px; }
@@ -136,7 +135,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC
 
 <!-- ✅ 按 routes.js BUSY_GO / BUSY_BACK 真實站點 -->
 <datalist id="pickup-list-morning">
-  <!-- 早更：大棠黃泥墩開出（BUSY_GO 順序）-->
   <option value="大棠黃泥墩"></option>
   <option value="大棠山路巴士站"></option>
   <option value="大棠村迴旋處"></option>
@@ -161,7 +159,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC
 </datalist>
 
 <datalist id="pickup-list-evening">
-  <!-- 夜更：元朗港鐵站開出（BUSY_BACK 順序）-->
   <option value="元朗港鐵站"></option>
   <option value="朗和路"></option>
   <option value="鳳翔路"></option>
@@ -249,14 +246,14 @@ const GPS_WONG = { lat: 22.416313, lng: 114.022155 };
 const GPS_YUEN = { lat: 22.445758, lng: 114.037078 };
 const SM = ['06:20','06:30','06:40','06:50'];
 const SE = ['18:15','18:30','18:45','19:00','19:15','19:30','19:45','20:00','20:20'];
-const GPS_R = 30;                            // ✅ 精準 30 米
+const GPS_R = 30;
 const AT = 5 * 60 * 1000;
 const LS = 7;
 const LE = 18;
 const LOOP_TIMEOUT = 30 * 60 * 1000;
 const LOOP_NOSHOW = 1 * 60 * 60 * 1000;
 const MAX_CANCEL_PER_DAY = 3;
-const TRACK_INTERVAL = 5000;                 // GPS 每 5 秒寫一次
+const TRACK_INTERVAL = 5000;
 
 function toast(m, d = 3000) {
   const e = document.getElementById('toast');
@@ -362,52 +359,40 @@ const DL = {
   async removeLoopQueue(d, i) {
     return db.ref('booking_loop/' + d + '/' + i).remove();
   },
-  /* ✅ 超賣修復：用 booking/{date} 本身做 transaction（避免新節點權限問題）*/
-  async reserveSeatSlot(d, sid, seats, quota) {
-    const ref = db.ref('booking_seat_locks/' + sid);
-    const result = await ref.transaction(current => {
-      const used = current || 0;
-      if (used + seats > quota) return;
-      return used + seats;
-    });
-    return result.committed;
+  /* ✅ 簡化：唔用 transaction，只用普通讀寫（小巴量細，可接受） */
+  async getSeatLocks(sid) {
+    const s = await db.ref('booking_seat_locks/' + sid).once('value');
+    return s.val() || 0;
   },
-  async releaseSeatSlot(sid, seats) {
-    const ref = db.ref('booking_seat_locks/' + sid);
-    await ref.transaction(current => {
-      const used = current || 0;
-      return Math.max(0, used - seats);
-    });
+  async setSeatLocks(sid, n) {
+    return db.ref('booking_seat_locks/' + sid).set(Math.max(0, n));
   },
-  /* ✅ 信用分用 Transaction，防並發覆蓋 */
+  /* ✅ 信用分用普通讀寫（避免 transaction 權限問題） */
   async updateCreditScore(phone, delta, extraPatch) {
-    const ref = db.ref('booking_passengers/' + phone);
-    await ref.transaction(current => {
-      const pd = current || {};
-      const cs = pd.creditScore != null ? pd.creditScore : 100;
-      const ns = Math.max(0, Math.min(100, cs + delta));
-      const patch = Object.assign({}, pd, { creditScore: ns, lastCreditUpdate: now() });
-      if (extraPatch) Object.assign(patch, extraPatch);
-      if (ns < 30) patch.suspendedUntil = now() + 30 * 24 * 60 * 60 * 1000;
-      else if (ns < 60) patch.suspendedUntil = now() + 7 * 24 * 60 * 60 * 1000;
-      else delete patch.suspendedUntil;
-      return patch;
-    });
+    const pd = await DL.getPassenger(phone) || {};
+    const cs = pd.creditScore != null ? pd.creditScore : 100;
+    const ns = Math.max(0, Math.min(100, cs + delta));
+    const patch = { creditScore: ns, lastCreditUpdate: now() };
+    if (extraPatch) Object.assign(patch, extraPatch);
+    if (ns < 30) patch.suspendedUntil = now() + 30 * 24 * 60 * 60 * 1000;
+    else if (ns < 60) patch.suspendedUntil = now() + 7 * 24 * 60 * 60 * 1000;
+    else patch.suspendedUntil = null;
+    return DL.savePassenger(phone, patch);
   },
   async incrCancelCount(phone, date) {
-    const ref = db.ref('booking_cancel_count/' + date + '/' + phone);
-    await ref.transaction(c => (c || 0) + 1);
+    const cur = await DL.getCancelCount(phone, date);
+    return db.ref('booking_cancel_count/' + date + '/' + phone).set(cur + 1);
   },
   async getCancelCount(phone, date) {
     const s = await db.ref('booking_cancel_count/' + date + '/' + phone).once('value');
     return s.val() || 0;
   },
-  /* ✅ 乘客 GPS 位置追蹤 */
-  async writePassengerTracking(date, bookingId, data) {
-    return db.ref('passenger_tracking/' + date + '/' + bookingId).update(data);
+  /* ✅ 乘客位置：寫入 booking/{date}/{id}/passengerLocation（已有權限） */
+  async writePassengerLocation(date, bookingId, data) {
+    return db.ref('booking/' + date + '/' + bookingId + '/passengerLocation').update(data);
   },
-  async removePassengerTracking(date, bookingId) {
-    return db.ref('passenger_tracking/' + date + '/' + bookingId).remove();
+  async clearPassengerLocation(date, bookingId) {
+    return db.ref('booking/' + date + '/' + bookingId + '/passengerLocation').remove();
   }
 };
 
@@ -425,7 +410,6 @@ let driverFirstLoad = true;
 let loopFirstLoad = true;
 let waitingRoomListener = null;
 let gpsWatchId = null;
-let gpsTrackInterval = null;
 let gpsLastWrite = 0;
 let gpsMarkedBookingId = null;
 let loopPassengerRef = null;
@@ -758,13 +742,15 @@ async function confirmBooking(d, t) {
     const today = getToday();
     const cancelCount = await DL.getCancelCount(currentPassenger.phone, today);
     if (cancelCount >= MAX_CANCEL_PER_DAY) throw new Error('今日取消次數已達上限，請明日再試');
-    const committed = await DL.reserveSeatSlot(d, sid, seats, quota);
-    if (!committed) throw new Error('剩餘留位額不足');
+    /* ✅ 簡單檢查（唔用 transaction，避免權限問題）*/
+    const tb = await DL.getBookings(d);
+    const used = Object.values(tb).filter(b => b.scheduleId === sid && ['pending', 'reserved', 'arrived', 'boarded'].includes(b.status)).reduce((s, b) => s + (b.seats || 0), 0);
+    if (used + seats > quota) throw new Error('剩餘留位額不足');
     const b = {
       scheduleId: sid, date: d, time: t,
       passengerName: name, passengerPhone: currentPassenger.phone,
       seats: seats, status: 'pending', direction: getDir(t),
-      pickupLocation: pickupLocation, counterReserved: true
+      pickupLocation: pickupLocation
     };
     const sv = await DL.addBooking(d, b);
     try {
@@ -824,7 +810,6 @@ function renderWaitingRoomUI(b, d, id) {
     h += '<button class="btn btn-outline" style="margin-top:10px;" onclick="cancelBooking(\'' + b.id + '\',\'' + b.date + '\')">取消預約</button>';
   }
   c.innerHTML = h;
-  /* ✅ 司機確認後即時啟動 GPS（唔等發車前） */
   if (b.status === 'reserved') {
     updateCountdown(b.date, b.time);
     if (currentTrackingBookingId !== b.id) {
@@ -840,7 +825,7 @@ async function passengerBoardFixed(id, d) {
   if (!confirm('確定你已上車？')) return;
   try {
     await DL.updateBooking(d, id, { status: 'boarded', boardedAt: now() });
-    await DL.removePassengerTracking(d, id);
+    await DL.clearPassengerLocation(d, id);
     stopGPS();
     currentTrackingBookingId = null;
     toast('✅ 已上車');
@@ -864,16 +849,12 @@ async function cancelBooking(id, d) {
   try {
     const b = (await DL.getBookings(d))[id];
     await DL.cancelBooking(d || getToday(), id);
-    if (b && b.counterReserved && b.scheduleId) {
-      await DL.releaseSeatSlot(b.scheduleId, b.seats || 1);
-      await db.ref('booking/' + (d || getToday()) + '/' + id).update({ counterReserved: false });
-    }
     if (b && b.status === 'reserved') {
       const cfg = await DL.getSeatConfig(d, b.time);
       if (cfg && cfg.plate) {
         await db.ref('van/active_buses/' + cfg.plate + '/passengerCount').transaction(c => Math.max(0, (c || 0) - (b.seats || 1)));
       }
-      await DL.removePassengerTracking(d, id);
+      await DL.clearPassengerLocation(d, id);
     }
     await DL.incrCancelCount(currentPassenger.phone, d || getToday());
     stopGPS();
@@ -884,7 +865,7 @@ async function cancelBooking(id, d) {
   } catch (e) { toast('取消失敗：' + e.message); }
 }
 
-/* ✅ GPS 即時追蹤：寫入 Firebase 畀司機睇 */
+/* ✅ GPS 即時追蹤：寫入 booking/{date}/{id}/passengerLocation */
 function startGPS(id, d, t) {
   if (!navigator.geolocation) {
     const x = document.getElementById('gps-text');
@@ -908,10 +889,9 @@ function startGPS(id, d, t) {
       const sub = document.getElementById('gps-sub');
       const accuracy = Math.round(pos.coords.accuracy || 0);
       const n = now();
-      /* 每 TRACK_INTERVAL 毫秒寫入一次 Firebase */
       if (n - gpsLastWrite > TRACK_INTERVAL) {
         gpsLastWrite = n;
-        DL.writePassengerTracking(d, id, {
+        DL.writePassengerLocation(d, id, {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           distance: Math.round(dd),
@@ -920,8 +900,7 @@ function startGPS(id, d, t) {
           arrived: dd <= GPS_R,
           name: currentPassenger ? currentPassenger.name : '',
           phone: currentPassenger ? currentPassenger.phone : '',
-          time: t,
-          pickupLocation: (document.getElementById('loop-pickup')?.value || '') || ''
+          time: t
         }).catch(() => {});
       }
       if (!box || !text || !sub) return;
@@ -968,7 +947,7 @@ async function markArrived(id, d, lat, lng, accuracy) {
       arrivedAccuracy: accuracy,
       arrivedAuto: true
     });
-    await DL.writePassengerTracking(d, id, { arrived: true, arrivedAt: now() });
+    await DL.writePassengerLocation(d, id, { arrived: true, arrivedAt: now() });
     toast('✅ 已自動確認到站！', 3000);
   } catch (e) {}
 }
@@ -1056,7 +1035,7 @@ function switchDriverTab(t) {
   else { bf.className = 'btn btn-outline'; bl.className = 'btn btn-primary'; df.style.display = 'none'; dl.style.display = 'block'; renderDriverLoopList(); }
 }
 
-/* ✅ 追蹤乘客 GPS 位置 */
+/* ✅ 乘客位置追蹤：直接由 booking 讀取 passengerLocation */
 let passengerTrackingRef = null;
 let passengerTrackingHandler = null;
 let currentPassengerTracking = {};
@@ -1067,25 +1046,33 @@ function startPassengerTracking(t) {
     passengerTrackingRef = null;
     passengerTrackingHandler = null;
   }
-  passengerTrackingRef = db.ref('passenger_tracking/' + t);
+  passengerTrackingRef = db.ref('booking/' + t);
   passengerTrackingHandler = (snap) => {
-    currentPassengerTracking = snap.val() || {};
-    /* 若固定班次列表已開啟，重新渲染 */
+    const all = snap.val() || {};
+    currentPassengerTracking = {};
+    Object.entries(all).forEach(([id, b]) => {
+      if (b && b.passengerLocation) currentPassengerTracking[id] = b.passengerLocation;
+    });
+    /* 重繪固定班次列表 */
     if (document.getElementById('driver-tab-fixed')?.style.display !== 'none') {
-      if (currentCachedBookings && Object.keys(currentCachedBookings).length > 0) {
-        const sc = document.getElementById('driver-tab-fixed').dataset.sc;
-        const allS = [...SM, ...SE];
-        if (sc) {
-          try {
-            const scObj = JSON.parse(sc);
-            renderDriverFixedHTML(currentCachedBookings, scObj, t, allS);
-          } catch (e) {}
-        }
+      const c = document.getElementById('driver-tab-fixed');
+      const scJson = c?.dataset?.sc;
+      if (scJson && currentCachedBookings && Object.keys(currentCachedBookings).length > 0) {
+        try {
+          const scObj = JSON.parse(scJson);
+          renderDriverFixedHTML(currentCachedBookings, scObj, t, [...SM, ...SE]);
+        } catch (e) {}
       }
+    }
+    /* 重繪循環線列表 */
+    if (document.getElementById('driver-tab-loop')?.style.display !== 'none') {
+      if (currentLoopCache) renderDriverLoopHTML(currentLoopCache);
     }
   };
   passengerTrackingRef.on('value', passengerTrackingHandler);
 }
+
+let currentLoopCache = null;
 
 async function renderDriverFixedList() {
   const c = document.getElementById('driver-tab-fixed');
@@ -1098,9 +1085,7 @@ async function renderDriverFixedList() {
   currentCachedBookings = init;
   Object.keys(init).forEach(i => driverKnownBookingIds.add(i));
   driverFirstLoad = false;
-  /* 將 seat config 存入 dataset，方便追蹤更新時重用 */
   if (c) c.dataset.sc = JSON.stringify(sc);
-  /* 啟動乘客位置追蹤 */
   startPassengerTracking(t);
   renderDriverFixedHTML(init, sc, t, allS);
   const r = db.ref('booking/' + t);
@@ -1187,6 +1172,7 @@ async function renderDriverLoopList() {
   const init = await DL.getLoopQueue(t);
   Object.keys(init).forEach(i => driverKnownLoopIds.add(i));
   loopFirstLoad = false;
+  currentLoopCache = init;
   startPassengerTracking(t);
   renderDriverLoopHTML(init);
   const r = db.ref('booking_loop/' + t);
@@ -1209,6 +1195,7 @@ async function renderDriverLoopList() {
     }
     driverKnownLoopIds = nid;
     loopFirstLoad = false;
+    currentLoopCache = all;
     renderDriverLoopHTML(all);
   };
   r.on('value', driverLoopListener);
@@ -1247,7 +1234,7 @@ async function driverRejectLoop(id) {
     const x = all[id];
     if (!x) { toast('找不到留位'); return; }
     await DL.removeLoopQueue(t, id);
-    await DL.removePassengerTracking(t, id);
+    await DL.clearPassengerLocation(t, id);
     toast('❌ 已拒絕', 2000);
   } catch (e) { toast('失敗：' + e.message); }
 }
@@ -1269,10 +1256,13 @@ async function driverReject(d, id, p) {
     const bs = await DL.getBookings(d);
     const b = bs[id];
     await DL.updateBooking(d, id, { status: 'rejected', rejectedAt: now(), rejectedBy: p, rejectReason: r });
-    if (b && b.counterReserved && b.scheduleId) {
-      await DL.releaseSeatSlot(b.scheduleId, b.seats || 1);
-      await db.ref('booking/' + d + '/' + id).update({ counterReserved: false });
+    if (b && b.status === 'reserved') {
+      const cfg = await DL.getSeatConfig(d, b.time);
+      if (cfg && cfg.plate) {
+        await db.ref('van/active_buses/' + cfg.plate + '/passengerCount').transaction(c => Math.max(0, (c || 0) - (b.seats || 1)));
+      }
     }
+    await DL.clearPassengerLocation(d, id);
     toast('❌ 已拒絕', 2000);
   } catch (e) { toast('操作失敗：' + e.message); }
 }
@@ -1299,7 +1289,7 @@ async function renderAdmin() {
 
 function renderInfo() {
   const c = document.getElementById('info-content');
-  c.innerHTML = '<div class="card"><div class="card-title">🚐 服務資訊</div><div style="font-size:13px;line-height:1.8;"><strong style="color:#38bdf8;">路線：</strong>大棠黃泥墩 ↔ 元朗港鐵站 H 出口（途經大棠路）</div></div><div class="card"><div class="card-title">🕐 星期一至五</div><div style="font-size:13px;line-height:1.9;"><strong style="color:#22c55e;">🌅 早上固定班次（大棠黃泥墩開出）：</strong><br>06:20 ｜ 06:30 ｜ 06:40 ｜ 06:50<br><br><strong style="color:#0ea5e9;">🔄 循環線時段（07:00 - 18:00）：</strong><br>無固定班次，可使用「循環線留位」<br>留位後司機確認，有位就上車<br><br><strong style="color:#fdba74;">🌆 傍晚固定班次（元朗港鐵站 H 出口開出）：</strong><br>18:15 ｜ 18:30 ｜ 18:45 ｜ 19:00 ｜ 19:15<br>19:30 ｜ 19:45 ｜ 20:00 ｜ 20:20（尾班車）</div></div><div class="card"><div class="card-title">💡 留位點運作？</div><div style="font-size:13px;line-height:1.9;">1. 乘客填寫上車地點（可揀或自行輸入）<br>2. 司機確認留位 → 乘客手機 GPS 即時啟動<br>3. 乘客行到站頭（30 米內）→ 自動通知司機<br>4. 司機介面見到「🟢 已到站」<br>5. 上車後乘客撳「我已上車」</div></div><div class="card"><div class="card-title">📊 信用分制度</div><div style="font-size:13px;line-height:1.9;">• 初始 100 分<br>• 未到站（no-show）-20 分<br>• 連續 5 次準時 +5 分<br>• 低於 60 分：暫停 7 日<br>• 低於 30 分：暫停 30 日<br>• 每日最多取消 3 次</div></div><div class="card" style="text-align:center;font-size:12px;color:#64748b;">© 浚鍵管理有限公司<br>小巴留座系統 v8.0</div>';
+  c.innerHTML = '<div class="card"><div class="card-title">🚐 服務資訊</div><div style="font-size:13px;line-height:1.8;"><strong style="color:#38bdf8;">路線：</strong>大棠黃泥墩 ↔ 元朗港鐵站 H 出口（途經大棠路）</div></div><div class="card"><div class="card-title">🕐 星期一至五</div><div style="font-size:13px;line-height:1.9;"><strong style="color:#22c55e;">🌅 早上固定班次（大棠黃泥墩開出）：</strong><br>06:20 ｜ 06:30 ｜ 06:40 ｜ 06:50<br><br><strong style="color:#0ea5e9;">🔄 循環線時段（07:00 - 18:00）：</strong><br>無固定班次，可使用「循環線留位」<br>留位後司機確認，有位就上車<br><br><strong style="color:#fdba74;">🌆 傍晚固定班次（元朗港鐵站 H 出口開出）：</strong><br>18:15 ｜ 18:30 ｜ 18:45 ｜ 19:00 ｜ 19:15<br>19:30 ｜ 19:45 ｜ 20:00 ｜ 20:20（尾班車）</div></div><div class="card"><div class="card-title">💡 留位點運作？</div><div style="font-size:13px;line-height:1.9;">1. 乘客填寫上車地點（可揀或自行輸入）<br>2. 司機確認留位 → 乘客手機 GPS 即時啟動<br>3. 乘客行到站頭（30 米內）→ 自動通知司機<br>4. 司機介面見到「🟢 已到站」<br>5. 上車後乘客撳「我已上車」</div></div><div class="card"><div class="card-title">📊 信用分制度</div><div style="font-size:13px;line-height:1.9;">• 初始 100 分<br>• 未到站（no-show）-20 分<br>• 連續 5 次準時 +5 分<br>• 低於 60 分：暫停 7 日<br>• 低於 30 分：暫停 30 日<br>• 每日最多取消 3 次</div></div><div class="card" style="text-align:center;font-size:12px;color:#64748b;">© 浚鍵管理有限公司<br>小巴留座系統 v8.1</div>';
 }
 
 /* ============================================================
@@ -1343,10 +1333,6 @@ async function autoCleanExpiredBookings() {
       if (now() > st + 5 * 60 * 1000) {
         if (b.status === 'pending') {
           await DL.updateBooking(b.date, id, { status: 'cancelled', cancelledAt: now(), autoCancelled: 'pending_timeout' });
-          if (b.counterReserved && b.scheduleId) {
-            await DL.releaseSeatSlot(b.scheduleId, b.seats || 1);
-            await db.ref('booking/' + b.date + '/' + id).update({ counterReserved: false });
-          }
           console.log('⏰ pending 超時自動取消（不扣分）:', id);
         } else if (b.status === 'reserved') {
           await DL.updateBooking(b.date, id, { status: 'no-show', noShowAt: now() });
@@ -1354,11 +1340,7 @@ async function autoCleanExpiredBookings() {
           if (cfg && cfg.plate) {
             await db.ref('van/active_buses/' + cfg.plate + '/passengerCount').transaction(c => Math.max(0, (c || 0) - (b.seats || 1)));
           }
-          if (b.counterReserved && b.scheduleId) {
-            await DL.releaseSeatSlot(b.scheduleId, b.seats || 1);
-            await db.ref('booking/' + b.date + '/' + id).update({ counterReserved: false });
-          }
-          await DL.removePassengerTracking(b.date, id);
+          await DL.clearPassengerLocation(b.date, id);
           const pd = await DL.getPassenger(b.passengerPhone) || {};
           await DL.updateCreditScore(b.passengerPhone, -20, { totalNoShows: (pd.totalNoShows || 0) + 1, streakCount: 0 });
         }
@@ -1371,7 +1353,7 @@ async function autoCleanExpiredBookings() {
       }
       else if (x.status === 'reserved' && now() - (x.confirmedAt || 0) > LOOP_NOSHOW) {
         await DL.removeLoopQueue(t, id);
-        await DL.removePassengerTracking(t, id);
+        await DL.clearPassengerLocation(t, id);
         const pd = await DL.getPassenger(x.phone) || {};
         await DL.updateCreditScore(x.phone, -10, { totalNoShows: (pd.totalNoShows || 0) + 1, streakCount: 0 });
       }
@@ -1399,24 +1381,26 @@ db.ref('.info/connected').on('value', snap => {
 });
 
 (async function init() {
-  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v8.0 啟動');
+  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v8.1 啟動');
   currentPassenger = loadPassengerSession();
   try { await ensureAuth(); } catch (e) { console.warn(e); }
   updateHomeStats();
   setInterval(autoCleanExpiredBookings, 60 * 1000);
   setTimeout(autoCleanExpiredBookings, 5000);
   setInterval(() => { if (currentScreen === 'home') updateHomeStats(); }, 30 * 1000);
-  /* 每 5 秒清理一次舊嘅 passenger_tracking（超過 2 分鐘冇更新） */
+  /* 每 30 秒清理過期乘客位置（超過 2 分鐘冇更新） */
   setInterval(async () => {
     try {
       const t = getToday();
-      const snap = await db.ref('passenger_tracking/' + t).once('value');
+      const snap = await db.ref('booking/' + t).once('value');
       const all = snap.val() || {};
       const stale = {};
-      Object.entries(all).forEach(([id, tr]) => {
-        if (!tr.updatedAt || now() - tr.updatedAt > 2 * 60 * 1000) stale[id] = null;
+      Object.entries(all).forEach(([id, b]) => {
+        if (b && b.passengerLocation && b.passengerLocation.updatedAt && now() - b.passengerLocation.updatedAt > 2 * 60 * 1000) {
+          stale[id + '/passengerLocation'] = null;
+        }
       });
-      if (Object.keys(stale).length > 0) await db.ref('passenger_tracking/' + t).update(stale);
+      if (Object.keys(stale).length > 0) await db.ref('booking/' + t).update(stale);
     } catch (e) {}
   }, 30 * 1000);
   history.pushState(null, '', location.href);
