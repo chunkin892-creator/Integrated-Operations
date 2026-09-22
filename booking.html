@@ -2,1873 +2,334 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>浚鍵管理有限公司 · 小巴留座系統</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>西鐵小巴系統</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚐</text></svg>">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ua-parser-js@1.0.37/dist/ua-parser.min.js"></script>
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-  background: #0a0f1a;
-  color: #e2e8f0;
-  min-height: 100vh;
-}
-.app {
-  max-width: 480px;
-  margin: 0 auto;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.header {
-  background: linear-gradient(135deg, #0f172a, #1e293b);
-  padding: 18px 16px;
-  text-align: center;
-  border-bottom: 1px solid #1e293b;
-}
-.header h1 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #38bdf8;
-}
-.header .sub {
-  font-size: 11px;
-  color: #64748b;
-  margin-top: 4px;
-}
-.header .company {
-  font-size: 13px;
-  color: #94a3b8;
-  font-weight: 600;
-}
-.screen {
-  display: none;
-  flex: 1;
-  padding: 16px;
-}
-.screen.active {
-  display: block;
-}
-.btn {
-  display: block;
-  width: 100%;
-  padding: 16px;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-}
-.btn-primary {
-  background: #0ea5e9;
-  color: #fff;
-}
-.btn-success {
-  background: #22c55e;
-  color: #fff;
-}
-.btn-danger {
-  background: #ef4444;
-  color: #fff;
-}
-.btn-outline {
-  background: transparent;
-  border: 1px solid #334155;
-  color: #94a3b8;
-}
-.btn-sm {
-  padding: 10px 16px;
-  font-size: 14px;
-  border-radius: 8px;
-  width: auto;
-  display: inline-block;
-}
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.card {
-  background: #1e293b;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 12px;
-  border: 1px solid #334155;
-}
-.card-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #94a3b8;
-  margin-bottom: 8px;
-}
-.module-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.module-card {
-  background: #1e293b;
-  border-radius: 16px;
-  padding: 20px 16px;
-  border: 1px solid #334155;
-  text-align: center;
-  cursor: pointer;
-}
-.module-card:active {
-  background: #334155;
-}
-.module-card .icon {
-  font-size: 32px;
-  margin-bottom: 8px;
-}
-.module-card .name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #f1f5f9;
-}
-.module-card .desc {
-  font-size: 11px;
-  color: #64748b;
-  margin-top: 4px;
-}
-.shift-card {
-  background: #1e293b;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 10px;
-  border: 1px solid #334155;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-.shift-card.full {
-  opacity: 0.5;
-}
-.shift-time {
-  font-size: 22px;
-  font-weight: 700;
-  color: #f1f5f9;
-}
-.shift-info {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 4px;
-}
-.shift-info.morning {
-  color: #4ade80;
-  font-weight: 600;
-}
-.shift-info.evening {
-  color: #fdba74;
-  font-weight: 600;
-}
-.shift-seats {
-  text-align: right;
-}
-.shift-seats .num {
-  font-size: 28px;
-  font-weight: 700;
-  color: #22c55e;
-}
-.shift-seats .num.low {
-  color: #f59e0b;
-}
-.shift-seats .num.zero {
-  color: #ef4444;
-}
-.shift-seats .label {
-  font-size: 11px;
-  color: #64748b;
-}
-.badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.badge-green {
-  background: #052e16;
-  color: #4ade80;
-}
-.badge-yellow {
-  background: #422006;
-  color: #fbbf24;
-}
-.badge-red {
-  background: #450a0a;
-  color: #f87171;
-}
-.badge-blue {
-  background: #082f49;
-  color: #38bdf8;
-}
-.badge-orange {
-  background: #431407;
-  color: #fdba74;
-}
-.input-group {
-  margin-bottom: 14px;
-}
-.input-group label {
-  display: block;
-  font-size: 13px;
-  color: #94a3b8;
-  margin-bottom: 6px;
-}
-.input-group input,
-.input-group select {
-  width: 100%;
-  padding: 14px;
-  border-radius: 10px;
-  border: 1px solid #334155;
-  background: #0f172a;
-  color: #f1f5f9;
-  font-size: 16px;
-  outline: none;
-}
-.toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1e293b;
-  color: #f1f5f9;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-size: 14px;
-  z-index: 9999;
-  opacity: 0;
-  transition: opacity 0.3s;
-  border: 1px solid #334155;
-  max-width: 90%;
-  text-align: center;
-}
-.toast.show {
-  opacity: 1;
-}.bottom-nav {
-  display: flex;
-  background: #1e293b;
-  border-top: 1px solid #334155;
-  position: sticky;
-  bottom: 0;
-}
-.nav-item {
-  flex: 1;
-  padding: 12px;
-  text-align: center;
-  font-size: 11px;
-  color: #64748b;
-  cursor: pointer;
-  border: none;
-  background: none;
-}
-.nav-item.active {
-  color: #38bdf8;
-}
-.nav-item .icon {
-  font-size: 20px;
-  display: block;
-  margin-bottom: 2px;
-}
-.booking-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  border-radius: 10px;
-  margin-bottom: 8px;
-  background: #0f172a;
-  border-left: 4px solid #334155;
-}
-.booking-item.arrived {
-  border-left-color: #22c55e;
-}
-.booking-item.not-arrived {
-  border-left-color: #f59e0b;
-}
-.booking-name {
-  font-size: 15px;
-  font-weight: 600;
-}
-.booking-phone {
-  font-size: 12px;
-  color: #64748b;
-}
-.driver-top {
-  background: linear-gradient(135deg, #052e16, #065f46);
-  border: 2px solid #22c55e;
-  border-radius: 14px;
-  padding: 18px;
-  text-align: center;
-  margin-bottom: 16px;
-}
-.driver-top .plate {
-  font-size: 42px;
-  font-weight: 900;
-  color: #4ade80;
-  letter-spacing: 4px;
-  line-height: 1;
-}
-.driver-top .seats {
-  font-size: 18px;
-  color: #86efac;
-  margin-top: 8px;
-  font-weight: 700;
-}
-.driver-top .status {
-  font-size: 14px;
-  color: #86efac;
-  margin-top: 6px;
-}
-.driver-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  margin-top: 12px;
-}
-.driver-info-grid .cell {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-  padding: 8px;
-  text-align: center;
-}
-.driver-info-grid .cell .num {
-  font-size: 24px;
-  font-weight: 900;
-}
-.driver-info-grid .cell .lbl {
-  font-size: 10px;
-  color: #86efac;
-  margin-top: 2px;
-}
-.alert-banner {
-  background: linear-gradient(135deg, #7c2d12, #c2410c);
-  border: 2px solid #fb923c;
-  border-radius: 14px;
-  padding: 16px;
-  text-align: center;
-  margin-bottom: 16px;
-}
-.alert-banner .icon {
-  font-size: 36px;
-  margin-bottom: 8px;
-}
-.alert-banner .text {
-  font-size: 18px;
-  font-weight: 900;
-  color: #fff;
-}
-.alert-banner .sub {
-  font-size: 13px;
-  color: #fed7aa;
-  margin-top: 4px;
-}
-.big-shift {
-  background: #1e293b;
-  border-radius: 16px;
-  padding: 18px;
-  margin-bottom: 14px;
-  border: 2px solid #334155;
-}
-.big-shift .time {
-  font-size: 36px;
-  font-weight: 900;
-  color: #38bdf8;
-  line-height: 1;
-}
-.big-shift .origin {
-  font-size: 16px;
-  color: #94a3b8;
-  margin-top: 6px;
-  font-weight: 600;
-}
-.big-shift .counts {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 14px;
-}
-.big-shift .seat-num {
-  font-size: 40px;
-  font-weight: 900;
-  color: #22c55e;
-  line-height: 1;
-}
-.big-shift .seat-num.low {
-  color: #f59e0b;
-}
-.big-shift .seat-num.zero {
-  color: #ef4444;
-}
-.big-shift .seat-label {
-  font-size: 12px;
-  color: #64748b;
-  text-align: right;
-}
-.big-shift .arrived-count {
-  font-size: 16px;
-  color: #22c55e;
-  font-weight: 700;
-}
-.big-shift .pending-count {
-  font-size: 16px;
-  color: #fdba74;
-  font-weight: 700;
-}
-.big-shift.full {
-  border-color: #ef4444;
-  background: #450a0a;
-}
-.big-shift.full .seat-num {
-  color: #f87171;
-}
-.big-shift.full .time {
-  color: #f87171;
-}
-.full-label {
-  display: block;
-  text-align: center;
-  font-size: 28px;
-  font-weight: 900;
-  color: #f87171;
-  margin-top: 10px;
-  letter-spacing: 4px;
-}
-.pending-box {
-  background: #1c1917;
-  border: 2px solid #fb923c;
-  border-radius: 12px;
-  padding: 12px;
-  margin-top: 10px;
-}
-.pending-box .pending-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #fdba74;
-  margin-bottom: 8px;
-}
-.pending-item {
-  background: #0f172a;
-  border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 8px;
-  border-left: 4px solid #fb923c;
-}
-.pending-item .name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #fff;
-}
-.pending-item .phone {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-top: 2px;
-}
-.pending-item .actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-.pending-item .actions button {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.pending-item .actions .btn-confirm {
-  background: #22c55e;
-  color: #fff;
-}
-.pending-item .actions .btn-reject {
-  background: #ef4444;
-  color: #fff;
-}
-.waiting-big {
-  text-align: center;
-  padding: 48px 16px;
-  background: #1e293b;
-  border-radius: 16px;
-  border: 2px dashed #475569;
-}
-.waiting-big .icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-.waiting-big h3 {
-  font-size: 20px;
-  color: #94a3b8;
-  margin-bottom: 8px;
-}
-.waiting-big p {
-  font-size: 14px;
-  color: #64748b;
-  line-height: 1.6;
-}
-.bus-pick {
-  background: #1e293b;
-  border-radius: 14px;
-  padding: 18px;
-  margin-bottom: 12px;
-  border: 2px solid #38bdf8;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.bus-pick .plate {
-  font-size: 26px;
-  font-weight: 900;
-  color: #38bdf8;
-}
-.bus-pick .info {
-  font-size: 13px;
-  color: #94a3b8;
-  margin-top: 4px;
-}
-.bus-pick .arrow {
-  font-size: 28px;
-  color: #38bdf8;
-}
-.loop-card {
-  background: linear-gradient(135deg, #0c4a6e, #075985);
-  border: 2px solid #0ea5e9;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 12px;
-}
-.loop-card .title {
-  font-size: 16px;
-  font-weight: 900;
-  color: #7dd3fc;
-}
-.loop-card .sub {
-  font-size: 12px;
-  color: #bae6fd;
-  margin-top: 4px;
-}
-.loop-wait {
-  background: #0f172a;
-  border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 8px;
-  border-left: 4px solid #0ea5e9;
-}
-.loop-wait .name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #fff;
-}
-.loop-wait .phone {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-top: 2px;
-}
-.loop-wait .actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-.loop-wait .actions button {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.loop-wait .actions .btn-board {
-  background: #22c55e;
-  color: #fff;
-}
-.loop-wait .actions .btn-cancel {
-  background: #ef4444;
-  color: #fff;
-}
+:root{--bg:#0f0f0f;--card:#1c1c1e;--gold:#fc0;--blue:#0a84ff;--red:#ff453a;--green:#30d158;--purple:#bf5af2;--orange:#ff9500;--radius:16px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.header{padding:10px;text-align:center;border-bottom:1px solid #333;flex-shrink:0;position:relative}
+.title{font-size:32px;font-weight:800;color:var(--gold)}
+.dev-tag{font-size:16px;color:#aaa;cursor:pointer}
+.global-voice-toggle{position:absolute;top:8px;right:10px;width:52px;height:52px;border-radius:50%;background:var(--green);border:none;color:#fff;font-size:26px;cursor:pointer}
+.global-voice-toggle.muted{background:var(--red)}
+.view{display:none;flex:1;overflow-y:auto;padding:12px;flex-direction:column}
+.view.active{display:flex}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid #333}
+.btn{width:100%;padding:18px;border-radius:16px;font-size:24px;font-weight:700;border:none;cursor:pointer;color:#fff;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn:active{opacity:.8;transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-portal{background:linear-gradient(135deg,#0a84ff,#06c)}
+.btn-driver{background:linear-gradient(135deg,#ff453a,#c62828)}
+.btn-secondary{background:#3a3a3c}
+.btn-warn{background:#ff9f0a;color:#000}
+.btn-green{background:var(--green)}
+.btn-red{background:var(--red)}
+.btn-purple{background:var(--purple)}
+.btn-google{background:#fff;color:#000;border:1px solid #ddd}
+.row{display:flex;gap:12px;margin-bottom:10px}
+.row>*{flex:1}
+.badge{display:inline-block;padding:8px 20px;border-radius:20px;font-weight:700;font-size:18px;margin:4px}
+.badge-red{background:var(--red)}
+.badge-blue{background:var(--blue)}
+.badge-purple{background:var(--purple)}
+.big-number{font-size:56px;font-weight:800;text-align:center;margin:4px 0;color:var(--gold)}
+.station-name{font-size:32px;font-weight:700;text-align:center;margin:4px 0;color:var(--gold)}
+.msg-area{background:#1a1a1a;border-radius:14px;padding:12px;margin-top:8px}
+.msg-list{max-height:200px;overflow-y:auto;margin-bottom:8px;font-size:16px;display:flex;flex-direction:column}
+.msg-row{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #333;flex-wrap:wrap}
+.msg-input{flex:1;padding:14px;border-radius:12px;border:none;font-size:18px;background:#2c2c2e;color:#fff;min-width:100px}
+.record-btn,.send-btn{width:56px;height:56px;border-radius:14px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;position:relative}
+.record-btn{background:#ff9f0a;color:#000;font-size:26px}
+.record-btn.recording{background:red;color:#fff;animation:pulse .6s infinite}
+.send-btn{background:var(--blue);color:#fff;font-size:18px;font-weight:700}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 28px;border-radius:30px;font-size:18px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90%}
+.toast.show{opacity:1}
+.login-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.login-modal.active{display:flex}
+.login-card{background:#1c1c1e;border:2px solid var(--gold);border-radius:20px;padding:24px;max-width:400px;width:100%;text-align:center}
+.login-card input{width:100%;padding:16px;margin:8px 0;border-radius:12px;border:none;font-size:20px;background:#2c2c2e;color:#fff}
+.login-card .btn{font-size:22px;padding:16px}
+.login-card .btn-secondary{background:#3a3a3c;color:#fff;margin-top:8px}
+.route-strip{display:flex;overflow-x:auto;gap:14px;padding:16px 10px;border-top:2px solid #555;margin-top:12px;background:rgba(255,255,255,0.05);border-radius:12px;min-height:80px;scroll-behavior:smooth;align-items:center}
+.dot-node{flex:0 0 180px;text-align:center;font-size:18px;white-space:nowrap;flex-shrink:0;padding:4px 0}
+.dot{width:32px;height:32px;border-radius:50%;background:#444;margin:0 auto 6px;border:3px solid #666;transition:all .3s}
+.dot-node.current .dot{background:#00ff66;box-shadow:0 0 24px #00ff66;border-color:#fff;transform:scale(1.15)}
+.dot-node.current span{color:#fff;font-weight:800;font-size:20px}
+.dot-node.next .dot{background:#00ff66;animation:blink .8s infinite;border-color:#fff}
+.dot-node.next span{color:#00ff66;font-weight:700}
+.dot-node.passed .dot{background:#666;border-color:#888;opacity:.5}
+.dot-node.passed span{color:#888}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.9)}}
+.play-audio{background:var(--blue);color:#fff;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:15px}
+.walkie-talkie{background:#2c1a3a;border:2px solid var(--gold);border-radius:16px;padding:16px;margin-top:8px}
+.walkie-talkie .btn{font-size:28px;padding:20px}
+.walkie-talkie .record-btn{width:72px;height:72px;font-size:32px}
+.admin-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.admin-tab{flex:1;min-width:70px;padding:12px 8px;background:#2c2c2e;border:none;color:#888;border-radius:12px;cursor:pointer;font-size:16px;font-weight:700;transition:.3s}
+.admin-tab.active{background:var(--gold);color:#000}
+.admin-section{display:none}
+.admin-section.active{display:block}
+.admin-stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.admin-stat-card{background:#2c2c2e;border-radius:12px;padding:12px;text-align:center}
+.admin-stat-card .label{font-size:14px;color:#888}
+.admin-stat-card .value{font-size:28px;font-weight:800;color:var(--gold)}
+.admin-item{background:#2c2c2e;border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid var(--blue)}
+.admin-item .title{font-size:18px;font-weight:700;color:var(--gold)}
+.admin-item .info{font-size:15px;color:#ccc}
+.admin-input{flex:1;padding:14px;border-radius:10px;border:none;font-size:18px;background:#2c2c2e;color:#fff;min-width:60px}
+.floating-announce{position:fixed;bottom:80px;right:16px;width:60px;height:60px;border-radius:50%;background:var(--green);border:none;color:#fff;font-size:28px;cursor:pointer;z-index:15;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.floating-announce.has-new{background:var(--orange);animation:pulse-orange 1s infinite}
+@keyframes pulse-orange{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.announce-bell{position:fixed;top:10px;right:68px;z-index:30;background:#333;color:#fff;border:none;border-radius:50%;width:44px;height:44px;font-size:22px;display:none;align-items:center;justify-content:center;cursor:pointer}
+.announce-bell.has-announce{display:flex;background:#fc0;color:#000}
+.announce-bell .dot-badge{position:absolute;top:-2px;right:-2px;background:red;border-radius:50%;width:12px;height:12px}
+.announce-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:30;display:none;flex-direction:column;padding:16px}
+.announce-overlay.show{display:flex}
+.announce-list{flex:1;overflow-y:auto;background:#1a1a1a;border-radius:14px;padding:12px;margin-top:12px}
+.announce-item{background:#2c2c2e;border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid var(--gold)}
+.announce-item .time{font-size:12px;color:#888}
+.announce-item .text{font-size:16px}
+.announce-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:40;display:none;align-items:center;justify-content:center;padding:20px}
+.announce-modal.active{display:flex}
+.announce-modal .modal-card{background:#2c1a3a;border:2px solid var(--gold);border-radius:20px;padding:24px;max-width:400px;width:100%;text-align:center}
+.announce-modal .modal-text{font-size:22px;color:#fff;margin-bottom:12px}
+.announce-modal .close-btn{background:var(--gold);color:#000;border:none;padding:12px 24px;border-radius:12px;font-size:20px;font-weight:700;cursor:pointer}
+.msg-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:20;display:none;flex-direction:column;padding:16px}
+.msg-overlay.show{display:flex}
+.donate-card{background:#2c1a3a;border:2px solid var(--gold);border-radius:16px;padding:16px;text-align:center;margin-top:8px}
+.donate-card .fps-code{background:#000;padding:12px;border-radius:12px;display:inline-block;font-size:20px;color:var(--gold);cursor:pointer}
+#voice-toggle{font-size:28px!important;padding:20px!important;min-height:80px}
+.toggle-btn{background:var(--blue);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px;margin-bottom:8px}
+.wake-lock-status{position:fixed;bottom:20px;left:16px;font-size:14px;color:#888;z-index:10;background:rgba(0,0,0,.7);padding:6px 14px;border-radius:12px;border:1px solid #333}
+.wake-lock-status.active{color:var(--green);border-color:var(--green)}
+.admin-online-list{max-height:200px;overflow-y:auto;background:#1a1a1a;border-radius:10px;padding:8px;margin:8px 0}
+.admin-online-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #333;cursor:pointer;border-radius:6px;transition:background .2s}
+.admin-online-item:hover{background:#2a2a2a}
+.admin-online-item .name{color:#fff;font-weight:600}
+.admin-online-item .info{color:#888;font-size:13px}
+.admin-online-item .action-btn{background:var(--red);border:none;color:#fff;padding:4px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+.admin-online-item .action-btn.ban{background:var(--orange);color:#000}
+.admin-online-item .action-btn.kick{background:var(--red)}
+.msg-time{color:#888;font-size:12px;margin-right:6px;flex-shrink:0}
+.connection-status{position:fixed;top:60px;left:50%;transform:translateX(-50%);padding:6px 20px;border-radius:20px;font-size:14px;z-index:100;display:none}
+.connection-status.offline{background:var(--red);color:#fff;display:block}
+.connection-status.online{background:var(--green);color:#fff;display:block}
+.admin-role-badge{background:#ff9f0a;color:#000;padding:4px 12px;border-radius:12px;font-size:14px;font-weight:bold;display:inline-block;margin-left:8px}
+.gps-debug{background:#1a1a1a;border-radius:8px;padding:8px 12px;margin-top:6px;font-size:14px;color:#aaa;border:1px solid #333;word-break:break-all}
+.msg-notification{position:fixed;bottom:-80px;left:0;right:0;background:linear-gradient(135deg,#2c1a3a,#1a0a2e);border-top:3px solid var(--gold);padding:14px 20px;z-index:60;transition:bottom .5s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;justify-content:space-between;box-shadow:0 -8px 30px rgba(0,0,0,.8);border-radius:20px 20px 0 0;max-width:500px;margin:0 auto}
+.msg-notification.show{bottom:0}
+.msg-notification .msg-icon{font-size:28px;margin-right:12px;animation:bounceIn .5s ease}
+.msg-notification .msg-content{flex:1;font-size:16px;font-weight:600;color:#fff;line-height:1.4}
+.msg-notification .msg-content small{display:block;font-weight:400;font-size:13px;color:#aaa}
+.msg-notification .msg-close-btn{background:transparent;border:none;color:#888;font-size:22px;cursor:pointer;padding:4px 10px;border-radius:30px}
+@keyframes bounceIn{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+<style>
+.booking-notify-bar{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:calc(100% - 20px);max-width:460px;background:linear-gradient(135deg,#7c2d12,#c2410c);border:2px solid #fb923c;border-radius:14px;padding:14px;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.6);display:none}
+.booking-notify-bar.show{display:block}
+.booking-notify-bar .bn-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.2)}
+.booking-notify-bar .bn-title{font-size:16px;font-weight:900;color:#fff}
+.booking-notify-bar .bn-count{background:#fff;color:#c2410c;font-size:14px;font-weight:900;padding:2px 10px;border-radius:20px}
+.booking-notify-bar .bn-close{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fed7aa;font-size:12px;padding:4px 12px;border-radius:20px;cursor:pointer;margin-left:8px}
+.booking-notify-bar .bn-item{background:rgba(0,0,0,.3);border-radius:10px;padding:10px;margin-bottom:8px}
+.booking-notify-bar .bn-item:last-child{margin-bottom:0}
+.booking-notify-bar .bn-name{font-size:15px;font-weight:700;color:#fff}
+.booking-notify-bar .bn-detail{font-size:12px;color:#fed7aa;margin-top:2px}
+.booking-notify-bar .bn-actions{display:flex;gap:8px;margin-top:10px}
+.booking-notify-bar .bn-actions button{flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+.booking-notify-bar .bn-confirm{background:#22c55e;color:#fff}
+.booking-notify-bar .bn-reject{background:#ef4444;color:#fff}
+.booking-notify-bar .bn-list{max-height:280px;overflow-y:auto}
 </style>
-</head><body>
-<div class="app">
-  <div class="header">
-    <div class="company">浚鍵管理有限公司</div>
-    <h1>小巴留座系統</h1>
-    <div class="sub">大棠黃泥墩 ↔ 元朗港鐵站 H 出口</div>
-  </div>
-
-  <div class="screen active" id="screen-home">
-    <div class="module-grid">
-      <div class="module-card" onclick="openModule('booking')">
-        <div class="icon">🚐</div>
-        <div class="name">小巴留座</div>
-        <div class="desc">乘客預約</div>
-      </div>
-      <div class="module-card" onclick="openModule('driver')">
-        <div class="icon">🧑‍✈️</div>
-        <div class="name">司機端</div>
-        <div class="desc">當值 · 確認</div>
-      </div>
-      <div class="module-card" onclick="openModule('admin')">
-        <div class="icon">⚙️</div>
-        <div class="name">管理</div>
-        <div class="desc">當值 · 狀況</div>
-      </div>
-      <div class="module-card" onclick="openModule('info')">
-        <div class="icon">ℹ️</div>
-        <div class="name">服務資訊</div>
-        <div class="desc">班次 · 時間</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📊 今日概況</div>
-      <div style="display: flex; gap: 8px;">
-        <div style="flex: 1; text-align: center; padding: 12px; background: #422006; border-radius: 10px; border: 1px solid #f59e0b;">
-          <div style="font-size: 24px; font-weight: 700; color: #fbbf24;" id="home-pending">0</div>
-          <div style="font-size: 11px; color: #94a3b8;">待確認</div>
-        </div>
-        <div style="flex: 1; text-align: center; padding: 12px; background: #052e16; border-radius: 10px; border: 1px solid #22c55e;">
-          <div style="font-size: 24px; font-weight: 700; color: #4ade80;" id="home-confirmed">0</div>
-          <div style="font-size: 11px; color: #94a3b8;">已確認</div>
-        </div>
-        <div style="flex: 1; text-align: center; padding: 12px; background: #0c4a6e; border-radius: 10px; border: 1px solid #0ea5e9;">
-          <div style="font-size: 24px; font-weight: 700; color: #7dd3fc;" id="home-loop">0</div>
-          <div style="font-size: 11px; color: #94a3b8;">循環留位</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="screen" id="screen-booking"><div id="booking-content"></div></div>
-  <div class="screen" id="screen-driver"><div id="driver-content"></div></div>
-  <div class="screen" id="screen-admin"><div id="admin-content"></div></div>
-  <div class="screen" id="screen-info"><div id="info-content"></div></div>
-
-  <div class="bottom-nav" id="bottom-nav" style="display: none;">
-    <button class="nav-item active" onclick="navTo('home')"><span class="icon">🏠</span>首頁</button>
-    <button class="nav-item" onclick="navTo('booking')"><span class="icon">🚐</span>留座</button>
-    <button class="nav-item" onclick="navTo('driver')"><span class="icon">🧑‍✈️</span>司機</button>
-  </div>
-
-  <div class="toast" id="toast"></div>
-</div><script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAX7Zy5br1ozGOGxHvDeFNY-Ldcjjw8Qgc",
-  authDomain: "triple-login-version.firebaseapp.com",
-  databaseURL: "https://triple-login-version-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "triple-login-version",
-  storageBucket: "triple-login-version.firebasestorage.app",
-  messagingSenderId: "66459706459",
-  appId: "1:66459706459:web:28f99a455652f393da0b7e"
-};
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
-
-const GPS_WONG = { lat: 22.416280, lng: 114.021977 };
-const GPS_YUEN = { lat: 22.445847, lng: 114.037022 };
-const SM = ['06:20', '06:30', '06:40', '06:50'];
-const SE = ['18:15', '18:30', '18:45', '19:00', '19:15', '19:30', '19:45', '20:00', '20:20'];
-const GPS_R = 80;
-const AW = 15 * 60 * 1000;
-const AT = 5 * 60 * 1000;
-const LS = 7;
-const LE = 18;
-const LOOP_TIMEOUT = 30 * 60 * 1000;
-const LOOP_NOSHOW = 4 * 60 * 60 * 1000;
-
-function toast(m, d = 3000) {
-  const e = document.getElementById('toast');
-  e.textContent = m;
-  e.classList.add('show');
-  clearTimeout(e._t);
-  e._t = setTimeout(() => e.classList.remove('show'), d);
-}
-
-function now() {
-  return Date.now();
-}
-
-function getToday() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
-
-function isWeekday() {
-  const d = new Date().getDay();
-  return d >= 1 && d <= 5;
-}
-
-function dist(a, b, c, d) {
-  const R = 6371000;
-  const dl = (c - a) * Math.PI / 180;
-  const dn = (d - b) * Math.PI / 180;
-  const x = Math.sin(dl / 2) ** 2 + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(dn / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
-}
-
-function getShiftTime(d, t) {
-  const [h, m] = t.split(':').map(Number);
-  const x = new Date(d + 'T00:00:00');
-  x.setHours(h, m, 0, 0);
-  return x.getTime();
-}
-
-function getSid(d, t) {
-  return d + '_' + t.replace(':', '');
-}
-
-function getDir(t) {
-  return parseInt(t.split(':')[0]) < 12 ? 'morning' : 'evening';
-}
-
-function getGPS(t) {
-  return getDir(t) === 'morning' ? GPS_WONG : GPS_YUEN;
-}
-
-function getOrig(t) {
-  return getDir(t) === 'morning' ? '大棠黃泥墩' : '元朗港鐵站 H 出口';
-}
-
-function getOrigL(t) {
-  return getDir(t) === 'morning' ? '🌅 大棠黃泥墩開出' : '🌆 元朗港鐵站 H 出口開出';
-}
-
-function getDest(t) {
-  return getDir(t) === 'morning' ? '元朗港鐵站 H 出口' : '大棠黃泥墩';
-}
-
-function esc(s) {
-  if (s == null) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
-function isLoopHour() {
-  const h = new Date().getHours();
-  return isWeekday() && h >= LS && h < LE;
-}const DL = {
-  async getActiveBuses() {
-    const s = await db.ref('van/active_buses').once('value');
-    const all = s.val() || {};
-    const n = now();
-    const r = [];
-    Object.entries(all).forEach(([p, b]) => {
-      if (b && b.isActive && (n - (b.lastUpdate || 0) < AT)) r.push({ plate: p, ...b });
-    });
-    return r;
-  },
-  async getBookings(d) {
-    const s = await db.ref('booking/' + d).once('value');
-    return s.val() || {};
-  },
-  async addBooking(d, b) {
-    const r = db.ref('booking/' + d).push();
-    b.id = r.key;
-    b.createdAt = now();
-    await r.set(b);
-    return b;
-  },
-  async updateBooking(d, i, p) {
-    return db.ref('booking/' + d + '/' + i).update(p);
-  },
-  async cancelBooking(d, i) {
-    return DL.updateBooking(d, i, { status: 'cancelled', cancelledAt: now() });
-  },
-  async getPassenger(p) {
-    const s = await db.ref('booking_passengers/' + p).once('value');
-    return s.val();
-  },
-  async savePassenger(p, d) {
-    return db.ref('booking_passengers/' + p).update(d);
-  },
-  async getSeatConfig(d, t) {
-    const s = await db.ref('booking_seats/' + d + '/' + t.replace(':', '')).once('value');
-    return s.val();
-  },
-  async getAllSeatConfigs(d) {
-    const s = await db.ref('booking_seats/' + d).once('value');
-    return s.val() || {};
-  },
-  async getLoopQueue(d) {
-    const s = await db.ref('booking_loop/' + d).once('value');
-    return s.val() || {};
-  },
-  async addLoopQueue(d, i) {
-    const r = db.ref('booking_loop/' + d).push();
-    i.id = r.key;
-    i.createdAt = now();
-    await r.set(i);
-    return i;
-  },
-  async updateLoopQueue(d, i, p) {
-    return db.ref('booking_loop/' + d + '/' + i).update(p);
-  },
-  async removeLoopQueue(d, i) {
-    return db.ref('booking_loop/' + d + '/' + i).remove();
-  }
-};
-
-let currentDriver = null;
-let currentPassenger = null;
-let currentScreen = 'home';
-let driverListeners = [];
-let driverBookingListener = null;
-let driverLoopListener = null;
-let driverListenerDate = null;
-let currentCachedBookings = {};
-let driverKnownBookingIds = new Set();
-let driverKnownLoopIds = new Set();
-let driverFirstLoad = true;
-let loopFirstLoad = true;
-let waitingRoomListener = null;
-let gpsWatchId = null;
-let gpsMarkedBookingId = null;
-let loopPassengerRef = null;
-let loopPassengerHandler = null;
-
-function savePassengerSession(p) {
-  try { localStorage.setItem('booking_passenger', JSON.stringify(p)); } catch (e) {}
-}
-function loadPassengerSession() {
-  try {
-    const r = localStorage.getItem('booking_passenger');
-    return r ? JSON.parse(r) : null;
-  } catch (e) { return null; }
-}
-function clearPassengerSession() {
-  try { localStorage.removeItem('booking_passenger'); } catch (e) {}
-}
-function saveSelectedBus(p) {
-  try { localStorage.setItem('booking_selected_bus', p); } catch (e) {}
-}
-function loadSelectedBus() {
-  try { return localStorage.getItem('booking_selected_bus'); } catch (e) { return null; }
-}
-function clearSelectedBus() {
-  try { localStorage.removeItem('booking_selected_bus'); } catch (e) {}
-}
-
-async function ensureAuth() {
-  if (auth.currentUser) return auth.currentUser;
-  const r = await auth.signInAnonymously();
-  return r.user;
-}
-
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  currentScreen = id.replace('screen-', '');
-}
-
-function navTo(m) {
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  event.target.closest('.nav-item').classList.add('active');
-  openModule(m);
-}
-
-function openModule(m) {
-  document.getElementById('bottom-nav').style.display = 'flex';
-  if (m === 'home') {
-    showScreen('screen-home');
-    updateHomeStats();
-  } else if (m === 'booking') {
-    showScreen('screen-booking');
-    renderPassengerHome();
-  } else if (m === 'driver') {
-    showScreen('screen-driver');
-    renderDriverHome();
-  } else if (m === 'admin') {
-    showScreen('screen-admin');
-    renderAdmin();
-  } else if (m === 'info') {
-    showScreen('screen-info');
-    renderInfo();
-  }
-}
-
-async function updateHomeStats() {
-  try {
-    const t = getToday();
-    const b = await DL.getBookings(t);
-    let p = 0, c = 0;
-    Object.values(b).forEach(x => {
-      if (x.status === 'pending') p++;
-      if (x.status === 'reserved' || x.status === 'arrived' || x.status === 'boarded') c++;
-    });
-    const l = await DL.getLoopQueue(t);
-    let lc = 0;
-    Object.values(l).forEach(x => {
-      if (x.status === 'pending' || x.status === 'reserved') lc++;
-    });
-    document.getElementById('home-pending').textContent = p;
-    document.getElementById('home-confirmed').textContent = c;
-    document.getElementById('home-loop').textContent = lc;
-  } catch (e) {}
-}async function renderPassengerHome() {
-  const c = document.getElementById('booking-content');
-  if (waitingRoomListener) {
-    try { waitingRoomListener.off(); } catch (e) {}
-    waitingRoomListener = null;
-  }
-  if (!currentPassenger) currentPassenger = loadPassengerSession();
-  if (!currentPassenger) {
-    renderPassengerLogin(c);
-    return;
-  }
-  try {
-    const pd = await DL.getPassenger(currentPassenger.phone) || {};
-    const cs = pd.creditScore != null ? pd.creditScore : 100;
-    const su = pd.suspendedUntil || 0;
-    const t = getToday();
-    if (!isWeekday()) {
-      c.innerHTML = '<div class="card"><div class="card-title">📅 今日不設留座</div><div style="font-size:13px;color:#64748b;line-height:1.8;">星期六、日及公眾假期採循環線運作，不設留座。</div></div><button class="btn btn-outline" onclick="passengerLogout()">登出</button>';
-      return;
-    }
-    if (su > now()) {
-      const r = Math.ceil((su - now()) / (24 * 60 * 60 * 1000));
-      c.innerHTML = '<div class="card" style="border-color:#ef4444;background:#450a0a;"><div style="font-size:14px;font-weight:600;color:#f87171;">⛔ 預約資格已暫停</div><div style="font-size:12px;color:#fca5a5;margin-top:6px;">剩餘 ' + r + ' 日。</div></div><button class="btn btn-outline" onclick="passengerLogout()">登出</button>';
-      return;
-    }
-    let h = '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:15px;font-weight:600;">👤 ' + esc(pd.name || currentPassenger.name) + '</div><div style="font-size:12px;color:#64748b;margin-top:2px;">' + esc(currentPassenger.phone) + '</div></div><div style="text-align:right;"><div style="font-size:20px;font-weight:700;color:' + (cs >= 80 ? '#22c55e' : cs >= 50 ? '#f59e0b' : '#ef4444') + ';">' + cs + '</div><div style="font-size:10px;color:#64748b;">信用分</div></div></div></div>';
-    const tb = await DL.getBookings(t);
-    const sc = await DL.getAllSeatConfigs(t);
-    h += '<div class="card-title" style="margin-bottom:10px;">🌅 早上固定班次 · 大棠黃泥墩開出</div>';
-    for (const tm of SM) h += renderShiftCard(t, tm, tb, sc);
-    if (isLoopHour()) {
-      h += '<div class="loop-card"><div class="title">🔄 循環線留位（07:00 - 18:00）</div><div class="sub">冇固定班次，留位後司機確認，有位就上車</div></div><div id="loop-section"></div>';
-    }
-    h += '<div class="card-title" style="margin:16px 0 10px;">🌆 傍晚固定班次 · 元朗港鐵站 H 出口開出</div>';
-    for (const tm of SE) h += renderShiftCard(t, tm, tb, sc);
-    const mb = Object.values(tb).filter(b => b.passengerPhone === currentPassenger.phone && b.status !== 'cancelled' && b.status !== 'rejected');
-    if (mb.length > 0) {
-      h += '<div class="card-title" style="margin:16px 0 10px;">🎫 我的固定班次預約</div>';
-      mb.sort((a, b) => a.time.localeCompare(b.time));
-      mb.forEach(b => {
-        const m = {
-          'pending': { text: '⏳ 等待司機確認', color: '#fdba74', border: '#fb923c' },
-          'reserved': { text: '✅ 已確認留位', color: '#4ade80', border: '#22c55e' },
-          'arrived': { text: '✅ 已到站', color: '#4ade80', border: '#22c55e' },
-          'boarded': { text: '🚐 已上車', color: '#7dd3fc', border: '#38bdf8' },
-          'no-show': { text: '❌ 未到站', color: '#f87171', border: '#ef4444' }
-        };
-        const s = m[b.status] || { text: b.status, color: '#94a3b8', border: '#334155' };
-        h += '<div class="card" style="padding:12px;border-color:' + s.border + ';cursor:pointer;" onclick="openWaitingRoom(\'' + b.id + '\',\'' + b.date + '\',\'' + b.time + '\')"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:15px;font-weight:600;">' + esc(b.time) + ' 班次</div><div style="font-size:12px;color:#64748b;">' + esc(getOrig(b.time)) + ' · ' + b.seats + ' 人</div></div><div style="font-size:13px;color:' + s.color + ';font-weight:700;">' + s.text + '</div></div></div>';
-      });
-    }
-    h += '<button class="btn btn-outline" style="margin-top:20px;" onclick="passengerLogout()">登出</button>';
-    c.innerHTML = h;
-    if (isLoopHour()) loadLoopSection();
-  } catch (e) {
-    c.innerHTML = '<div class="card" style="border-color:#ef4444;"><div style="color:#f87171;">⚠️ ' + esc(e.message) + '</div></div><button class="btn btn-primary" onclick="renderPassengerHome()">🔄 重試</button>';
-  }
-}async function loadLoopSection() {
-  const s = document.getElementById('loop-section');
-  if (!s) return;
-  s.innerHTML = '<div class="card" style="text-align:center;color:#64748b;padding:20px;">🔄 載入中...</div>';
-  const t = getToday();
-  if (loopPassengerRef && loopPassengerHandler) {
-    try { loopPassengerRef.off('value', loopPassengerHandler); } catch (e) {}
-    loopPassengerRef = null;
-    loopPassengerHandler = null;
-  }
-  const buses = await DL.getActiveBuses();
-  let totalSeats = 0, currentPax = 0;
-  buses.forEach(b => {
-    totalSeats += (b.carSeats || 16);
-    currentPax += (b.passengerCount || 0);
-  });
-  const availSeats = Math.max(0, totalSeats - currentPax);
-  const r = db.ref('booking_loop/' + t);
-  const h = async (snap) => {
-    const all = snap.val() || {};
-    const my = Object.values(all).find(x => x.phone === currentPassenger.phone && (x.status === 'pending' || x.status === 'reserved'));
-    const waitingCount = Object.values(all).filter(x => x.status === 'pending').length;
-    const reservedCount = Object.values(all).filter(x => x.status === 'reserved').length;
-    const el = document.getElementById('loop-section');
-    if (!el) return;
-    if (my) {
-      if (my.status === 'pending') {
-        el.innerHTML = '<div class="loop-card" style="background:linear-gradient(135deg,#431407,#7c2d12);border-color:#fb923c;"><div class="title" style="color:#fdba74;">⏳ 等待司機確認</div><div class="sub" style="color:#fed7aa;">你嘅循環線留位已送出<br>司機確認後會即時通知你<br>前面仲有 <strong>' + Math.max(0, waitingCount - 1) + '</strong> 位乘客</div><button class="btn btn-danger" style="margin-top:12px;" onclick="loopCancel()">取消留位</button></div>';
-      } else if (my.status === 'reserved') {
-        el.innerHTML = '<div class="loop-card" style="background:linear-gradient(135deg,#052e16,#065f46);border-color:#22c55e;"><div class="title" style="color:#4ade80;">✅ 已確認留位</div><div class="sub" style="color:#86efac;">司機已確認你嘅留位<br>請到站頭等候上車<br>上車後撳「我已上車」</div><button class="btn btn-success" style="margin-top:12px;" onclick="loopBoarded()">🚐 我已上車</button><button class="btn btn-outline" style="margin-top:8px;" onclick="loopCancel()">取消留位</button></div>';
-      }
-    } else {
-      el.innerHTML = '<div class="loop-card"><div class="title" style="color:#7dd3fc;">🔄 循環線留位</div><div class="sub" style="color:#bae6fd;">而家循環線時段（07:00 - 18:00）<br>可留位座位：<strong style="font-size:18px;color:#4ade80;">' + availSeats + '</strong> 個<br>候補中：<strong>' + waitingCount + '</strong> 人 · 已確認：<strong>' + reservedCount + '</strong> 人<br><br>留位後司機確認，有位就上車</div><button class="btn btn-primary" style="margin-top:12px;" onclick="loopJoin()" ' + (availSeats <= 0 ? 'disabled' : '') + '>' + (availSeats <= 0 ? '❌ 暫無座位' : '✅ 立即留位') + '</button></div>';
-    }
-  };
-  r.on('value', h);
-  loopPassengerRef = r;
-  loopPassengerHandler = h;
-}
-
-async function loopJoin() {
-  try {
-    await ensureAuth();
-    const t = getToday();
-    const all = await DL.getLoopQueue(t);
-    const ex = Object.values(all).find(x => x.phone === currentPassenger.phone && (x.status === 'pending' || x.status === 'reserved'));
-    if (ex) {
-      toast('⚠️ 你已經留咗位');
-      return;
-    }
-    const pd = await DL.getPassenger(currentPassenger.phone) || {};
-    const cs = pd.creditScore != null ? pd.creditScore : 100;
-    if (cs < 50) {
-      toast('⚠️ 信用分不足');
-      return;
-    }
-    await DL.addLoopQueue(t, {
-      phone: currentPassenger.phone,
-      name: pd.name || currentPassenger.name,
-      seats: 1,
-      status: 'pending',
-      date: t
-    });
-    toast('✅ 已送出，等待司機確認', 3000);
-  } catch (e) {
-    toast('❌ 留位失敗：' + e.message);
-  }
-}
-
-async function loopCancel() {
-  if (!confirm('確定取消留位？')) return;
-  try {
-    const t = getToday();
-    const all = await DL.getLoopQueue(t);
-    const my = Object.values(all).find(x => x.phone === currentPassenger.phone && (x.status === 'pending' || x.status === 'reserved'));
-    if (my) await DL.removeLoopQueue(t, my.id);
-    toast('已取消留位');
-  } catch (e) {
-    toast('取消失敗：' + e.message);
-  }
-}
-
-async function loopBoarded() {
-  if (!confirm('確定你已上車？')) return;
-  try {
-    const t = getToday();
-    const all = await DL.getLoopQueue(t);
-    const my = Object.values(all).find(x => x.phone === currentPassenger.phone && x.status === 'reserved');
-    if (!my) {
-      toast('搵唔到留位記錄');
-      return;
-    }
-    await DL.updateLoopQueue(t, my.id, { status: 'boarded', boardedAt: now() });
-    const buses = await DL.getActiveBuses();
-    if (buses.length > 0) {
-      await db.ref('van/active_buses/' + buses[0].plate + '/passengerCount').transaction(c => (c || 0) + 1);
-    }
-    toast('✅ 已上車，祝旅途愉快', 3000);
-  } catch (e) {
-    toast('❌ 失敗：' + e.message);
-  }
-}function renderShiftCard(d, t, ab, sc) {
-  const sid = getSid(d, t);
-  const cfg = sc[t.replace(':', '')];
-  const dir = getDir(t);
-  if (!cfg || !cfg.seats) {
-    return '<div class="shift-card full" style="opacity:.4;"><div><div class="shift-time">' + esc(t) + '</div><div class="shift-info ' + (dir === 'morning' ? 'morning' : 'evening') + '">' + esc(getOrigL(t)) + '</div><div style="margin-top:6px;"><span class="badge badge-red">未開放</span></div></div><div class="shift-seats"><div class="num zero">—</div><div class="label">未開放</div></div></div>';
-  }
-  const quota = cfg.quota || cfg.seats;
-  const used = Object.values(ab).filter(b => b.scheduleId === sid && ['pending', 'reserved', 'arrived', 'boarded'].includes(b.status)).reduce((s, b) => s + (b.seats || 0), 0);
-  const rem = quota - used;
-  const full = rem <= 0;
-  const my = Object.values(ab).find(b => b.scheduleId === sid && b.passengerPhone === currentPassenger.phone && b.status !== 'cancelled' && b.status !== 'rejected' && b.status !== 'no-show');
-  let bg = '';
-  if (my) {
-    if (my.status === 'pending') bg = '<span class="badge badge-orange">⏳ 等待司機確認</span>';
-    else if (my.status === 'reserved') bg = '<span class="badge badge-yellow">✅ 已確認</span>';
-    else if (my.status === 'arrived') bg = '<span class="badge badge-green">已到站</span>';
-    else if (my.status === 'boarded') bg = '<span class="badge badge-blue">已上車</span>';
-  }
-  const clk = !full || my;
-  return '<div class="shift-card ' + (full && !my ? 'full' : '') + '" ' + (clk ? 'onclick="selectShift(\'' + d + '\',\'' + t + '\')"' : '') + '><div><div class="shift-time">' + esc(t) + '</div><div class="shift-info ' + (dir === 'morning' ? 'morning' : 'evening') + '">' + esc(getOrigL(t)) + '</div>' + (bg ? '<div style="margin-top:6px;">' + bg + '</div>' : '') + '<div style="font-size:10px;color:#64748b;margin-top:4px;">留位額：' + quota + ' 個</div></div><div class="shift-seats"><div class="num ' + (rem <= 0 ? 'zero' : rem <= 2 ? 'low' : '') + '">' + rem + '</div><div class="label">剩餘留位</div></div></div>';
-}
-
-function renderPassengerLogin(c) {
-  c.innerHTML = '<div class="card"><div class="card-title">📱 輸入電話號碼開始預約</div><div class="input-group"><label>電話號碼（8 位數字）</label><input type="tel" id="login-phone" placeholder="例如：91234567" maxlength="8" inputmode="numeric"></div><div class="input-group"><label>姓名</label><input type="text" id="login-name" placeholder="例如：陳先生" maxlength="20"></div><button class="btn btn-primary" id="passenger-login-btn" onclick="passengerLogin()">確認</button></div>';
-}
-
-async function passengerLogin() {
-  const btn = document.getElementById('passenger-login-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '處理中...'; }
-  const phone = document.getElementById('login-phone').value.trim();
-  const name = document.getElementById('login-name').value.trim();
-  if (!/^\d{8}$/.test(phone)) {
-    toast('請輸入 8 位數字');
-    if (btn) { btn.disabled = false; btn.textContent = '確認'; }
-    return;
-  }
-  if (!name || name.length > 20) {
-    toast('請輸入姓名（20 字內）');
-    if (btn) { btn.disabled = false; btn.textContent = '確認'; }
-    return;
-  }
-  try {
-    await ensureAuth();
-    const ex = await DL.getPassenger(phone) || {};
-    if (ex.suspendedUntil && ex.suspendedUntil > now()) {
-      const r = Math.ceil((ex.suspendedUntil - now()) / (24 * 60 * 60 * 1000));
-      toast('預約資格暫停中，剩餘 ' + r + ' 日');
-      if (btn) { btn.disabled = false; btn.textContent = '確認'; }
-      return;
-    }
-    await DL.savePassenger(phone, {
-      name: name,
-      phone: phone,
-      creditScore: ex.creditScore != null ? ex.creditScore : 100,
-      totalBookings: ex.totalBookings || 0,
-      totalNoShows: ex.totalNoShows || 0,
-      lastLogin: now()
-    });
-    currentPassenger = { phone: phone, name: name };
-    savePassengerSession(currentPassenger);
-    toast('✅ 登入成功');
-    renderPassengerHome();
-  } catch (e) {
-    toast('❌ ' + e.message, 5000);
-    if (btn) { btn.disabled = false; btn.textContent = '確認'; }
-  }
-}
-
-function passengerLogout() {
-  currentPassenger = null;
-  clearPassengerSession();
-  stopGPS();
-  if (waitingRoomListener) {
-    try { waitingRoomListener.off(); } catch (e) {}
-    waitingRoomListener = null;
-  }
-  if (loopPassengerRef && loopPassengerHandler) {
-    try { loopPassengerRef.off('value', loopPassengerHandler); } catch (e) {}
-    loopPassengerRef = null;
-    loopPassengerHandler = null;
-  }
-  renderPassengerHome();
-}
-
-async function selectShift(d, t) {
-  const c = document.getElementById('booking-content');
-  try {
-    const cfg = await DL.getSeatConfig(d, t);
-    if (!cfg || !cfg.seats) {
-      toast('此班次未開放預約');
-      return;
-    }
-    const quota = cfg.quota || cfg.seats;
-    const tb = await DL.getBookings(d);
-    const sid = getSid(d, t);
-    const used = Object.values(tb).filter(b => b.scheduleId === sid && ['pending', 'reserved', 'arrived', 'boarded'].includes(b.status)).reduce((s, b) => s + (b.seats || 0), 0);
-    const rem = quota - used;
-    const my = Object.values(tb).find(b => b.scheduleId === sid && b.passengerPhone === currentPassenger.phone && b.status !== 'cancelled' && b.status !== 'rejected' && b.status !== 'no-show');
-    if (my) {
-      toast('你已經預約咗呢個班次');
-      return;
-    }
-    const pd = await DL.getPassenger(currentPassenger.phone) || {};
-    c.innerHTML = '<div style="display:flex;align-items:center;margin-bottom:16px;"><button class="btn btn-outline btn-sm" onclick="renderPassengerHome()">← 返回</button></div><div class="card"><div class="card-title">🚐 預約班次</div><div style="font-size:28px;font-weight:700;color:#38bdf8;">' + esc(t) + '</div><div style="font-size:13px;color:#64748b;margin-top:4px;">' + esc(d) + '</div><div style="font-size:13px;margin-top:6px;font-weight:600;color:' + (getDir(t) === 'morning' ? '#4ade80' : '#fdba74') + ';">' + esc(getOrigL(t)) + '</div><div style="font-size:13px;color:#94a3b8;margin-top:4px;">→ ' + esc(getDest(t)) + '</div><div style="font-size:13px;color:#22c55e;margin-top:8px;">剩餘留位額：' + rem + ' 個（總共 ' + quota + '）</div></div><div class="card"><div class="input-group"><label>姓名</label><input type="text" id="book-name" value="' + esc(pd.name || currentPassenger.name) + '" maxlength="20"></div><div class="input-group"><label>人數</label><select id="book-seats"><option value="1">1 人</option><option value="2">2 人</option></select></div><button class="btn btn-primary" id="confirm-booking-btn" onclick="confirmBooking(\'' + d + '\',\'' + t + '\')">送出預約（待司機確認）</button><div style="font-size:12px;color:#94a3b8;margin-top:10px;text-align:center;line-height:1.6;">⚠️ 送出後需要司機確認<br>司機確認後才作實留位</div></div>';
-  } catch (e) {
-    toast('載入失敗：' + e.message);
-  }
-}
-
-async function confirmBooking(d, t) {
-  const btn = document.getElementById('confirm-booking-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '處理中...'; }
-  const name = document.getElementById('book-name').value.trim();
-  const seats = parseInt(document.getElementById('book-seats').value);
-  if (!name || name.length > 20) {
-    toast('請輸入姓名');
-    if (btn) { btn.disabled = false; btn.textContent = '送出預約'; }
-    return;
-  }
-  try {
-    await ensureAuth();
-    const cfg = await DL.getSeatConfig(d, t);
-    if (!cfg || !cfg.seats) throw new Error('此班次未開放');
-    const quota = cfg.quota || cfg.seats;
-    const tb = await DL.getBookings(d);
-    const sid = getSid(d, t);
-    const used = Object.values(tb).filter(b => b.scheduleId === sid && ['pending', 'reserved', 'arrived', 'boarded'].includes(b.status)).reduce((s, b) => s + (b.seats || 0), 0);
-    if (used + seats > quota) throw new Error('剩餘留位額不足');
-    const b = {
-      scheduleId: sid,
-      date: d,
-      time: t,
-      passengerName: name,
-      passengerPhone: currentPassenger.phone,
-      seats: seats,
-      status: 'pending',
-      direction: getDir(t)
-    };
-    const sv = await DL.addBooking(d, b);
-    try {
-      const pd = await DL.getPassenger(currentPassenger.phone) || {};
-      await DL.savePassenger(currentPassenger.phone, {
-        totalBookings: (pd.totalBookings || 0) + 1,
-        lastBooking: now()
-      });
-    } catch (e) {}
-    toast('✅ 已送出，等待司機確認', 3000);
-    openWaitingRoom(sv.id, d, t);
-  } catch (e) {
-    toast('❌ ' + e.message, 5000);
-    if (btn) { btn.disabled = false; btn.textContent = '送出預約'; }
-  }
-}
-
-function openWaitingRoom(id, d, t) {
-  renderWaitingRoom(id, d, t);
-}
-
-async function renderWaitingRoom(id, d, t) {
-  if (waitingRoomListener) {
-    try { waitingRoomListener.off(); } catch (e) {}
-    waitingRoomListener = null;
-  }
-  const r = db.ref('booking/' + d + '/' + id);
-  const h = (snap) => {
-    const b = snap.val();
-    if (!b) {
-      renderPassengerHome();
-      return;
-    }
-    renderWaitingRoomUI(b, d, id);
-  };
-  r.on('value', h);
-  waitingRoomListener = r;
-  const s = await r.once('value');
-  const b = s.val();
-  if (!b) {
-    renderPassengerHome();
-    return;
-  }
-  renderWaitingRoomUI(b, d, id);
-}
-
-function renderWaitingRoomUI(b, d, id) {
-  const c = document.getElementById('booking-content');
-  const st = getShiftTime(b.date, b.time);
-  const tu = st - now();
-  let sb = '';
-  if (b.status === 'pending') {
-    sb = '<div class="card" style="border-color:#fb923c;background:#431407;text-align:center;padding:24px;"><div style="font-size:60px;">⏳</div><h2 style="color:#fdba74;font-size:22px;margin:12px 0 8px;">等待司機確認</h2><p style="font-size:14px;color:#fdba74;">你嘅預約已送出<br>司機確認後會即時通知你</p></div>';
-  } else if (b.status === 'reserved') {
-    sb = '<div class="card" style="border-color:#22c55e;background:#052e16;text-align:center;padding:24px;"><div style="font-size:60px;">✅</div><h2 style="color:#22c55e;font-size:22px;margin:12px 0 8px;">已確認留位！</h2><p style="font-size:14px;color:#86efac;">司機已確認你嘅預約</p></div>';
-  } else if (b.status === 'rejected') {
-    sb = '<div class="card" style="border-color:#ef4444;background:#450a0a;text-align:center;padding:24px;"><div style="font-size:60px;">❌</div><h2 style="color:#f87171;font-size:22px;margin:12px 0 8px;">預約已被拒絕</h2><p style="font-size:14px;color:#fca5a5;">' + esc(b.rejectReason ? '原因：' + b.rejectReason : '司機未能確認') + '</p></div>';
-  } else if (b.status === 'arrived') {
-    sb = '<div class="card" style="border-color:#22c55e;background:#052e16;text-align:center;padding:24px;"><div style="font-size:60px;">✅</div><h2 style="color:#22c55e;font-size:22px;margin:12px 0 8px;">已確認到站</h2><p style="font-size:14px;color:#86efac;">請在總站等候上車</p></div>';
-  } else if (b.status === 'boarded') {
-    sb = '<div class="card" style="text-align:center;padding:24px;"><div style="font-size:60px;">🚐</div><h2 style="color:#7dd3fc;font-size:22px;margin:12px 0 8px;">已上車</h2></div>';
-  } else if (b.status === 'cancelled') {
-    sb = '<div class="card" style="text-align:center;color:#94a3b8;">已取消</div>';
-  } else if (b.status === 'no-show') {
-    sb = '<div class="card" style="text-align:center;border-color:#ef4444;background:#450a0a;"><div style="color:#f87171;font-weight:600;">❌ 未到站</div></div>';
-  }
-  let h = '<div style="display:flex;align-items:center;margin-bottom:16px;"><button class="btn btn-outline btn-sm" onclick="renderPassengerHome()">← 返回</button></div>' + sb + '<div class="card" style="text-align:center;"><div style="font-size:14px;color:#64748b;">預約編號</div><div style="font-size:20px;font-weight:700;color:#38bdf8;letter-spacing:2px;margin:8px 0;">' + esc(b.id.substring(0, 8).toUpperCase()) + '</div><div style="font-size:13px;color:#94a3b8;">' + esc(b.time) + ' 班次 · ' + b.seats + ' 人</div><div style="font-size:13px;margin-top:6px;font-weight:600;color:' + (getDir(b.time) === 'morning' ? '#4ade80' : '#fdba74') + ';">' + esc(getOrigL(b.time)) + '</div><div style="font-size:12px;color:#64748b;margin-top:4px;">乘客：' + esc(b.passengerName) + '</div></div>';
-  if (b.status === 'reserved') {
-    h += '<div class="card" style="text-align:center;padding:16px;border:2px dashed #f59e0b;background:#422006;" id="gps-box"><div style="font-size:40px;">📍</div><div style="font-size:14px;font-weight:600;" id="gps-text">等待開始定位...</div><div style="font-size:12px;color:#94a3b8;margin-top:4px;" id="gps-sub">發車前 15 分鐘開始追蹤</div></div><div class="card" style="text-align:center;"><div style="font-size:13px;color:#f59e0b;font-weight:600;" id="countdown">距離發車：--:--</div></div>';
-  }
-  if (b.status === 'pending' || b.status === 'reserved') {
-    h += '<button class="btn btn-outline" onclick="cancelBooking(\'' + b.id + '\',\'' + b.date + '\')">取消預約</button>';
-    if (b.status === 'reserved') {
-      h += '<button class="btn btn-success" style="margin-top:10px;" onclick="passengerBoardFixed(\'' + b.id + '\',\'' + b.date + '\',\'' + b.plate + '\')">🚐 我已上車</button><button class="btn btn-primary" style="margin-top:10px;" onclick="renderPassengerHome()">返回主頁</button>';
-    }
-  }
-  c.innerHTML = h;
-  if (b.status === 'reserved') {
-    updateCountdown(b.date, b.time);
-    if (tu < AW && tu > -5 * 60 * 1000) startGPS(b.id, b.date, b.time);
-    else if (tu > 0) {
-      const dl = tu - AW;
-      if (dl < 24 * 60 * 60 * 1000) setTimeout(() => {
-        if (document.getElementById('countdown')) checkAndStartGPS(b.id, b.date, b.time);
-      }, dl);
-    }
-  }
-}
-
-async function passengerBoardFixed(id, d, p) {
-  if (!confirm('確定你已上車？')) return;
-  try {
-    await DL.updateBooking(d, id, { status: 'boarded', boardedAt: now() });
-    if (p) {
-      await db.ref('van/active_buses/' + p + '/passengerCount').transaction(c => (c || 0) + 1);
-    }
-    toast('✅ 已上車');
-    renderPassengerHome();
-  } catch (e) {
-    toast('失敗：' + e.message);
-  }
-}
-
-async function checkAndStartGPS(id, d, t) {
-  try {
-    const b = await DL.getBookings(d);
-    const x = b[id];
-    if (x && x.status === 'reserved') startGPS(id, d, t);
-  } catch (e) {}
-}
-
-function updateCountdown(d, t) {
-  const el = document.getElementById('countdown');
-  if (!el) return;
-  const diff = getShiftTime(d, t) - now();
-  if (diff <= 0) {
-    el.textContent = '班次已發車';
-    return;
-  }
-  const m = Math.floor(diff / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
-  el.textContent = '距離發車：' + m + ':' + String(s).padStart(2, '0');
-  setTimeout(() => {
-    if (document.getElementById('countdown')) updateCountdown(d, t);
-  }, 1000);
-}
-
-async function cancelBooking(id, d) {
-  if (!confirm('確定取消預約？')) return;
-  try {
-    const b = (await DL.getBookings(d))[id];
-    await DL.cancelBooking(d || getToday(), id);
-    if (b && b.status === 'reserved') {
-      const cfg = await DL.getSeatConfig(d, b.time);
-      if (cfg && cfg.plate) {
-        await db.ref('van/active_buses/' + cfg.plate + '/passengerCount').transaction(c => Math.max(0, (c || 0) - (b.seats || 1)));
-      }
-    }
-    stopGPS();
-    toast('已取消預約');
-    if (waitingRoomListener) {
-      try { waitingRoomListener.off(); } catch (e) {}
-      waitingRoomListener = null;
-    }
-    renderPassengerHome();
-  } catch (e) {
-    toast('取消失敗：' + e.message);
-  }
-}
-
-function startGPS(id, d, t) {
-  if (!navigator.geolocation) {
-    const x = document.getElementById('gps-text');
-    if (x) x.textContent = '不支援 GPS';
-    return;
-  }
-  const g = getGPS(t);
-  const gt = document.getElementById('gps-text');
-  const gs = document.getElementById('gps-sub');
-  if (gt) gt.textContent = '正在定位...';
-  if (gs) gs.textContent = '目標：' + getOrig(t);
-  stopGPS();
-  gpsWatchId = navigator.geolocation.watchPosition(
-    async (pos) => {
-      const dd = dist(pos.coords.latitude, pos.coords.longitude, g.lat, g.lng);
-      const box = document.getElementById('gps-box');
-      const text = document.getElementById('gps-text');
-      const sub = document.getElementById('gps-sub');
-      if (!box || !text || !sub) return;
-      if (dd <= GPS_R) {
-        box.style.borderColor = '#22c55e';
-        box.style.background = '#052e16';
-        text.textContent = '✅ 已到站！';
-        sub.textContent = '距離 ' + Math.round(dd) + ' 米';
-        if (gpsMarkedBookingId !== id) {
-          gpsMarkedBookingId = id;
-          await markArrived(id, d);
-        }
-      } else {
-        text.textContent = '⏳ 未到站';
-        sub.textContent = '距離 ' + Math.round(dd) + ' 米（需進入 ' + GPS_R + ' 米範圍）';
-      }
-    },
-    (err) => {
-      const x = document.getElementById('gps-text');
-      if (x) x.textContent = 'GPS 錯誤：' + err.message;
-    },
-    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
-  );
-}
-
-function stopGPS() {
-  if (gpsWatchId !== null) {
-    navigator.geolocation.clearWatch(gpsWatchId);
-    gpsWatchId = null;
-  }
-}
-
-async function markArrived(id, d) {
-  try {
-    const b = await DL.getBookings(d);
-    const x = b[id];
-    if (!x || x.status !== 'reserved') return;
-    await DL.updateBooking(d, id, { status: 'arrived', arrivedAt: now() });
-    stopGPS();
-    toast('✅ 已確認到站！');
-  } catch (e) {}
-}function clearDriverListeners() {
-  driverListeners.forEach(({ ref, handler }) => {
-    try { ref.off('value', handler); } catch (e) {}
-  });
-  driverListeners = [];
-  if (driverBookingListener && driverListenerDate) {
-    try { db.ref('booking/' + driverListenerDate).off('value', driverBookingListener); } catch (e) {}
-    driverBookingListener = null;
-  }
-  if (driverLoopListener && driverListenerDate) {
-    try { db.ref('booking_loop/' + driverListenerDate).off('value', driverLoopListener); } catch (e) {}
-    driverLoopListener = null;
-  }
-  driverListenerDate = null;
-}
-
-async function renderDriverHome() {
-  const c = document.getElementById('driver-content');
-  clearDriverListeners();
-  try {
-    await ensureAuth();
-    const ab = await DL.getActiveBuses();
-    if (ab.length === 0) {
-      clearSelectedBus();
-      currentDriver = null;
-      c.innerHTML = '<div class="waiting-big"><div class="icon">🚐</div><h3>等待當值中...</h3><p>請先喺「西鐵小巴系統」開始當值。<br>開始當值後，呢個頁面會自動顯示你嘅車牌同預約名單。</p></div>';
-      const r = db.ref('van/active_buses');
-      const h = () => {
-        if (currentScreen === 'driver') renderDriverHome();
-      };
-      r.on('value', h);
-      driverListeners.push({ ref: r, handler: h });
-      return;
-    }
-    if (ab.length === 1) {
-      currentDriver = { plate: ab[0].plate, carSeats: ab[0].carSeats || 16, passengerCount: ab[0].passengerCount || 0 };
-      saveSelectedBus(currentDriver.plate);
-      renderDriverDuty();
-      return;
-    }
-    const sv = loadSelectedBus();
-    if (sv && ab.find(b => b.plate === sv)) {
-      const bus = ab.find(b => b.plate === sv);
-      currentDriver = { plate: bus.plate, carSeats: bus.carSeats || 16, passengerCount: bus.passengerCount || 0 };
-      renderDriverDuty();
-      return;
-    }
-    let h = '<div class="card"><div class="card-title">🚐 而家有 ' + ab.length + ' 部車當值中</div><div style="font-size:13px;color:#94a3b8;">請揀你揸緊嗰部車：</div></div>';
-    ab.forEach(bus => {
-      h += '<div class="bus-pick" onclick="pickBus(\'' + esc(bus.plate) + '\')"><div><div class="plate">' + esc(bus.plate) + '</div><div class="info">' + (bus.carSeats || 16) + ' 座 · ' + esc(bus.currentStation || '未知位置') + '</div></div><div class="arrow">›</div></div>';
-    });
-    c.innerHTML = h;
-  } catch (e) {
-    c.innerHTML = '<div class="card" style="border-color:#ef4444;"><div style="color:#f87171;">⚠️ ' + esc(e.message) + '</div></div><button class="btn btn-primary" onclick="renderDriverHome()">🔄 重試</button>';
-  }
-}
-
-function pickBus(p) {
-  saveSelectedBus(p);
-  renderDriverHome();
-}
-
-async function renderDriverDuty() {
-  const c = document.getElementById('driver-content');
-  const bus = currentDriver;
-  if (!bus) {
-    renderDriverHome();
-    return;
-  }
-  const t = getToday();
-  c.innerHTML = '<div class="driver-top" id="driver-top-card"><div class="plate">' + esc(bus.plate) + '</div><div class="seats">' + (bus.carSeats || 16) + ' 座</div><div class="status">🟢 當值中 · 實時同步</div><div class="driver-info-grid" id="driver-info-grid"></div></div><div id="alert-area"></div><div style="display:flex;gap:8px;margin-bottom:12px;"><button class="btn btn-primary" id="tab-btn-fixed" onclick="switchDriverTab(\'fixed\')" style="padding:12px;font-size:14px;">📋 固定班次</button><button class="btn btn-outline" id="tab-btn-loop" onclick="switchDriverTab(\'loop\')" style="padding:12px;font-size:14px;">🔄 循環線</button></div><div id="driver-tab-fixed"></div><div id="driver-tab-loop" style="display:none;"></div>';
-  const br = db.ref('van/active_buses/' + bus.plate);
-  const brH = (snap) => {
-    const d = snap.val();
-    if (!d || !d.isActive) {
-      toast('🔴 西鐵小巴已停止當值');
-      clearSelectedBus();
-      currentDriver = null;
-      renderDriverHome();
-      return;
-    }
-    if (d.carSeats) currentDriver.carSeats = d.carSeats;
-    if (d.passengerCount != null) currentDriver.passengerCount = d.passengerCount;
-    updateDriverInfoGrid(d);
-  };
-  br.on('value', brH);
-  driverListeners.push({ ref: br, handler: brH });
-  switchDriverTab('fixed');
-}
-
-function updateDriverInfoGrid(d) {
-  const g = document.getElementById('driver-info-grid');
-  if (!g) return;
-  const p = d.passengerCount || 0;
-  const s = d.carSeats || 16;
-  const f = p >= s;
-  const o = p > s;
-  const col = o ? '#ef4444' : f ? '#f59e0b' : '#22c55e';
-  g.innerHTML = '<div class="cell"><div class="num" style="color:' + col + ';">' + p + '</div><div class="lbl">目前乘客</div></div><div class="cell"><div class="num" style="color:#22c55e;">' + Math.max(0, s - p) + '</div><div class="lbl">剩餘座位</div></div><div class="cell"><div class="num" style="color:#fdba74;">' + s + '</div><div class="lbl">總座位</div></div>';
-}
-
-function switchDriverTab(t) {
-  const bf = document.getElementById('tab-btn-fixed');
-  const bl = document.getElementById('tab-btn-loop');
-  const df = document.getElementById('driver-tab-fixed');
-  const dl = document.getElementById('driver-tab-loop');
-  if (!bf || !bl) return;
-  if (t === 'fixed') {
-    bf.className = 'btn btn-primary';
-    bl.className = 'btn btn-outline';
-    df.style.display = 'block';
-    dl.style.display = 'none';
-    renderDriverFixedList();
-  } else {
-    bf.className = 'btn btn-outline';
-    bl.className = 'btn btn-primary';
-    df.style.display = 'none';
-    dl.style.display = 'block';
-    renderDriverLoopList();
-  }
-}
-
-async function renderDriverFixedList() {
-  const c = document.getElementById('driver-tab-fixed');
-  if (!c) return;
-  c.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px;">🔄 載入中...</div>';
-  const t = getToday();
-  const allS = [...SM, ...SE];
-  const sc = await DL.getAllSeatConfigs(t);
-  const init = await DL.getBookings(t);
-  currentCachedBookings = init;
-  Object.keys(init).forEach(i => driverKnownBookingIds.add(i));
-  driverFirstLoad = false;
-  renderDriverFixedHTML(init, sc, t, allS);
-  const r = db.ref('booking/' + t);
-  driverListenerDate = t;
-  driverBookingListener = (snap) => {
-    const ab = snap.val() || {};
-    const nid = new Set(Object.keys(ab));
-    let np = 0;
-    if (!driverFirstLoad) {
-      nid.forEach(i => {
-        if (!driverKnownBookingIds.has(i)) {
-          const b = ab[i];
-          if (b && b.status === 'pending') np++;
-        }
-      });
-      if (np > 0) {
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const o = ctx.createOscillator();
-          const g = ctx.createGain();
-          o.frequency.value = 880;
-          g.gain.value = 0.3;
-          o.connect(g);
-          g.connect(ctx.destination);
-          o.start();
-          o.stop(ctx.currentTime + 0.15);
-          setTimeout(() => {
-            const o2 = ctx.createOscillator();
-            const g2 = ctx.createGain();
-            o2.frequency.value = 1320;
-            g2.gain.value = 0.3;
-            o2.connect(g2);
-            g2.connect(ctx.destination);
-            o2.start();
-            o2.stop(ctx.currentTime + 0.15);
-          }, 200);
-        } catch (e) {}
-        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
-        toast('🔔 有 ' + np + ' 個新固定班次預約！', 4000);
-      }
-    }
-    driverKnownBookingIds = nid;
-    driverFirstLoad = false;
-    currentCachedBookings = ab;
-    renderDriverFixedHTML(ab, sc, t, allS);
-  };
-  r.on('value', driverBookingListener);
-}
-
-function renderDriverFixedHTML(ab, sc, t, allS) {
-  const c = document.getElementById('driver-tab-fixed');
-  const a = document.getElementById('alert-area');
-  if (!c) return;
-  const bus = currentDriver;
-  if (!bus) return;
-  let mpt = 0;
-  allS.forEach(tm => {
-    const sid = getSid(t, tm);
-    Object.values(ab).forEach(b => {
-      if (b.scheduleId === sid && b.status === 'pending') mpt++;
-    });
-  });
-  if (a) {
-    if (mpt > 0) {
-      a.innerHTML = '<div class="alert-banner"><div class="icon">🔔</div><div class="text">有 ' + mpt + ' 個新固定班次預約！</div><div class="sub">請撳「✅ 確認」或「❌ 拒絕」</div></div>';
-    } else {
-      a.innerHTML = '';
-    }
-  }
-  let h = '';
-  allS.forEach(tm => {
-    const sid = getSid(t, tm);
-    const cfg = sc[tm.replace(':', '')];
-    const quota = (cfg && cfg.quota) || (cfg && cfg.seats) || bus.carSeats || 16;
-    const dir = getDir(tm);
-    const sb = Object.values(ab).filter(b => b.scheduleId === sid && b.status !== 'cancelled');
-    const used = sb.filter(b => ['pending', 'reserved', 'arrived', 'boarded'].includes(b.status)).reduce((s, b) => s + (b.seats || 0), 0);
-    const rem = quota - used;
-    const full = rem <= 0;
-    const pl = sb.filter(b => b.status === 'pending');
-    const cl = sb.filter(b => b.status === 'reserved');
-    const al = sb.filter(b => b.status === 'arrived' || b.status === 'boarded');
-    h += '<div class="big-shift ' + (full ? 'full' : '') + '"><div class="time">' + esc(tm) + '</div><div class="origin" style="color:' + (dir === 'morning' ? '#4ade80' : '#fdba74') + ';font-weight:700;">' + esc(getOrigL(tm)) + '</div><div class="counts"><div><div class="pending-count">⏳ ' + pl.length + ' 待確認</div><div class="arrived-count" style="margin-top:4px;">🔴 ' + al.length + ' 已到 · ✅ ' + cl.length + ' 已確認</div></div><div style="text-align:right;"><div class="seat-num ' + (rem <= 0 ? 'zero' : rem <= 2 ? 'low' : '') + '">' + rem + '</div><div class="seat-label">剩餘留位額 / ' + quota + '</div></div></div>' + (full ? '<span class="full-label">🔴 滿座</span>' : '') + (pl.length > 0 ? '<div class="pending-box"><div class="pending-title">🔔 待你確認（' + pl.length + '）</div>' + pl.map(b => '<div class="pending-item"><div class="name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div><div class="phone">' + esc(b.passengerPhone) + '</div><div class="actions"><button class="btn-confirm" onclick="driverConfirm(\'' + b.date + '\',\'' + b.id + '\',\'' + esc(bus.plate) + '\')">✅ 確認</button><button class="btn-reject" onclick="driverReject(\'' + b.date + '\',\'' + b.id + '\',\'' + esc(bus.plate) + '\')">❌ 拒絕</button></div></div>').join('') + '</div>' : '') + (cl.length > 0 ? '<div style="margin-top:12px;"><div style="font-size:13px;color:#4ade80;font-weight:700;margin-bottom:6px;">✅ 已確認留位（' + cl.length + '）</div>' + cl.map(b => '<div class="booking-item arrived"><div><div class="booking-name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div><div class="booking-phone">' + esc(b.passengerPhone) + '</div></div><div style="font-size:12px;color:#4ade80;">已確認</div></div>').join('') + '</div>' : '') + (al.length > 0 ? '<div style="margin-top:12px;"><div style="font-size:13px;color:#22c55e;font-weight:700;margin-bottom:6px;">🔴 已到站（' + al.length + '）</div>' + al.map(b => '<div class="booking-item arrived"><div><div class="booking-name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div><div class="booking-phone">' + esc(b.passengerPhone) + '</div></div><div>' + (b.status === 'boarded' ? '<span class="badge badge-blue">已上車</span>' : '<span class="badge badge-yellow">等候上車</span>') + '</div></div>').join('') + '</div>' : '') + '</div>';
-  });
-  c.innerHTML = h;
-}async function renderDriverLoopList() {
-  const c = document.getElementById('driver-tab-loop');
-  if (!c) return;
-  c.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px;">🔄 載入中...</div>';
-  const t = getToday();
-  if (driverLoopListener && driverListenerDate) {
-    try { db.ref('booking_loop/' + driverListenerDate).off('value', driverLoopListener); } catch (e) {}
-  }
-  const init = await DL.getLoopQueue(t);
-  Object.keys(init).forEach(i => driverKnownLoopIds.add(i));
-  loopFirstLoad = false;
-  renderDriverLoopHTML(init);
-  const r = db.ref('booking_loop/' + t);
-  driverLoopListener = (snap) => {
-    const all = snap.val() || {};
-    const nid = new Set(Object.keys(all));
-    let nw = 0;
-    if (!loopFirstLoad) {
-      nid.forEach(i => {
-        if (!driverKnownLoopIds.has(i)) {
-          const x = all[i];
-          if (x && x.status === 'pending') nw++;
-        }
-      });
-      if (nw > 0) {
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const o = ctx.createOscillator();
-          const g = ctx.createGain();
-          o.frequency.value = 660;
-          g.gain.value = 0.3;
-          o.connect(g);
-          g.connect(ctx.destination);
-          o.start();
-          o.stop(ctx.currentTime + 0.2);
-        } catch (e) {}
-        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
-        toast('🔄 有 ' + nw + ' 位循環線乘客！', 4000);
-      }
-    }
-    driverKnownLoopIds = nid;
-    loopFirstLoad = false;
-    renderDriverLoopHTML(all);
-  };
-  r.on('value', driverLoopListener);
-}
-
-function renderDriverLoopHTML(all) {
-  const c = document.getElementById('driver-tab-loop');
-  if (!c) return;
-  const bus = currentDriver;
-  if (!bus) return;
-  const pl = Object.values(all).filter(x => x.status === 'pending').sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-  const rl = Object.values(all).filter(x => x.status === 'reserved').sort((a, b) => (a.confirmedAt || 0) - (b.confirmedAt || 0));
-  let h = '<div class="loop-card"><div class="title">🔄 循環線留位（07:00 - 18:00）</div><div class="sub">留位後請撳「✅ 確認」<br>確認後乘客會收到通知</div></div>';
-  if (pl.length === 0 && rl.length === 0) {
-    h += '<div class="waiting-big"><div class="icon">🔄</div><h3>暫時冇乘客留位</h3><p>循環線時段（07:00 - 18:00）<br>乘客留位後會即時顯示</p></div>';
-  }
-  if (pl.length > 0) {
-    h += '<div class="card-title" style="margin-bottom:8px;color:#fdba74;">🔔 待你確認（' + pl.length + '）</div>';
-    pl.forEach((x, i) => {
-      h += '<div class="loop-wait" style="border-left-color:#fb923c;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div class="name">#' + (i + 1) + ' ' + esc(x.name) + '</div><div class="phone">' + esc(x.phone) + ' · ' + (x.seats || 1) + ' 人</div></div></div><div class="actions"><button class="btn-board" onclick="driverConfirmLoop(\'' + x.id + '\')">✅ 確認</button><button class="btn-cancel" onclick="driverRejectLoop(\'' + x.id + '\')">❌ 拒絕</button></div></div>';
-    });
-  }
-  if (rl.length > 0) {
-    h += '<div class="card-title" style="margin:16px 0 8px;color:#4ade80;">✅ 已確認留位（' + rl.length + '）</div>';
-    rl.forEach((x, i) => {
-      h += '<div class="loop-wait"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div class="name">#' + (i + 1) + ' ' + esc(x.name) + '</div><div class="phone">' + esc(x.phone) + ' · ' + (x.seats || 1) + ' 人</div></div></div><div style="font-size:12px;color:#4ade80;margin-top:6px;">已確認，等候上車</div></div>';
-    });
-  }
-  c.innerHTML = h;
-}
-
-async function driverConfirmLoop(id) {
-  try {
-    const t = getToday();
-    const all = await DL.getLoopQueue(t);
-    const x = all[id];
-    if (!x) {
-      toast('找不到留位');
-      return;
-    }
-    await DL.updateLoopQueue(t, id, { status: 'reserved', confirmedAt: now() });
-    toast('✅ 已確認留位', 2000);
-  } catch (e) {
-    toast('失敗：' + e.message);
-  }
-}
-
-async function driverRejectLoop(id) {
-  if (!confirm('確定拒絕呢位乘客？')) return;
-  try {
-    const t = getToday();
-    const all = await DL.getLoopQueue(t);
-    const x = all[id];
-    if (!x) {
-      toast('找不到留位');
-      return;
-    }
-    await DL.removeLoopQueue(t, id);
-    toast('❌ 已拒絕', 2000);
-  } catch (e) {
-    toast('失敗：' + e.message);
-  }
-}
-
-async function driverConfirm(d, id, p) {
-  try {
-    const bs = await DL.getBookings(d);
-    const b = bs[id];
-    if (!b) {
-      toast('預約唔存在');
-      return;
-    }
-    await DL.updateBooking(d, id, { status: 'reserved', confirmedAt: now(), confirmedBy: p });
-    await db.ref('van/active_buses/' + p + '/passengerCount').transaction(c => (c || 0) + (b.seats || 1));
-    toast('✅ 已確認留位', 2000);
-  } catch (e) {
-    toast('確認失敗：' + e.message);
-  }
-}
-
-async function driverReject(d, id, p) {
-  const r = prompt('拒絕原因（可以留空）：', '') || '';
-  try {
-    await DL.updateBooking(d, id, { status: 'rejected', rejectedAt: now(), rejectedBy: p, rejectReason: r });
-    toast('❌ 已拒絕', 2000);
-  } catch (e) {
-    toast('操作失敗：' + e.message);
-  }
-}
-
-async function renderAdmin() {
-  const c = document.getElementById('admin-content');
-  const t = getToday();
-  let h = '<div class="card"><div class="card-title">⚙️ 系統管理</div><div style="font-size:12px;color:#64748b;line-height:1.8;">留座系統同西鐵小巴自動同步。</div></div>';
-  try {
-    const ab = await DL.getActiveBuses();
-    h += '<div class="card-title" style="margin:16px 0 10px;">🚐 當值中嘅車（' + ab.length + '）</div>';
-    if (ab.length === 0) {
-      h += '<div class="card" style="text-align:center;color:#64748b;padding:24px;">暫時冇車當值</div>';
-    } else {
-      ab.forEach(bus => {
-        const p = bus.passengerCount || 0;
-        const s = bus.carSeats || 16;
-        const o = p > s;
-        h += '<div class="card" style="padding:12px;"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:18px;font-weight:700;color:#4ade80;">' + esc(bus.plate) + '</div><div style="font-size:12px;color:#64748b;">' + s + ' 座 · ' + esc(bus.currentStation || '未知') + '</div></div><div style="text-align:right;"><div style="font-size:24px;font-weight:900;color:' + (o ? '#ef4444' : '#22c55e') + ';">' + p + '</div><div style="font-size:10px;color:#64748b;">目前乘客</div></div></div></div>';
-      });
-    }
-    const l = await DL.getLoopQueue(t);
-    const wl = Object.values(l).filter(x => x.status === 'pending').length;
-    const rl = Object.values(l).filter(x => x.status === 'reserved').length;
-    const bl = Object.values(l).filter(x => x.status === 'boarded').length;
-    h += '<div class="card-title" style="margin:16px 0 10px;">🔄 循環線留位</div><div class="card" style="padding:14px;"><div style="display:flex;justify-content:space-between;"><div><div style="font-size:12px;color:#64748b;">待確認</div><div style="font-size:24px;font-weight:700;color:#fdba74;">' + wl + '</div></div><div><div style="font-size:12px;color:#64748b;">已確認</div><div style="font-size:24px;font-weight:700;color:#4ade80;">' + rl + '</div></div><div style="text-align:right;"><div style="font-size:12px;color:#64748b;">已上車</div><div style="font-size:24px;font-weight:700;color:#7dd3fc;">' + bl + '</div></div></div></div>';
-  } catch (e) {
-    h += '<div class="card" style="color:#f87171;">載入失敗：' + esc(e.message) + '</div>';
-  }
-  c.innerHTML = h;
-}
-
-function renderInfo() {
-  const c = document.getElementById('info-content');
-  c.innerHTML = '<div class="card"><div class="card-title">🚐 服務資訊</div><div style="font-size:13px;line-height:1.8;"><strong style="color:#38bdf8;">路線：</strong>大棠黃泥墩 ↔ 元朗港鐵站 H 出口（途經大棠路）</div></div><div class="card"><div class="card-title">🕐 星期一至五</div><div style="font-size:13px;line-height:1.9;"><strong style="color:#22c55e;">🌅 早上固定班次（大棠黃泥墩開出）：</strong><br>06:20 ｜ 06:30 ｜ 06:40 ｜ 06:50<br><br><strong style="color:#0ea5e9;">🔄 循環線時段（07:00 - 18:00）：</strong><br>無固定班次，可使用「循環線留位」<br>留位後司機確認，有位就上車<br><br><strong style="color:#fdba74;">🌆 傍晚固定班次（元朗港鐵站 H 出口開出）：</strong><br>18:15 ｜ 18:30 ｜ 18:45 ｜ 19:00 ｜ 19:15<br>19:30 ｜ 19:45 ｜ 20:00 ｜ 20:20（尾班車）</div></div><div class="card"><div class="card-title">💡 循環線留位點運作？</div><div style="font-size:13px;line-height:1.9;">1. 乘客撳「立即留位」<br>2. 司機收到通知，撳「✅ 確認」<br>3. 乘客到站頭等候上車<br>4. 上車後，乘客自己撳「我已上車」<br>5. 冇上車會扣信用分</div></div><div class="card" style="text-align:center;font-size:12px;color:#64748b;">© 浚鍵管理有限公司<br>小巴留座系統 v6.0</div>';
-}
-
-document.addEventListener('keydown', function (e) {
-  if (e.key !== 'Enter') return;
-  if (document.getElementById('login-phone')) passengerLogin();
-});
-
-window.addEventListener('popstate', function (e) {
-  if (currentScreen !== 'home') {
-    openModule('home');
-    history.pushState(null, '', location.href);
-  }
-});
-
-db.ref('.info/connected').on('value', snap => {
-  if (snap.val() === true) console.log('☁️ Firebase 已連線');
-  else console.log('⚠️ Firebase 離線');
-});
-
-async function autoCleanExpiredBookings() {
-  if (!isWeekday()) return;
-  try {
-    const t = getToday();
-    const bs = await DL.getBookings(t);
-    for (const [id, b] of Object.entries(bs)) {
-      if (b.status !== 'reserved' && b.status !== 'pending') continue;
-      const st = getShiftTime(b.date, b.time);
-      if (now() > st + 5 * 60 * 1000) {
-        await DL.updateBooking(b.date, id, { status: 'no-show', noShowAt: now() });
-        if (b.status === 'reserved') {
-          const cfg = await DL.getSeatConfig(b.date, b.time);
-          if (cfg && cfg.plate) {
-            await db.ref('van/active_buses/' + cfg.plate + '/passengerCount').transaction(c => Math.max(0, (c || 0) - (b.seats || 1)));
-          }
-        }
-        const pd = await DL.getPassenger(b.passengerPhone) || {};
-        const ns = Math.max(0, (pd.creditScore != null ? pd.creditScore : 100) - 20);
-        const patch = { creditScore: ns, totalNoShows: (pd.totalNoShows || 0) + 1 };
-        if (ns < 30) patch.suspendedUntil = now() + 30 * 24 * 60 * 60 * 1000;
-        else if (ns < 60) patch.suspendedUntil = now() + 7 * 24 * 60 * 60 * 1000;
-        await DL.savePassenger(b.passengerPhone, patch);
-      }
-    }
-    const l = await DL.getLoopQueue(t);
-    for (const [id, x] of Object.entries(l)) {
-      if (x.status === 'pending' && now() - (x.createdAt || 0) > LOOP_TIMEOUT) {
-        await DL.removeLoopQueue(t, id);
-      } else if (x.status === 'reserved' && now() - (x.confirmedAt || 0) > LOOP_NOSHOW) {
-        await DL.removeLoopQueue(t, id);
-        const pd = await DL.getPassenger(x.phone) || {};
-        const ns = Math.max(0, (pd.creditScore != null ? pd.creditScore : 100) - 10);
-        const patch = { creditScore: ns, totalNoShows: (pd.totalNoShows || 0) + 1 };
-        if (ns < 30) patch.suspendedUntil = now() + 30 * 24 * 60 * 60 * 1000;
-        else if (ns < 60) patch.suspendedUntil = now() + 7 * 24 * 60 * 60 * 1000;
-        await DL.savePassenger(x.phone, patch);
-      }
-    }
-  } catch (e) {}
-}
-
-(async function init() {
-  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v6.0 啟動');
-  currentPassenger = loadPassengerSession();
-  try { await ensureAuth(); } catch (e) { console.warn(e); }
-  updateHomeStats();
-  setInterval(autoCleanExpiredBookings, 60 * 1000);
-  setTimeout(autoCleanExpiredBookings, 5000);
-  setInterval(() => {
-    if (currentScreen === 'home') updateHomeStats();
-  }, 30 * 1000);
-  history.pushState(null, '', location.href);
-})();
+</head>
+<body>
+<div class="header"><div class="title">西鐵小巴系統</div><div class="dev-tag">開發者-大輝</div><button class="global-voice-toggle" id="global-voice-btn">🔊</button></div>
+<div class="connection-status" id="connection-status"></div>
+<button class="floating-announce" id="floating-announce-btn">📢</button><button class="announce-bell" id="announce-bell">🔔<span class="dot-badge"></span></button>
+<div class="announce-overlay" id="announce-overlay"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:24px;font-weight:bold;">📢 系統公告</span><button class="btn btn-secondary" id="close-announce-overlay" style="width:auto;padding:10px 20px;font-size:18px;">✕ 關閉</button></div><div class="announce-list" id="announce-list-content"><div style="text-align:center;color:#888;padding:20px;font-size:18px;">暫無公告</div></div></div>
+<div class="announce-modal" id="announce-modal"><div class="modal-card"><div class="modal-text" id="announce-modal-text"></div><button class="close-btn" id="announce-modal-close">關閉</button></div></div>
+<div class="login-modal" id="login-modal">
+<div class="login-card"><h2 style="color:var(--gold);margin-bottom:16px;font-size:28px;">🔐 登入</h2><div id="login-choice"><button class="btn btn-google" id="login-google" style="font-size:20px;padding:14px;">🅶 管理員 Google 登入</button><button class="btn btn-driver" id="login-driver" style="font-size:20px;padding:14px;">🚏 司機登入</button><button class="btn btn-portal" id="login-passenger" style="font-size:20px;padding:14px;">🧍 乘客登入</button></div><div id="driver-login-form" style="display:none;"><input type="text" id="driver-identifier" placeholder="電郵 或 電話號碼" style="width:100%;padding:16px;border-radius:12px;border:none;font-size:20px;background:#2c2c2e;color:#fff;margin-bottom:10px;"><button class="btn btn-green" id="driver-login-btn" style="font-size:20px;padding:14px;">確認登入</button><button class="btn btn-secondary" id="driver-login-back" style="font-size:18px;padding:12px;margin-top:6px;">返回</button><div id="driver-login-error" style="color:var(--red);margin-top:8px;font-size:16px;"></div></div><div id="passenger-login-form" style="display:none;"><input type="tel" id="passenger-phone" placeholder="電話號碼 (8位數字)" style="width:100%;padding:16px;border-radius:12px;border:none;font-size:20px;background:#2c2c2e;color:#fff;margin-bottom:10px;"><button class="btn btn-portal" id="passenger-login-btn" style="font-size:20px;padding:14px;">確認登入</button><button class="btn btn-secondary" id="passenger-login-back" style="font-size:18px;padding:12px;margin-top:6px;">返回</button><div id="passenger-login-error" style="color:var(--red);margin-top:8px;font-size:16px;"></div></div><button class="btn btn-secondary" id="login-cancel" style="font-size:18px;padding:12px;margin-top:6px;">取消</button></div></div>
+<div id="view-lobby" class="view active"><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:22px;font-weight:bold;color:var(--gold);">📋 使用說明</span><button class="btn" style="width:auto;padding:10px 20px;background:var(--gold);color:#000;font-size:18px;" id="btn-guide-voice">🔊 聆聽教學</button></div><div style="margin-top:10px;color:#ccc;line-height:1.8;font-size:17px;">🚏 司機：登入→輸入車牌→開始當值→真實GPS自動報站<br>🧍 乘客：登入→揀車追蹤→開啟報站→自動同步語音<br>🎙️ 對講機：司機之間／管理員與司機即時通話</div></div><button class="btn btn-portal" id="btn-passenger" style="font-size:26px;padding:20px;">🧍 乘客入口</button><button class="btn btn-driver" id="btn-driver" style="font-size:26px;padding:20px;">🚏 司機入口</button><button class="btn btn-warn" id="btn-generate-qr" style="font-size:24px;padding:18px;">📱 分享二維碼</button><button class="btn btn-purple" id="btn-admin-panel" style="display:none;font-size:24px;padding:18px;">👑 總管後台</button><button class="btn btn-secondary" id="btn-logout" style="font-size:22px;padding:18px;">🚪 登出</button><div class="donate-card"><div style="color:var(--gold);font-size:20px;font-weight:bold;margin-bottom:8px;">☕ 支持開發者</div><div class="fps-code" id="fps-code">轉數快：122891914</div><div style="color:#aaa;font-size:14px;margin-top:6px;">點擊複製轉數快號碼</div></div><div id="qr-box" class="card" style="display:none;"></div></div>
+<div id="view-passenger-list" class="view"><h2 style="text-align:center;font-size:24px;">🚐 線上小巴</h2><div style="display:flex;gap:10px;margin-bottom:8px;"><button class="btn btn-secondary" id="btn-refresh-buslist" style="font-size:16px;padding:10px;flex:1;">🔄 重新整理</button></div><div id="bus-list-container" style="margin:8px 0;font-size:18px;">載入中…</div><button class="btn btn-secondary" id="btn-back-list" style="font-size:22px;padding:18px;">返回大堂</button></div>
+<div id="view-passenger" class="view"><button id="voice-toggle" class="btn" style="background:#ff9f0a;color:#000;font-size:28px;padding:20px;min-height:80px;">🔊 開啟廣東話自動報站</button><div class="card" id="pass-data-card" style="font-size:18px;">讀取中…</div><div class="route-strip" id="pass-route-strip"></div><div class="msg-area"><div class="msg-list" id="pass-msg-list"></div><div class="msg-row"><button class="record-btn" id="btn-pass-record">🎤<span class="record-timer" id="pass-timer" style="position:absolute;top:-6px;right:-6px;background:red;color:#fff;border-radius:8px;padding:2px 6px;font-size:12px;display:none;">0s</span></button><input id="pass-msg-input" class="msg-input" placeholder="訊息…"><button class="send-btn" id="btn-pass-send" style="font-size:18px;">發</button></div><button class="btn btn-secondary" style="font-size:18px;padding:12px;" id="btn-pass-clear">隱藏訊息</button><button class="btn btn-secondary" style="font-size:18px;padding:12px;display:none;" id="btn-pass-restore">還原隱藏訊息</button></div><button class="btn btn-secondary" id="btn-back-track" style="font-size:22px;padding:18px;">返回列表</button></div>
+<div id="view-driver" class="view"><div id="driver-panel" style="display:flex;flex-direction:column;gap:10px;"><div class="card" style="text-align:center;padding:14px;"><div style="font-size:18px;color:#aaa;" id="d-info">🚐 未登入 | 司機: -</div><div style="margin:8px 0;"><span class="badge badge-purple" id="d-mode-badge">西鐵快線</span><span class="badge badge-red" id="d-dir-badge">往元朗</span></div><div class="station-name" id="d-station">大棠黃泥墩</div><div class="target-station" id="d-target" style="font-size:20px;color:var(--gold);">下一站：大棠山路巴士站</div><div id="d-gps-status" style="font-size:16px;color:#888;margin-top:4px;">📍 GPS 定位中...</div><div id="gps-debug" class="gps-debug" style="display:none;"></div></div><div class="card" style="text-align:center;padding:12px;" id="passenger-count-card"><div style="font-size:20px;color:#aaa;">目前乘客</div><div class="big-number" id="d-pass-count">0</div><div class="row"><button class="btn btn-green" id="btn-add-pass" style="font-size:28px;padding:16px;">＋ 乘客</button><button class="btn btn-red" id="btn-sub-pass" style="font-size:28px;padding:16px;">－ 乘客</button></div></div><div class="row"><button class="btn btn-portal" id="btn-prev" style="font-size:24px;padding:16px;">◀ 上一站</button><button class="btn btn-portal" id="btn-next" style="font-size:24px;padding:16px;">下一站 ▶</button></div><div class="row"><button class="btn" id="d-full-btn" style="font-size:22px;padding:16px;background:var(--green);">🚫 滿座</button><button class="btn btn-secondary" id="d-car-btn" style="font-size:22px;padding:16px;">16座</button></div><div class="row"><button class="btn btn-secondary" id="btn-switch-dir" style="font-size:20px;padding:16px;">🔄 調頭</button><button class="btn" id="btn-mode-toggle" style="background:#bf5af2;font-size:20px;padding:16px;">🔄 切換至市中心循環線</button></div><div class="row"><input id="driver-plate-input" class="admin-input" placeholder="輸入車牌號碼" style="flex:2;margin-bottom:0;"><button class="btn btn-green" id="btn-set-plate" style="width:auto;padding:10px 20px;font-size:18px;">設定車牌</button></div>
+<button class="btn btn-green" id="start-gps" style="font-size:24px;padding:18px;" onclick="startDuty()">🟢 開始當值 (GPS)</button>
+<button class="btn btn-red" id="stop-gps" style="font-size:24px;padding:18px;display:none;" onclick="stopDuty()">🔴 停止當值</button>
+<div class="route-strip" id="d-route-strip"></div><div class="walkie-talkie"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:20px;font-weight:bold;color:var(--gold);">🎙️ 對講機</span><span id="walkie-target-display" style="font-size:16px;color:#aaa;">廣播給：全部司機</span></div><div class="row"><select id="walkie-target" style="flex:1;padding:14px;border-radius:12px;border:none;font-size:18px;background:#2c2c2e;color:#fff;"><option value="all">📢 全部司機</option></select><button class="btn btn-secondary" id="walkie-refresh-targets" style="width:auto;padding:12px 16px;font-size:16px;">🔄</button></div><div style="display:flex;gap:12px;align-items:center;"><button class="record-btn" id="btn-walkie-record" style="width:72px;height:72px;font-size:36px;">🎤<span class="record-timer" id="walkie-timer" style="position:absolute;top:-8px;right:-8px;background:red;color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;display:none;">0s</span></button><div style="flex:1;font-size:16px;color:#888;padding:8px;">長按錄音，放開發送</div></div><div id="walkie-messages" style="max-height:120px;overflow-y:auto;background:#1a1a1a;border-radius:10px;padding:8px;margin-top:8px;font-size:15px;"></div></div><div class="msg-area"><div class="msg-list" id="driver-msg-list"></div><div class="msg-row"><button class="record-btn" id="btn-driver-record">🎤<span class="record-timer" id="driver-timer" style="position:absolute;top:-6px;right:-6px;background:red;color:#fff;border-radius:8px;padding:2px 6px;font-size:12px;display:none;">0s</span></button><input id="driver-msg-input" class="msg-input" placeholder="廣播訊息…"><button class="send-btn" id="btn-driver-send" style="font-size:18px;">發</button></div><button class="btn btn-secondary" style="font-size:18px;padding:12px;" id="btn-driver-clear">隱藏訊息</button><button class="btn btn-secondary" style="font-size:18px;padding:12px;display:none;" id="btn-driver-restore">還原隱藏訊息</button></div><button class="btn btn-secondary" id="btn-driver-back" style="font-size:22px;padding:18px;">返回大堂</button></div></div>
+<div class="msg-overlay" id="msg-overlay"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:24px;font-weight:bold;">📨 乘客訊息</span><button class="btn btn-secondary" style="width:auto;padding:10px 20px;font-size:18px;" id="close-msg-overlay">✕</button></div><div class="msg-list" id="driver-msg-list-overlay" style="flex:1;background:#1a1a1a;border-radius:14px;padding:10px;"></div><div class="msg-row" style="margin-top:8px;"><button class="record-btn" id="btn-driver-record-overlay">🎤<span class="record-timer" id="driver-timer-overlay" style="position:absolute;top:-6px;right:-6px;background:red;color:#fff;border-radius:8px;padding:2px 6px;font-size:12px;display:none;">0s</span></button><input id="driver-msg-input-overlay" class="msg-input" placeholder="廣播訊息…"><button class="send-btn" id="btn-driver-send-overlay" style="font-size:18px;">發</button></div><button class="btn btn-secondary" style="font-size:18px;padding:12px;" id="btn-driver-clear-overlay">隱藏訊息</button><button class="btn btn-secondary" style="font-size:18px;padding:12px;display:none;" id="btn-driver-restore-overlay">還原隱藏訊息</button></div>
+<div id="view-admin" class="view"><div class="card" style="border:2px solid var(--gold);background:#1a0a2e;"><h2 style="color:var(--gold);text-align:center;font-size:26px;">🛡️ 總管後台 <span id="admin-role-badge" class="admin-role-badge" style="display:none;">👁️ 普通管理員</span></h2><div class="admin-stat-grid"><div class="admin-stat-card"><div class="label">🚐 在線</div><div class="value" id="admin-active-count">0</div></div><div class="admin-stat-card"><div class="label">👥 乘客</div><div class="value" id="admin-passenger-count">0</div></div><div class="admin-stat-card"><div class="label">💬 訊息</div><div class="value" id="admin-msg-count">0</div></div></div><div class="admin-tabs"><button class="admin-tab active" data-tab="monitor">📡 監控</button><button class="admin-tab" data-tab="devices">🛡️ 設備</button><button class="admin-tab" data-tab="walkie">🎙️ 對講機</button><button class="admin-tab" data-tab="bans">🚫 封鎖</button><button class="admin-tab" data-tab="kick">👢 踢出</button><button class="admin-tab" data-tab="announce">📢 公告</button><button class="admin-tab" data-tab="broadcast">📨 廣播</button><button class="admin-tab" data-tab="manage-admins" id="tab-manage-admins" style="display:none;">👑 管理管理員</button></div>
+<div class="admin-section active" id="admin-section-monitor"><button class="btn btn-red" id="btn-clear-all-msgs" style="margin-bottom:10px;font-size:16px;padding:12px;">🗑️ 清除所有訊息 (永久)</button><button class="btn btn-secondary" id="btn-restore-all-msgs" style="margin-bottom:10px;font-size:16px;padding:12px;">↩️ 還原所有隱藏訊息</button><div id="admin-msg-list" style="max-height:300px;overflow-y:auto;background:#1a1a1a;border-radius:10px;padding:8px;"><div style="color:#888;text-align:center;padding:12px;font-size:16px;">載入中...</div></div></div>
+<div class="admin-section" id="admin-section-devices"><div id="admin-device-list" style="max-height:400px;overflow-y:auto;background:#1a1a1a;border-radius:10px;padding:8px;"><div style="color:#888;text-align:center;padding:12px;font-size:16px;">載入中...</div></div></div>
+<div class="admin-section" id="admin-section-walkie"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:18px;font-weight:700;color:var(--purple);">🎙️ 管理員對講機</span><button class="btn btn-red" id="btn-clear-walkie" style="width:auto;padding:8px 16px;font-size:14px;">🗑️ 清除所有</button></div><div class="row"><select id="admin-walkie-target" style="flex:1;padding:14px;border-radius:12px;border:none;font-size:18px;background:#2c2c2e;color:#fff;"><option value="all">📢 全部司機</option></select><button class="btn btn-secondary" id="admin-walkie-refresh" style="width:auto;padding:12px 16px;font-size:16px;">🔄</button></div><div style="display:flex;gap:12px;align-items:center;"><button class="record-btn" id="btn-admin-walkie-record" style="width:72px;height:72px;font-size:36px;">🎤<span class="record-timer" id="admin-walkie-timer" style="position:absolute;top:-8px;right:-8px;background:red;color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;display:none;">0s</span></button><div style="flex:1;font-size:16px;color:#888;padding:8px;">長按錄音，放開發送</div></div><div id="admin-walkie-messages" style="max-height:300px;overflow-y:auto;background:#1a1a1a;border-radius:10px;padding:8px;margin-top:8px;"><div style="color:#888;text-align:center;padding:12px;">暫無對講機訊息</div></div></div>
+<div class="admin-section" id="admin-section-bans">
+<div style="margin-bottom:8px;"><span style="font-size:16px;font-weight:bold;color:#aaa;">🚫 在線司機（點擊封鎖）</span><div id="admin-online-drivers-ban" class="admin-online-list"><div style="color:#888;text-align:center;padding:12px;font-size:14px;">載入中...</div></div></div>
+<div style="margin-bottom:8px;"><span style="font-size:16px;font-weight:bold;color:#aaa;">🚫 在線乘客（點擊封鎖）</span><div id="admin-online-passengers-ban" class="admin-online-list"><div style="color:#888;text-align:center;padding:12px;font-size:14px;">載入中...</div></div></div>
+<div id="admin-banned-phones"></div>
+<div id="admin-banned-passengers"></div>
+<div style="margin-top:16px; border-top:1px solid #555; padding-top:14px;" id="admin-add-driver-section">
+<span style="font-size:16px;font-weight:bold;color:#aaa;">➕ 新增司機（管理員專用）</span>
+<div class="row" style="margin-top:6px;">
+<input id="admin-add-driver-identifier" class="admin-input" placeholder="電郵 或 電話號碼" style="flex:1;">
+<button class="btn btn-green" id="btn-add-driver" style="width:auto;padding:10px 20px;font-size:18px;">新增</button>
+</div>
+<div id="admin-add-driver-status" style="color:#aaa;font-size:14px;margin-top:4px;">輸入電郵或電話後按「新增」即可註冊司機</div>
+</div>
+</div>
+<div class="admin-section" id="admin-section-kick"><div style="margin-bottom:8px;"><span style="font-size:16px;font-weight:bold;color:#aaa;">🚐 在線車輛（點擊踢出）</span><div id="admin-online-vehicles-kick" class="admin-online-list"><div style="color:#888;text-align:center;padding:12px;font-size:14px;">載入中...</div></div></div><div style="margin-bottom:8px;"><span style="font-size:16px;font-weight:bold;color:#aaa;">🧍 在線乘客（點擊踢出）</span><div id="admin-online-passengers-kick" class="admin-online-list"><div style="color:#888;text-align:center;padding:12px;font-size:14px;">載入中...</div></div></div><label style="display:flex;align-items:center;gap:8px;font-size:16px;color:#aaa;"><input type="checkbox" id="admin-kick-clear-msgs" checked> 同時永久刪除訊息</label><div id="admin-kick-status"></div></div>
+<div class="admin-section" id="admin-section-announce"><div class="row"><input id="admin-announce-text" class="admin-input" placeholder="公告內容…"><button class="btn btn-portal" id="btn-publish-announce" style="width:auto;padding:14px 18px;font-size:16px;">發佈</button></div><div class="row"><button class="record-btn" id="btn-admin-announce-record" style="width:56px;height:56px;font-size:28px;">🎤<span class="record-timer" id="admin-announce-timer" style="position:absolute;top:-6px;right:-6px;background:red;color:#fff;border-radius:8px;padding:2px 6px;font-size:12px;display:none;">0s</span></button><input id="admin-announce-voice-status" class="admin-input" placeholder="長按錄音發佈語音公告" readonly style="flex:1;font-size:18px;"><button class="btn btn-red" id="btn-clear-announce" style="width:auto;padding:14px 18px;font-size:16px;">清除</button></div><div id="admin-announce-list"></div></div>
+<div class="admin-section" id="admin-section-broadcast"><div class="row"><input id="admin-broadcast-target" class="admin-input" placeholder="指定車牌 (留空=全部)"><button class="btn btn-secondary" id="btn-broadcast-target-all" style="width:auto;padding:10px 14px;font-size:14px;">全部</button></div><div class="msg-row"><button class="record-btn" id="btn-admin-broadcast-record" style="width:56px;height:56px;font-size:28px;">🎤<span class="record-timer" id="admin-broadcast-timer" style="position:absolute;top:-6px;right:-6px;background:red;color:#fff;border-radius:8px;padding:2px 6px;font-size:12px;display:none;">0s</span></button><input id="admin-broadcast-input" class="msg-input" placeholder="廣播訊息…"><button class="send-btn" id="btn-admin-broadcast-send" style="font-size:18px;">發</button></div><div id="admin-broadcast-status"></div></div>
+<div class="admin-section" id="admin-section-manage-admins" style="display:none;">
+<div style="margin-top:16px; border-top:1px solid #555; padding-top:14px;">
+<span style="font-size:18px;font-weight:bold;color:var(--gold);">👑 新增管理員（超級管理員專用）</span>
+<div class="row" style="margin-top:8px;">
+<input id="admin-add-admin-email" class="admin-input" placeholder="輸入 Google 電郵" style="flex:1;">
+<button class="btn btn-purple" id="btn-add-admin" style="width:auto;padding:10px 20px;font-size:18px;">新增為管理員</button>
+</div>
+<div id="admin-add-admin-status" style="color:#aaa;font-size:14px;margin-top:4px;">輸入電郵後按「新增為管理員」，該用戶即可用 Google 登入後台（普通管理員權限）</div>
+<div style="margin-top:12px;">
+<span style="font-size:16px;font-weight:bold;color:#aaa;">📋 現有管理員列表</span>
+<div id="admin-list-container" style="background:#1a1a1a;border-radius:10px;padding:8px;margin-top:6px;"></div>
+</div>
+</div>
+</div>
+</div>
+<button class="btn btn-secondary" id="btn-back-admin" style="font-size:22px;padding:18px;">返回大堂</button></div>
+<div id="toast" class="toast"></div>
+<div class="wake-lock-status" id="wake-lock-status">🔋 屏幕喚醒鎖: 等待中</div>
+<div id="msg-notification" class="msg-notification">
+<span class="msg-icon" id="notif-icon">📩</span>
+<div class="msg-content" id="notif-content">
+<span id="notif-title">新訊息</span>
+<small id="notif-sub">來自乘客</small>
+</div>
+<button class="msg-close-btn" id="notif-close">✕</button>
+</div>
+<div class="booking-notify-bar" id="booking-notify-bar">
+<div class="bn-header">
+<div class="bn-title">🔔 新留位通知</div>
+<div style="display:flex;align-items:center;">
+<div class="bn-count" id="bn-count">0</div>
+<button class="bn-close" onclick="hideBookingNotify()">收起</button>
+</div>
+</div>
+<div class="bn-list" id="bn-list"></div>
+</div>
+<script>
+console.log('🔵 西鐵小巴系統 v3.5 啟動');
+const firebaseConfig={apiKey:"AIzaSyAX7Zy5br1ozGOGxHvDeFNY-Ldcjjw8Qgc",authDomain:"triple-login-version.firebaseapp.com",databaseURL:"https://triple-login-version-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"triple-login-version",storageBucket:"triple-login-version.firebasestorage.app",messagingSenderId:"66459706459",appId:"1:66459706459:web:28f99a455652f393da0b7e"};
+const SUPER_ADMIN_EMAILS=['cheungyiufai1810@gmail.com','hujiaboy@gmail.com','chunkin892@gmail.com','zhangyaohuifai@gmail.com','cheungyiufai01@gmail.com'];
+const CONFIG={TRIGGER_DISTANCE:100,GPS_TIMEOUT:20000,GPS_ACCURACY_THRESHOLD:50,GPS_RETRY_DELAY:5000,MIN_SPEED_FOR_TRIGGER:1.0,SMOOTHING_WINDOW:3,VOICE_BITRATE:24000,RECORD_MAX_SECONDS:30,ACTIVE_BUS_TIMEOUT:300000,MESSAGE_LIMIT:100};
+const VOICE_TEXTS={startDuty:'開始當值',stopDuty:'已停止當值',arrived:'到達 ',nextStation:'下一站 ',lastStation:'已到達總站',turnAround:'已調頭',welcomeAdmin:'管理員登入成功',welcomeDriver:'司機登入成功',welcomePassenger:'乘客登入成功',loggedOut:'已登出，下次見',permissionDenied:'權限不足',carPlateSet:'車牌已設定'};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(),db=firebase.database();
+function esc(s){if(s==null)return'';return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function safeText(el,txt){if(el)el.textContent=txt==null?'':String(txt);}
+let currentUser={uid:null,identifier:null,role:'passenger',loginTime:null},isSuperAdmin=false,isAdmin=false;
+let driverData={mode:'busy',direction:0,stationIndex:0,passengerCount:0,isActive:false,plate:null,carSeats:16,isFull:false};
+let currentBusId=null,gpsWatchId=null,busListRef=null,passengerMsgRef=null,driverMsgRef=null,adminMsgRef=null,walkieRef=null,adminWalkieRef=null,driverBusRef=null,adminBusesRef=null,deviceLogRef=null,bansRef=null,adminAnnounceRef=null,passengerBusRef=null;
+let passengerVoiceEnabled=localStorage.getItem('passengerVoice')==='true',passengerLastStationIndex=-1,voiceEnabled=true,lastReportedIndex=-1,wakeLock=null,voiceLock=false,lastDriverScrollIndex=-1,gpsFirstFix=false,gpsRetryTimer=null,driverMsgScrollTimer=null,notificationTimer=null,lastPos=null,lastPosTime=0,gpsRestartNeeded=false,positionBuffer=[],isLoggingIn=false,lastDriverMsgKey=null,lastGpsProcessTime=0,pendingStationIdx=-1,pendingStationCount=0,_superCache={uid:null,value:false,ts:0};
+const BUSY_GO=["大棠黃泥墩","大棠山路巴士站","大棠村迴旋處","群潤花園","曉門","南坑排巴士站","南坑村","紅棗田","水喉頭","崇正公立學校","崇正新村","天龍花園","深涌村","禮修村巴士站","蝶翠峰巴士站","大旗嶺浸信會教堂","富達廣場巴士站","合益路","鳳翔路","大馬路燈位","元朗港鐵站"];
+const BUSY_GO_COORDS=[{lat:22.416313,lng:114.022155},{lat:22.416332,lng:114.023058},{lat:22.417982,lng:114.025327},{lat:22.421638,lng:114.027892},{lat:22.422562,lng:114.02959},{lat:22.422692,lng:114.030617},{lat:22.424852,lng:114.031972},{lat:22.42511,lng:114.03174},{lat:22.429618,lng:114.02862},{lat:22.429303,lng:114.028623},{lat:22.431183,lng:114.028508},{lat:22.433085,lng:114.02856},{lat:22.433853,lng:114.028602},{lat:22.434793,lng:114.028578},{lat:22.436858,lng:114.029397},{lat:22.438265,lng:114.02953},{lat:22.4406,lng:114.029515},{lat:22.441503,lng:114.029297},{lat:22.441865,lng:114.03208},{lat:22.444148,lng:114.032273},{lat:22.445758,lng:114.037078}];
+const BUSY_BACK=["元朗港鐵站","朗和路","鳳翔路","合益路","富達廣場","蝶翠峰","禮修村","深涌村","天龍花園","田寮村","崇正新村","水喉頭","菜站","麥園","老圍","新路口","南坑村","棠景花園","南坑排","新樓","教堂","振南苑","山咀","大棠村","金龍花園","大棠山路","巴士站","宏基","大棠黃泥墩"];
+const BUSY_BACK_COORDS=[{lat:22.445758,lng:114.037078},{lat:22.444707,lng:114.034928},{lat:22.444185,lng:114.032277},{lat:22.44185,lng:114.032307},{lat:22.441973,lng:114.029638},{lat:22.438012,lng:114.029683},{lat:22.435922,lng:114.028992},{lat:22.433853,lng:114.028602},{lat:22.433085,lng:114.02856},{lat:22.431565,lng:114.028508},{lat:22.431183,lng:114.028508},{lat:22.429618,lng:114.02862},{lat:22.427947,lng:114.028982},{lat:22.427143,lng:114.029783},{lat:22.426547,lng:114.030365},{lat:22.4254,lng:114.031478},{lat:22.424852,lng:114.031972},{lat:22.423538,lng:114.032115},{lat:22.423063,lng:114.031763},{lat:22.4226,lng:114.030215},{lat:22.422075,lng:114.02837},{lat:22.421735,lng:114.028007},{lat:22.420233,lng:114.027247},{lat:22.418555,lng:114.026047},{lat:22.417378,lng:114.025125},{lat:22.416193,lng:114.024142},{lat:22.416197,lng:114.023803},{lat:22.41629,lng:114.023028},{lat:22.416313,lng:114.022155}];
+function getRoute(){const g=driverData.mode==='busy'?BUSY_GO:BUSY_BACK;return driverData.direction===0?g:g;}
+function getCoords(){const g=driverData.mode==='busy'?BUSY_GO_COORDS:BUSY_BACK_COORDS;return driverData.direction===0?g:g;}
+function showLoading(t){const el=document.getElementById('loading-overlay');if(el){if(t)document.getElementById('loading-text').textContent=t;el.classList.add('show');}}
+function hideLoading(){const el=document.getElementById('loading-overlay');if(el)el.classList.remove('show');}
+const _toastQueue=[];let _toastBusy=false;
+function _processToastQueue(){if(_toastBusy||_toastQueue.length===0)return;_toastBusy=true;const m=_toastQueue.shift();const t=document.getElementById('toast');if(!t){_toastBusy=false;return;}t.textContent=m;t.classList.add('show');setTimeout(()=>{t.classList.remove('show');setTimeout(()=>{_toastBusy=false;_processToastQueue();},300);},2500);}
+function showToast(m){if(_toastQueue.length>5)_toastQueue.shift();_toastQueue.push(m);_processToastQueue();}
+function vibrate(ms){try{if(navigator.vibrate)navigator.vibrate(ms||30);}catch(e){}}
+const _speakQueue=[];let _speakBusy=false;
+function _processSpeakQueue(){if(_speakBusy||_speakQueue.length===0)return;_speakBusy=true;const it=_speakQueue.shift();const{text,resolve}=it;if(!voiceEnabled||!window.speechSynthesis){_speakBusy=false;resolve();setTimeout(_processSpeakQueue,0);return;}const u=new SpeechSynthesisUtterance(text);u.lang='zh-HK';u.volume=1;u.rate=0.9;const vs=window.speechSynthesis.getVoices();if(vs.length>0){const v=vs.find(x=>x.lang==='zh-HK')||vs.find(x=>x.lang.startsWith('zh'));if(v)u.voice=v;}let rs=false;const done=()=>{if(!rs){rs=true;resolve();_speakBusy=false;setTimeout(_processSpeakQueue,0);}};const t=setTimeout(done,6000);u.onend=()=>{clearTimeout(t);done();};u.onerror=()=>{clearTimeout(t);done();};window.speechSynthesis.speak(u);}
+function speakCantonese(t){if(!voiceEnabled||!window.speechSynthesis)return Promise.resolve();return new Promise(r=>{if(_speakQueue.length>3)_speakQueue.shift();_speakQueue.push({text:t,resolve:r});_processSpeakQueue();});}
+function calcDistance(a,b,c,d){const R=6371000,dLat=(c-a)*Math.PI/180,dLon=(d-b)*Math.PI/180,x=Math.sin(dLat/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));const e=document.getElementById(id);if(e)e.classList.add('active');}
+function isBanned(id){if(!id)return Promise.resolve(false);return db.ref('bans/'+id).once('value').then(s=>!!s.val()).catch(()=>false);}
+function getSavedPlate(id){if(!id)return null;try{const d=JSON.parse(localStorage.getItem('savedPlates')||'{}');return d[id]||null;}catch(e){return null;}}
+function savePlate(id,p){if(!id||!p)return;try{const d=JSON.parse(localStorage.getItem('savedPlates')||'{}');d[id]=p;localStorage.setItem('savedPlates',JSON.stringify(d));}catch(e){}}
+function safeClick(el,cb){if(!el)return;el.addEventListener('click',function(e){if(this.disabled)return;this.disabled=true;try{cb(e);}catch(err){console.error(err);showToast('操作錯誤');}setTimeout(()=>{this.disabled=false;},300);});}
+function isSuperAdminEmail(e){return SUPER_ADMIN_EMAILS.some(x=>x.toLowerCase()===(e||'').toLowerCase());}
+function isTargetSuperAdmin(id){return isSuperAdminEmail(id);}
+function checkTargetNotSuperAdmin(id){if(isTargetSuperAdmin(id)){showToast('⛔ 無法操作超級管理員');return false;}return true;}
+async function checkSuperAdmin(uid){if(!uid)return false;const n=Date.now();if(_superCache.uid===uid&&(n-_superCache.ts)<60000)return _superCache.value;try{const s=await db.ref('admins/'+uid+'/super').once('value');let v=s.val()===true;if(!v){const u=await db.ref('users/'+uid+'/identifier').once('value');const id=u.val();if(id&&isSuperAdminEmail(id))v=true;}_superCache={uid,value:v,ts:Date.now()};return v;}catch(e){return false;}}
+async function checkRole(id,uid){let r='passenger';try{if(uid){const a=await db.ref('admins/'+uid).once('value');if(a.exists())return 'admin';}const aQ=await db.ref('admins').orderByChild('identifier').equalTo(id).once('value');if(aQ.exists())return 'admin';const dQ=await db.ref('drivers').orderByChild('identifier').equalTo(id).once('value');if(dQ.exists())return 'driver';}catch(e){}return r;}
+function updateDriverUI(){const r=getRoute(),i=driverData.stationIndex||0,s=r[i]||'未知',n=i+1<r.length?i+1:0,ns=r[n]||'終點';safeText(document.getElementById('d-info'),`🚐 ${driverData.plate||'未設定'} | 司機: ${currentUser.identifier||'未登入'}`);safeText(document.getElementById('d-station'),s);safeText(document.getElementById('d-target'),'下一站：'+ns);safeText(document.getElementById('d-pass-count'),String(driverData.passengerCount));safeText(document.getElementById('d-mode-badge'),driverData.mode==='busy'?'西鐵快線':'市中心循環線');safeText(document.getElementById('d-dir-badge'),driverData.direction===0?'往元朗':'往大棠');const fb=document.getElementById('d-full-btn');if(fb){fb.style.background=driverData.isFull?'var(--red)':'var(--green)';fb.textContent=driverData.isFull?'✅ 滿座':'🚫 滿座';}const cb=document.getElementById('d-car-btn');if(cb)cb.textContent=driverData.carSeats+'座';renderDriverRouteStrip();}
+function renderDriverRouteStrip(){const st=document.getElementById('d-route-strip');if(!st)return;const r=getRoute(),i=driverData.stationIndex||0,ch=st.children;if(ch.length===r.length){for(let x=0;x<r.length;x++){const nd=ch[x];nd.className='dot-node';if(x<i)nd.classList.add('passed');else if(x===i)nd.classList.add('current');else if(x===i+1)nd.classList.add('next');const sp=nd.querySelector('span');if(sp&&sp.textContent!==r[x])sp.textContent=r[x];}}else{st.innerHTML='';r.forEach((nm,x)=>{const nd=document.createElement('div');nd.className='dot-node';if(x<i)nd.classList.add('passed');else if(x===i)nd.classList.add('current');else if(x===i+1)nd.classList.add('next');const dot=document.createElement('div');dot.className='dot';const sp=document.createElement('span');sp.textContent=nm;nd.appendChild(dot);nd.appendChild(sp);st.appendChild(nd);});}if(i!==lastDriverScrollIndex){const c=st.querySelector('.dot-node.current');if(c){const sr=st.getBoundingClientRect(),nr=c.getBoundingClientRect();const off=nr.left-sr.left-(sr.width/2)+(nr.width/2);st.scrollLeft+=off;}lastDriverScrollIndex=i;}}
+function updateDriverDB(){const r=getRoute(),i=driverData.stationIndex||0,cs=r[i]||'未知',n=i+1<r.length?i+1:0,ns=r[n]||'終點';const d={plate:driverData.plate,mode:driverData.mode,direction:driverData.direction,stationIndex:i,currentStation:cs,nextStation:ns,passengerCount:driverData.passengerCount,isActive:driverData.isActive,carSeats:driverData.carSeats,isFull:driverData.isFull,lastUpdate:Date.now(),driverUid:currentUser.uid,driverIdentifier:currentUser.identifier};if(driverData.plate)db.ref('van/active_buses/'+driverData.plate).update(d).catch(console.warn);updateDriverUI();}
+function resetDriverData(kp){driverData.stationIndex=0;driverData.passengerCount=0;driverData.isFull=false;driverData.isActive=false;if(!kp)driverData.plate=null;lastReportedIndex=-1;lastDriverScrollIndex=-1;pendingStationIdx=-1;pendingStationCount=0;if(gpsWatchId){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}if(gpsRetryTimer){clearTimeout(gpsRetryTimer);gpsRetryTimer=null;}releaseWakeLock();updateDriverUI();if(driverData.plate)db.ref('van/active_buses/'+driverData.plate).remove().catch(()=>{});const gs=document.getElementById('d-gps-status');if(gs)gs.textContent='📍 GPS 已停止';const sg=document.getElementById('start-gps');if(sg)sg.style.display='block';const stg=document.getElementById('stop-gps');if(stg)stg.style.display='none';}
+async function requestWakeLock(){try{if('wakeLock' in navigator){if(wakeLock){try{await wakeLock.release();}catch(e){}wakeLock=null;}wakeLock=await navigator.wakeLock.request('screen');const e=document.getElementById('wake-lock-status');if(e){e.textContent='🔋 屏幕喚醒鎖: 已啟用 ✅';e.classList.add('active');}return true;}return false;}catch(e){return false;}}
+async function releaseWakeLock(){try{if(wakeLock){await wakeLock.release();wakeLock=null;}}catch(e){}}
+function startGpsWatch(){if(gpsWatchId){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}if(gpsRetryTimer){clearTimeout(gpsRetryTimer);gpsRetryTimer=null;}const gs=document.getElementById('d-gps-status');if(gs)gs.textContent='📍 GPS 定位中⋯';const gd=document.getElementById('gps-debug');if(gd){gd.style.display='block';gd.textContent='⏳ 等待衛星信號⋯';}let ff=false;gpsFirstFix=false;lastPos=null;lastPosTime=0;positionBuffer=[];pendingStationIdx=-1;pendingStationCount=0;gpsWatchId=navigator.geolocation.watchPosition(pos=>{if(pos.coords.accuracy>CONFIG.GPS_ACCURACY_THRESHOLD){if(gd)gd.textContent=`⚠️ 精度不足 (${Math.round(pos.coords.accuracy)}m)`;return;}if(!ff){ff=true;gpsFirstFix=true;if(gpsRetryTimer){clearTimeout(gpsRetryTimer);gpsRetryTimer=null;}showToast('GPS 已定位');if(gs)gs.textContent='📍 GPS 已定位';}if(!driverData.isActive||!driverData.plate)return;const now=Date.now();if(now-lastGpsProcessTime<1000)return;lastGpsProcessTime=now;positionBuffer.push({lat:pos.coords.latitude,lng:pos.coords.longitude});if(positionBuffer.length>3)positionBuffer.shift();let aL=0,aLn=0;positionBuffer.forEach(p=>{aL+=p.lat;aLn+=p.lng;});aL/=positionBuffer.length;aLn/=positionBuffer.length;let sp=0;if(lastPos){const dt=(now-lastPosTime)/1000;if(dt>0)sp=calcDistance(lastPos.lat,lastPos.lng,pos.coords.latitude,pos.coords.longitude)/dt;}lastPos={lat:pos.coords.latitude,lng:pos.coords.longitude};lastPosTime=now;const co=getCoords(),rt=getRoute();if(!co||!co.length)return;let mD=Infinity,nI=0;for(let x=0;x<co.length;x++){const d=calcDistance(aL,aLn,co[x].lat,co[x].lng);if(d<mD){mD=d;nI=x;}}if(gd)gd.textContent=`📍 ${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)} | 精確度 ${Math.round(pos.coords.accuracy)}m | 最近站: ${rt[nI]} (${Math.round(mD)}m) | 速度: ${sp.toFixed(1)}m/s`;if(gs)gs.textContent=`📍 ${rt[nI]} (${Math.round(mD)}m) · ${sp.toFixed(1)}m/s`;if(mD<CONFIG.TRIGGER_DISTANCE&&nI>lastReportedIndex){if(sp<CONFIG.MIN_SPEED_FOR_TRIGGER)return;if(pendingStationIdx===nI){pendingStationCount++;}else{pendingStationIdx=nI;pendingStationCount=1;}if(pendingStationCount<2)return;pendingStationIdx=-1;pendingStationCount=0;lastReportedIndex=nI;driverData.stationIndex=nI;updateDriverDB();renderDriverRouteStrip();const sN=rt[nI],nX=nI+1;let nsn=(nX<rt.length)?rt[nX]:null;if(voiceEnabled){if(nsn)speakCantonese('到達 '+sN).then(()=>setTimeout(()=>speakCantonese('下一站 '+nsn),2000));else speakCantonese('到達 '+sN).then(()=>setTimeout(()=>speakCantonese('已到達總站'),2000));}if(nI===rt.length-1&&driverData.isActive){setTimeout(()=>{if(!driverData.isActive)return;driverData.direction=driverData.direction===0?1:0;driverData.stationIndex=0;driverData.passengerCount=0;driverData.isFull=false;lastReportedIndex=0;lastDriverScrollIndex=-1;updateDriverDB();renderDriverRouteStrip();showToast('🔄 已到總站，自動掉頭');},3000);}}},err=>{console.error('GPS 錯誤:',err);const gs2=document.getElementById('d-gps-status');if(gs2)gs2.textContent='📍 GPS 定位失敗';if(err.code===3||err.code===1){if(gpsWatchId){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}setTimeout(()=>{if(driverData.isActive)startGpsWatch();},CONFIG.GPS_RETRY_DELAY);}},{enableHighAccuracy:true,timeout:CONFIG.GPS_TIMEOUT,maximumAge:0});}
+function startDuty(){if(!driverData.plate){showToast('請先設定車牌');return;}if(!navigator.geolocation)showToast('瀏覽器不支援 GPS');gpsFirstFix=false;if(gpsRetryTimer){clearTimeout(gpsRetryTimer);gpsRetryTimer=null;}voiceLock=false;lastPos=null;lastPosTime=0;gpsRestartNeeded=false;positionBuffer=[];pendingStationIdx=-1;pendingStationCount=0;requestWakeLock();driverData.isActive=true;driverData.stationIndex=0;driverData.direction=0;driverData.passengerCount=0;driverData.isFull=false;lastReportedIndex=-1;lastDriverScrollIndex=-1;updateDriverDB();updateDriverUI();showToast('🟢 已開始當值');if(voiceEnabled)speakCantonese(VOICE_TEXTS.startDuty);vibrate(50);if(navigator.geolocation)setTimeout(()=>{if(driverData.isActive)startGpsWatch();},1500);const sg=document.getElementById('start-gps');if(sg)sg.style.display='none';const stg=document.getElementById('stop-gps');if(stg)stg.style.display='block';}
+function stopDuty(){if(!confirm('確定停止當值？'))return;driverData.isActive=false;if(gpsWatchId){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}if(gpsRetryTimer){clearTimeout(gpsRetryTimer);gpsRetryTimer=null;}releaseWakeLock();if(driverData.plate)db.ref('van/active_buses/'+driverData.plate).remove().catch(()=>{});resetDriverData(true);const sg=document.getElementById('start-gps');if(sg)sg.style.display='block';const stg=document.getElementById('stop-gps');if(stg)stg.style.display='none';showToast('🔴 已停止當值');if(voiceEnabled)speakCantonese(VOICE_TEXTS.stopDuty);}
+async function goToNextStation(){if(!driverData.isActive){showToast('請先開始當值');return;}const r=getRoute();if(driverData.stationIndex<r.length-1){driverData.stationIndex++;}else{driverData.direction=driverData.direction===0?1:0;driverData.stationIndex=0;driverData.passengerCount=0;driverData.isFull=false;lastReportedIndex=0;lastDriverScrollIndex=-1;showToast('🔄 已到總站，調頭清客');if(voiceEnabled)speakCantonese('已到達總站，清客完畢，現已調頭');updateDriverDB();renderDriverRouteStrip();return;}lastReportedIndex=driverData.stationIndex;updateDriverDB();renderDriverRouteStrip();const nr=getRoute(),cs=nr[driverData.stationIndex],nX=driverData.stationIndex+1;let nsn=(nX<nr.length)?nr[nX]:null;if(voiceEnabled){if(nsn){await speakCantonese('到達 '+cs);setTimeout(()=>speakCantonese('下一站 '+nsn),2000);}else{await speakCantonese('到達 '+cs);setTimeout(()=>speakCantonese('已到達總站'),2000);}}}
+async function goToPrevStation(){if(!driverData.isActive){showToast('請先開始當值');return;}const r=getRoute();if(driverData.stationIndex>0){driverData.stationIndex--;}else{driverData.direction=driverData.direction===0?1:0;const nr=getRoute();driverData.stationIndex=nr.length-1;lastReportedIndex=-1;lastDriverScrollIndex=-1;showToast('🔄 已調頭至總站');if(voiceEnabled)speakCantonese('已調頭');updateDriverDB();renderDriverRouteStrip();return;}lastReportedIndex=driverData.stationIndex;updateDriverDB();renderDriverRouteStrip();const nr=getRoute(),cs=nr[driverData.stationIndex],nX=driverData.stationIndex+1;let nsn=(nX<nr.length)?nr[nX]:null;if(voiceEnabled){if(nsn){await speakCantonese('到達 '+cs);setTimeout(()=>speakCantonese('下一站 '+nsn),2000);}else{await speakCantonese('到達 '+cs);setTimeout(()=>speakCantonese('已到達總站'),2000);}}}
+document.getElementById('btn-set-plate').addEventListener('click',function(){const i=document.getElementById('driver-plate-input');const p=i.value.trim().toUpperCase();if(!p){showToast('請輸入車牌');return;}if(driverData.isActive){if(!confirm('更改車牌會停止當值，確定？'))return;stopDuty();}driverData.plate=p;savePlate(currentUser.identifier,p);updateDriverDB();i.value='';showToast('✅ 車牌已設定：'+p);if(voiceEnabled)speakCantonese(VOICE_TEXTS.carPlateSet);});
+function initDriverPanel(){const sp=getSavedPlate(currentUser.identifier);if(sp&&!driverData.plate){driverData.plate=sp;document.getElementById('driver-plate-input').value=sp;showToast('已自動填入車牌：'+sp);}if(driverMsgRef)driverMsgRef.off();if(!driverData.plate){driverData.plate=null;}if(driverData.plate){driverBusRef=db.ref('van/active_buses/'+driverData.plate);driverBusRef.on('value',s=>{const d=s.val();if(d){driverData.mode=d.mode||'busy';driverData.direction=d.direction||0;driverData.stationIndex=d.stationIndex||0;driverData.passengerCount=d.passengerCount||0;driverData.isActive=d.isActive||false;driverData.carSeats=d.carSeats||16;driverData.isFull=d.isFull||false;updateDriverUI();}});}driverMsgRef=db.ref('van/messages').orderByChild('busId').equalTo(driverData.plate||'');driverMsgRef.on('value',async s=>{const banned=await isBanned(currentUser.uid);let hasNew=false,lastMsg=null,lastSender=null,lastType='text';['driver-msg-list','driver-msg-list-overlay'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML='';const items=[];s.forEach(c=>{const m=c.val();if(m.hidden||banned)return;items.push({key:c.key,msg:m});});items.sort((a,b)=>b.msg.timestamp-a.msg.timestamp);const frag=document.createDocumentFragment();items.forEach(it=>{const m=it.msg,div=document.createElement('div');div.className='msg-row';const tS=document.createElement('span');tS.className='msg-time';tS.textContent=m.timestamp?'['+new Date(m.timestamp).toLocaleTimeString('zh-HK')+'] ':'';div.appendChild(tS);if(m.audio){const b=document.createElement('button');b.className='play-audio';b.textContent='▶ 語音';b.addEventListener('click',()=>playBoostedAudio(m.audio,CONFIG.VOICE_MSG_BOOST));div.appendChild(b);const sp=document.createElement('span');sp.textContent='🎤 語音訊息';div.appendChild(sp);if(!lastMsg&&id==='driver-msg-list'){lastMsg='🎤 語音訊息';lastSender=m.senderIdentifier||'乘客';lastType='audio';}}else{div.appendChild(document.createTextNode((m.senderIdentifier||'')+': '+(m.text||'(訊息)')));if(!lastMsg&&id==='driver-msg-list'){lastMsg=m.text||'(訊息)';lastSender=m.senderIdentifier||'乘客';lastType='text';}}const cDel=(m.senderUid===currentUser.uid)||isSuperAdmin;if(cDel){const db2=document.createElement('button');db2.className='btn btn-secondary';db2.style.cssText='width:auto;padding:4px 10px;font-size:13px;';db2.textContent='🗑️';db2.addEventListener('click',()=>{if(confirm('確定刪除？'))db.ref('van/messages/'+it.key).remove().then(()=>showToast('已刪除'));});div.appendChild(db2);}frag.appendChild(div);hasNew=true;});el.appendChild(frag);});if(hasNew&&document.getElementById('view-driver').classList.contains('active')){if(lastMsg)showMsgNotification(lastType,lastSender,lastMsg);}});updateDriverUI();const sg=document.getElementById('start-gps');if(sg)sg.style.display=driverData.isActive?'none':'block';const stg=document.getElementById('stop-gps');if(stg)stg.style.display=driverData.isActive?'block':'none';if(driverData.isActive&&driverData.plate&&!gpsWatchId)startGpsWatch();}
+function initWalkieTalkie(){if(!driverData.plate)return;updateWalkieTargets();if(walkieRef)walkieRef.off();walkieRef=db.ref('van/walkie_talkie').orderByChild('timestamp').limitToLast(50);walkieRef.on('value',async s=>{const c=document.getElementById('walkie-messages');if(!c)return;c.innerHTML='';const banned=await isBanned(currentUser.uid);const items=[];s.forEach(ch=>{const m=ch.val();if(m.hidden||banned)return;if(m.target==='all'||m.target===driverData.plate||m.senderPlate===driverData.plate)items.push({key:ch.key,msg:m});});items.sort((a,b)=>b.msg.timestamp-a.msg.timestamp);const frag=document.createDocumentFragment();items.forEach(it=>{const m=it.msg,div=document.createElement('div');div.style.cssText='padding:4px 0;border-bottom:1px solid #333;font-size:14px;';const tS=document.createElement('span');tS.style.color='#888';tS.textContent=`[${new Date(m.timestamp).toLocaleTimeString('zh-HK')}] `;div.appendChild(tS);const strong=document.createElement('strong');strong.textContent=(m.senderPlate||'未知司機')+': ';div.appendChild(strong);if(m.audio){const b=document.createElement('button');b.className='play-audio';b.textContent='▶ 語音';b.addEventListener('click',()=>playBoostedAudio(m.audio,10));div.appendChild(b);}else{div.appendChild(document.createTextNode(m.text||''));}frag.appendChild(div);});c.appendChild(frag);});}
+function updateWalkieTargets(){const s=document.getElementById('walkie-target');if(!s)return;db.ref('van/active_buses').once('value',snap=>{const d=snap.val()||{};let h='<option value="all">📢 全部司機</option>';for(const p in d){if(p!==driverData.plate&&Date.now()-d[p].lastUpdate<CONFIG.ACTIVE_BUS_TIMEOUT)h+=`<option value="${esc(p)}">🚐 ${esc(p)}</option>`;}s.innerHTML=h;});}
+function loadBusList(){const c=document.getElementById('bus-list-container');if(!c)return;c.textContent='載入中…';if(busListRef)busListRef.off();busListRef=db.ref('van/active_buses');busListRef.on('value',snap=>{const d=snap.val()||{};let cnt=0,nw=Date.now();const frag=document.createDocumentFragment();for(const p in d){const b=d[p];if(nw-b.lastUpdate>CONFIG.ACTIVE_BUS_TIMEOUT)continue;cnt++;const card=document.createElement('div');card.className='card';card.style.padding='14px';const tt=document.createElement('div');tt.style.cssText='font-size:24px;font-weight:bold;color:var(--gold);';tt.textContent='🚐 '+p;card.appendChild(tt);const info=document.createElement('div');info.style.cssText='font-size:17px;color:#ccc;';info.textContent=(b.currentStation||'未知')+' · 👥 '+(b.passengerCount||0)+'人';card.appendChild(info);const btn=document.createElement('button');btn.className='btn btn-portal';btn.style.cssText='margin-top:8px;font-size:20px;padding:14px;';btn.textContent='追蹤';btn.dataset.plate=p;btn.addEventListener('click',()=>trackBus(p));card.appendChild(btn);frag.appendChild(card);}c.innerHTML='';if(cnt===0){const e=document.createElement('div');e.style.cssText='text-align:center;color:#888;font-size:18px;';e.textContent='沒有活躍車輛';c.appendChild(e);}else c.appendChild(frag);});}
+function trackBus(plate){currentBusId=plate;showView('view-passenger');const card=document.getElementById('pass-data-card');if(!card)return;card.textContent='讀取中…';passengerLastStationIndex=-1;if(passengerMsgRef)passengerMsgRef.off();if(passengerBusRef)passengerBusRef.off();passengerBusRef=db.ref('van/active_buses/'+plate);passengerBusRef.on('value',snap=>{if(!document.getElementById('view-passenger').classList.contains('active'))return;const bus=snap.val();if(!bus){card.textContent='車輛已離線';return;}const ci=bus.stationIndex||0;let rt;if(bus.mode==='busy')rt=bus.direction===0?BUSY_GO:BUSY_BACK;else rt=bus.direction===0?BUSY_GO:BUSY_BACK;const cs=rt[ci]||'未知',ni=ci+1<rt.length?ci+1:0,ns=rt[ni]||'終點';card.innerHTML='';const t1=document.createElement('div');t1.style.cssText='font-size:24px;font-weight:bold;color:var(--gold);';t1.textContent='🚐 '+plate;card.appendChild(t1);const t2=document.createElement('div');t2.className='station-name';t2.textContent=cs;card.appendChild(t2);if(bus.isFull){const t3=document.createElement('div');t3.style.cssText='font-size:48px;font-weight:800;color:#ff4444;text-align:center;';t3.textContent='🚫 滿座';card.appendChild(t3);}else{const t3=document.createElement('div');t3.style.cssText='font-size:48px;font-weight:800;color:var(--gold);text-align:center;';t3.textContent=(bus.passengerCount||0)+' 人';card.appendChild(t3);}const t4=document.createElement('div');t4.style.cssText='font-size:17px;color:#aaa;text-align:center;';t4.textContent='下一站：'+ns;card.appendChild(t4);renderPassRouteStrip(bus);});passengerMsgRef=db.ref('van/messages').orderByChild('busId').equalTo(plate);passengerMsgRef.on('value',async snap=>{const list=document.getElementById('pass-msg-list');if(!list)return;list.innerHTML='';const banned=await isBanned(currentUser.uid);const items=[];snap.forEach(ch=>{const m=ch.val();if(m.hidden||banned)return;items.push({key:ch.key,msg:m});});items.sort((a,b)=>b.msg.timestamp-a.msg.timestamp);const frag=document.createDocumentFragment();items.forEach(it=>{const m=it.msg,div=document.createElement('div');div.className='msg-row';const tS=document.createElement('span');tS.className='msg-time';tS.textContent=m.timestamp?'['+new Date(m.timestamp).toLocaleTimeString('zh-HK')+'] ':'';div.appendChild(tS);if(m.audio){const b=document.createElement('button');b.className='play-audio';b.textContent='▶ 語音';b.addEventListener('click',()=>playBoostedAudio(m.audio,10));div.appendChild(b);}else{div.appendChild(document.createTextNode((m.senderIdentifier||'')+': '+(m.text||'(訊息)')));}frag.appendChild(div);});list.appendChild(frag);});}
+function renderPassRouteStrip(bus){const st=document.getElementById('pass-route-strip');if(!st)return;st.innerHTML='';let rt;if(bus.mode==='busy')rt=bus.direction===0?BUSY_GO:BUSY_BACK;else rt=bus.direction===0?BUSY_GO:BUSY_BACK;const cur=bus.stationIndex||0;if(!rt||rt.length===0){st.innerHTML='<div style="color:#888;padding:10px;">路線資料載入中...</div>';return;}rt.forEach((nm,i)=>{const nd=document.createElement('div');nd.className='dot-node';if(i<cur)nd.classList.add('passed');else if(i===cur)nd.classList.add('current');else if(i===cur+1)nd.classList.add('next');const dot=document.createElement('div');dot.className='dot';const sp=document.createElement('span');sp.textContent=nm;nd.appendChild(dot);nd.appendChild(sp);st.appendChild(nd);});const cd=st.querySelector('.dot-node.current');if(cd)setTimeout(()=>cd.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'}),100);}
+function loadAdminPanel(){try{if(adminBusesRef)adminBusesRef.off();adminBusesRef=db.ref('van/active_buses');adminBusesRef.on('value',snap=>{try{const d=snap.val()||{};let cnt=0,tot=0,nw=Date.now();for(const p in d){if(nw-d[p].lastUpdate<CONFIG.ACTIVE_BUS_TIMEOUT){cnt++;tot+=d[p].passengerCount||0;}}const ac=document.getElementById('admin-active-count');if(ac)ac.textContent=cnt;const pc=document.getElementById('admin-passenger-count');if(pc)pc.textContent=tot;}catch(e){}});if(adminMsgRef)adminMsgRef.off();adminMsgRef=db.ref('van/messages').orderByChild('timestamp').limitToLast(CONFIG.MESSAGE_LIMIT);adminMsgRef.on('value',snap=>{try{const c=document.getElementById('admin-msg-list');if(!c)return;c.innerHTML='';snap.forEach(ch=>{const m=ch.val();const div=document.createElement('div');div.className='admin-item';const info=document.createElement('div');info.className='info';info.textContent=new Date(m.timestamp).toLocaleTimeString('zh-HK')+' | '+m.senderIdentifier;div.appendChild(info);const ct=document.createElement('div');ct.style.fontSize='15px';ct.textContent=m.audio?'🎤 語音':(m.text||'');div.appendChild(ct);c.appendChild(div);});}catch(e){}});loadBans();loadAdminAnnounce();}catch(e){console.error(e);}}
+function loadBans(){try{if(bansRef)bansRef.off();bansRef=db.ref('bans');bansRef.on('value',snap=>{const d=snap.val()||{};const c=document.getElementById('admin-banned-phones');if(!c)return;let h='<div style="margin-top:8px;"><span style="font-size:14px;color:#888;">已封鎖用戶：</span>';const keys=Object.keys(d).filter(k=>d[k]&&typeof d[k]==='object');if(keys.length===0)h+='<div style="color:#888;font-size:14px;">暫無封鎖記錄</div>';else keys.forEach(k=>{h+=`<span class="badge badge-red" style="font-size:15px;">${esc(d[k].identifier||k)}</span>`;});h+='</div>';c.innerHTML=h;});}catch(e){}}
+function loadAdminAnnounce(){try{if(adminAnnounceRef)adminAnnounceRef.off();adminAnnounceRef=db.ref('van/announcements').orderByChild('timestamp').limitToLast(20);adminAnnounceRef.on('value',snap=>{const c=document.getElementById('admin-announce-list');if(!c)return;c.innerHTML='';snap.forEach(ch=>{const a=ch.val();const div=document.createElement('div');div.className='admin-item';div.style.borderLeftColor='var(--gold)';div.innerHTML='<div class="info">'+esc(new Date(a.timestamp).toLocaleString('zh-HK'))+'</div><div style="font-size:15px;">'+esc(a.text||'🎤 語音公告')+'</div>';c.appendChild(div);});});}catch(e){}}
+document.getElementById('login-google').addEventListener('click',function(){if(isLoggingIn){showToast('⏳ 登入處理中');return;}isLoggingIn=true;showLoading('Google 登入中...');const p=new firebase.auth.GoogleAuthProvider();auth.signInWithPopup(p).then(async r=>{const u=r.user,em=u.email;const role=await checkRole(em,u.uid);if(role!=='admin'){showToast('此 Google 帳戶不是管理員');auth.signOut();hideLoading();isLoggingIn=false;return;}currentUser.uid=u.uid;currentUser.identifier=em;currentUser.role=role;currentUser.loginTime=Date.now();isSuperAdmin=await checkSuperAdmin(u.uid);if(!isSuperAdmin&&isSuperAdminEmail(em))isSuperAdmin=true;isAdmin=true;await db.ref('users/'+u.uid).set({identifier:em,role,lastLogin:Date.now()});document.getElementById('login-modal').classList.remove('active');document.getElementById('btn-admin-panel').style.display='block';loadAdminPanel();applyAdminPermissions();showToast('管理員登入成功：'+em);showView('view-lobby');hideLoading();isLoggingIn=false;initBookingNotify();}).catch(e=>{hideLoading();isLoggingIn=false;if(e.code==='auth/popup-closed-by-user')showToast('登入視窗已關閉');else showToast('登入失敗：'+e.message);});});
+document.getElementById('login-driver').addEventListener('click',function(){document.getElementById('login-choice').style.display='none';document.getElementById('driver-login-form').style.display='block';});
+document.getElementById('driver-login-back').addEventListener('click',function(){document.getElementById('driver-login-form').style.display='none';document.getElementById('login-choice').style.display='block';});
+document.getElementById('driver-login-btn').addEventListener('click',async function(){const id=document.getElementById('driver-identifier').value.trim();const er=document.getElementById('driver-login-error');if(!id){er.textContent='請輸入電郵或電話號碼';return;}showLoading('司機登入中...');try{await auth.signInAnonymously();if(!auth.currentUser){er.textContent='登入失敗';hideLoading();return;}const _uid=auth.currentUser.uid;const role=await checkRole(id,_uid);if(role!=='driver'&&role!=='admin'){er.textContent='此帳戶不是司機';hideLoading();return;}currentUser.uid=_uid;currentUser.identifier=id;currentUser.role=role;currentUser.loginTime=Date.now();if(role==='admin'){isSuperAdmin=await checkSuperAdmin(_uid);isAdmin=true;}else{isSuperAdmin=false;isAdmin=false;}await db.ref('users/'+currentUser.uid).set({identifier:id,role,lastLogin:Date.now()});document.getElementById('login-modal').classList.remove('active');if(role==='admin'){document.getElementById('btn-admin-panel').style.display='block';loadAdminPanel();applyAdminPermissions();}else document.getElementById('btn-admin-panel').style.display='none';showToast((role==='admin'?'管理員':'司機')+'登入成功：'+id);showView('view-lobby');initBookingNotify();}catch(e){er.textContent='登入失敗：'+e.message;}hideLoading();});
+document.getElementById('login-passenger').addEventListener('click',function(){document.getElementById('login-choice').style.display='none';document.getElementById('passenger-login-form').style.display='block';});
+document.getElementById('passenger-login-back').addEventListener('click',function(){document.getElementById('passenger-login-form').style.display='none';document.getElementById('login-choice').style.display='block';});
+document.getElementById('passenger-login-btn').addEventListener('click',async function(){const ph=document.getElementById('passenger-phone').value.trim();const er=document.getElementById('passenger-login-error');if(!ph||!/^\d{8,}$/.test(ph)){er.textContent='請輸入 8 位數字電話號碼';return;}showLoading('乘客登入中...');try{await auth.signInAnonymously();const _uid2=auth.currentUser.uid;const role=await checkRole(ph,_uid2);currentUser.uid=_uid2;currentUser.identifier=ph;currentUser.role=role;currentUser.loginTime=Date.now();await db.ref('users/'+currentUser.uid).set({identifier:ph,role,lastLogin:Date.now()});document.getElementById('login-modal').classList.remove('active');if(role==='admin'){isAdmin=true;document.getElementById('btn-admin-panel').style.display='block';loadAdminPanel();applyAdminPermissions();}else{document.getElementById('btn-admin-panel').style.display='none';}showToast('乘客登入成功：'+ph);showView('view-lobby');}catch(e){er.textContent='登入失敗：'+e.message;}hideLoading();});
+document.getElementById('login-cancel').addEventListener('click',function(){document.getElementById('login-modal').classList.remove('active');});
+document.getElementById('btn-logout').addEventListener('click',function(){if(gpsWatchId){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}releaseWakeLock();try{if(busListRef)busListRef.off();if(passengerMsgRef)passengerMsgRef.off();if(driverMsgRef)driverMsgRef.off();if(adminMsgRef)adminMsgRef.off();if(walkieRef)walkieRef.off();if(driverBusRef)driverBusRef.off();if(adminBusesRef)adminBusesRef.off();if(bansRef)bansRef.off();if(adminAnnounceRef)adminAnnounceRef.off();if(passengerBusRef)passengerBusRef.off();}catch(e){}auth.signOut().catch(console.warn);currentUser={uid:null,identifier:null,role:'passenger',loginTime:null};isSuperAdmin=false;isAdmin=false;document.getElementById('btn-admin-panel').style.display='none';if(driverData.plate)db.ref('van/active_buses/'+driverData.plate).remove().catch(()=>{});resetDriverData(false);stopBookingNotify();showToast('已登出');showView('view-lobby');});
+safeClick(document.getElementById('btn-passenger'),function(){if(!currentUser.uid){document.getElementById('login-modal').classList.add('active');return;}showView('view-passenger-list');loadBusList();});
+safeClick(document.getElementById('btn-driver'),function(){if(!currentUser.uid){document.getElementById('login-modal').classList.add('active');return;}if(currentUser.role!=='driver'&&currentUser.role!=='admin'){showToast('只有司機或管理員可以進入');return;}showView('view-driver');initDriverPanel();initWalkieTalkie();});
+safeClick(document.getElementById('btn-admin-panel'),function(){if(!isAdmin){showToast('權限不足');return;}showView('view-admin');loadAdminPanel();applyAdminPermissions();});
+safeClick(document.getElementById('btn-prev'),goToPrevStation);
+safeClick(document.getElementById('btn-next'),goToNextStation);
+safeClick(document.getElementById('btn-add-pass'),function(){if(!driverData.isActive){showToast('請先開始當值');return;}if(driverData.passengerCount>=driverData.carSeats){showToast(`已達 ${driverData.carSeats} 座上限`);return;}driverData.passengerCount++;if(driverData.passengerCount===driverData.carSeats)driverData.isFull=true;updateDriverDB();});
+safeClick(document.getElementById('btn-sub-pass'),function(){if(!driverData.isActive){showToast('請先開始當值');return;}if(driverData.passengerCount>0){driverData.passengerCount--;if(driverData.passengerCount<driverData.carSeats)driverData.isFull=false;updateDriverDB();}});
+safeClick(document.getElementById('d-full-btn'),function(){if(!driverData.isActive){showToast('請先開始當值');return;}driverData.isFull=!driverData.isFull;if(driverData.isFull)driverData.passengerCount=driverData.carSeats;else driverData.passengerCount=Math.max(0,driverData.carSeats-1);updateDriverDB();});
+safeClick(document.getElementById('d-car-btn'),function(){driverData.carSeats=driverData.carSeats===16?19:16;if(driverData.passengerCount>driverData.carSeats)driverData.passengerCount=driverData.carSeats;driverData.isFull=driverData.passengerCount===driverData.carSeats;updateDriverDB();});
+safeClick(document.getElementById('btn-driver-back'),function(){if(gpsWatchId){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}releaseWakeLock();if(driverMsgRef)driverMsgRef.off();if(walkieRef)walkieRef.off();showView('view-lobby');});
+safeClick(document.getElementById('btn-back-list'),function(){if(busListRef)busListRef.off();showView('view-lobby');});
+safeClick(document.getElementById('btn-back-track'),function(){if(passengerMsgRef)passengerMsgRef.off();if(passengerBusRef)passengerBusRef.off();showView('view-passenger-list');loadBusList();});
+safeClick(document.getElementById('btn-back-admin'),function(){showView('view-lobby');});
+document.getElementById('fps-code').addEventListener('click',function(){const t='122891914';if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>showToast('✅ 已複製：'+t));}else{showToast('✅ 轉數快：'+t);}});
+document.getElementById('global-voice-btn').addEventListener('click',function(){voiceEnabled=!voiceEnabled;this.textContent=voiceEnabled?'🔊':'🔇';this.classList.toggle('muted');showToast(voiceEnabled?'語音已開啟':'語音已關閉');localStorage.setItem('globalVoice',voiceEnabled?'on':'off');if(!voiceEnabled&&window.speechSynthesis)window.speechSynthesis.cancel();});
+if(localStorage.getItem('globalVoice')==='off'){voiceEnabled=false;document.getElementById('global-voice-btn').textContent='🔇';document.getElementById('global-voice-btn').classList.add('muted');}
+auth.onAuthStateChanged(function(u){if(u){db.ref('users/'+u.uid).once('value').then(async snap=>{const d=snap.val();if(!d){console.warn('用戶資料缺失');return;}currentUser.uid=u.uid;currentUser.identifier=d.identifier||'';currentUser.role=d.role||'passenger';if(currentUser.role==='admin'){isAdmin=true;isSuperAdmin=await checkSuperAdmin(u.uid);document.getElementById('btn-admin-panel').style.display='block';loadAdminPanel();applyAdminPermissions();}else{isAdmin=false;isSuperAdmin=false;}document.getElementById('login-modal').classList.remove('active');});}});
+db.ref('.info/connected').on('value',snap=>{const s=document.getElementById('connection-status');if(!s)return;if(snap.val()){s.textContent='🟢 已連線';s.className='connection-status online';setTimeout(()=>{s.style.display='none';},2500);}else{s.textContent='🔴 網絡中斷';s.className='connection-status offline';s.style.display='block';}});
+// ============================================================
+// 留座預約即時通知（司機端）
+// ============================================================
+let _bnRef=null,_bnLoopRef=null;
+let _bnKnownIds=new Set(),_bnLoopKnownIds=new Set();
+let _bnFirstLoad=true,_bnLoopFirstLoad=true;
+let _bnPending={},_bnLoopPending={};
+function _bnToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function initBookingNotify(){const today=_bnToday();if(_bnRef){try{_bnRef.off();}catch(e){}}_bnRef=db.ref('booking/'+today);_bnRef.on('value',function(snap){const all=snap.val()||{};const newIds=new Set(Object.keys(all));if(_bnFirstLoad){Object.keys(all).forEach(function(id){const b=all[id];if(b&&b.status==='pending')_bnPending[id]=b;});_bnKnownIds=newIds;_bnFirstLoad=false;renderBookingNotify();return;}let hasNew=false;newIds.forEach(function(id){if(!_bnKnownIds.has(id)){const b=all[id];if(b&&b.status==='pending'){_bnPending[id]=b;hasNew=true;}}});Object.keys(_bnPending).forEach(function(id){if(!all[id]||all[id].status!=='pending')delete _bnPending[id];});_bnKnownIds=newIds;if(hasNew){playBookingBeep();if(navigator.vibrate)navigator.vibrate([300,100,300]);showToast('🔔 有新固定班次留位！');}renderBookingNotify();});if(_bnLoopRef){try{_bnLoopRef.off();}catch(e){}}_bnLoopRef=db.ref('booking_loop/'+today);_bnLoopRef.on('value',function(snap){const all=snap.val()||{};const newIds=new Set(Object.keys(all));if(_bnLoopFirstLoad){Object.keys(all).forEach(function(id){const x=all[id];if(x&&x.status==='pending')_bnLoopPending[id]=x;});_bnLoopKnownIds=newIds;_bnLoopFirstLoad=false;renderBookingNotify();return;}let hasNew=false;newIds.forEach(function(id){if(!_bnLoopKnownIds.has(id)){const x=all[id];if(x&&x.status==='pending'){_bnLoopPending[id]=x;hasNew=true;}}});Object.keys(_bnLoopPending).forEach(function(id){if(!all[id]||all[id].status!=='pending')delete _bnLoopPending[id];});_bnLoopKnownIds=newIds;if(hasNew){playBookingBeep();if(navigator.vibrate)navigator.vibrate([300,100,300]);showToast('🔄 有循環線乘客留位！');}renderBookingNotify();});}
+function stopBookingNotify(){if(_bnRef){try{_bnRef.off();}catch(e){}_bnRef=null;}if(_bnLoopRef){try{_bnLoopRef.off();}catch(e){}_bnLoopRef=null;}_bnPending={};_bnLoopPending={};_bnFirstLoad=true;_bnLoopFirstLoad=true;const bar=document.getElementById('booking-notify-bar');if(bar)bar.classList.remove('show');}
+function _bnEsc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function renderBookingNotify(){const bar=document.getElementById('booking-notify-bar');const list=document.getElementById('bn-list');const count=document.getElementById('bn-count');if(!bar||!list||!count)return;const fixedItems=Object.keys(_bnPending).map(function(id){return Object.assign({id:id,_type:'fixed'},_bnPending[id]);});const loopItems=Object.keys(_bnLoopPending).map(function(id){return Object.assign({id:id,_type:'loop'},_bnLoopPending[id]);});const all=fixedItems.concat(loopItems);if(all.length===0){bar.classList.remove('show');return;}bar.classList.add('show');count.textContent=all.length;let h='';all.forEach(function(item){if(item._type==='fixed'){const dirLabel=item.direction==='morning'?'🌅 黃泥墩開出':'🌆 元朗站開出';h+='<div class="bn-item">';h+='<div class="bn-name">🚐 '+_bnEsc(item.passengerName||'乘客')+(item.seats>1?' ×'+item.seats:'')+'</div>';h+='<div class="bn-detail">'+_bnEsc(item.passengerPhone||'')+' · '+_bnEsc(item.time||'')+' 班次</div>';h+='<div class="bn-detail">'+dirLabel+'</div>';h+='<div class="bn-actions">';h+='<button class="bn-confirm" onclick="bnConfirmFixed(\''+item.id+'\')">✅ 確認</button>';h+='<button class="bn-reject" onclick="bnRejectFixed(\''+item.id+'\')">❌ 拒絕</button>';h+='</div></div>';}else{h+='<div class="bn-item">';h+='<div class="bn-name">🔄 '+_bnEsc(item.name||'乘客')+(item.seats>1?' ×'+item.seats:'')+'</div>';h+='<div class="bn-detail">'+_bnEsc(item.phone||'')+' · 循環線</div>';h+='<div class="bn-actions">';h+='<button class="bn-confirm" onclick="bnConfirmLoop(\''+item.id+'\')">✅ 確認</button>';h+='<button class="bn-reject" onclick="bnRejectLoop(\''+item.id+'\')">❌ 拒絕</button>';h+='</div></div>';}});list.innerHTML=h;}
+async function bnConfirmFixed(id){try{const today=_bnToday();const b=_bnPending[id];if(!b)return;const plate=driverData.plate||'';await db.ref('booking/'+today+'/'+id).update({status:'reserved',confirmedAt:Date.now(),confirmedBy:plate||'driver'});if(plate){await db.ref('van/active_buses/'+plate+'/passengerCount').transaction(function(c){return (c||0)+(b.seats||1);});}delete _bnPending[id];renderBookingNotify();showToast('✅ 已確認留位');}catch(e){showToast('❌ 確認失敗：'+e.message);}}
+async function bnRejectFixed(id){const reason=prompt('拒絕原因（可以留空）：','')||'';try{const today=_bnToday();await db.ref('booking/'+today+'/'+id).update({status:'rejected',rejectedAt:Date.now(),rejectReason:reason});delete _bnPending[id];renderBookingNotify();showToast('❌ 已拒絕');}catch(e){showToast('❌ 操作失敗：'+e.message);}}
+async function bnConfirmLoop(id){try{const today=_bnToday();await db.ref('booking_loop/'+today+'/'+id).update({status:'reserved',confirmedAt:Date.now()});delete _bnLoopPending[id];renderBookingNotify();showToast('✅ 已確認循環線留位');}catch(e){showToast('❌ 確認失敗：'+e.message);}}
+async function bnRejectLoop(id){if(!confirm('確定拒絕呢位乘客？'))return;try{const today=_bnToday();await db.ref('booking_loop/'+today+'/'+id).remove();delete _bnLoopPending[id];renderBookingNotify();showToast('❌ 已拒絕');}catch(e){showToast('❌ 操作失敗：'+e.message);}}
+function hideBookingNotify(){const bar=document.getElementById('booking-notify-bar');if(bar)bar.classList.remove('show');setTimeout(function(){const total=Object.keys(_bnPending).length+Object.keys(_bnLoopPending).length;if(total>0)renderBookingNotify();},5000);}
+function playBookingBeep(){try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const osc=ctx.createOscillator();const gain=ctx.createGain();osc.type='sine';osc.frequency.value=880;gain.gain.value=0.35;osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+0.15);setTimeout(function(){const osc2=ctx.createOscillator();const gain2=ctx.createGain();osc2.type='sine';osc2.frequency.value=1320;gain2.gain.value=0.35;osc2.connect(gain2);gain2.connect(ctx.destination);osc2.start();osc2.stop(ctx.currentTime+0.15);},200);}catch(e){}}
+window.addEventListener('beforeunload',function(){stopBookingNotify();});
+console.log('✅ 西鐵小巴系統 v3.5 已就緒');
 </script>
 </body>
 </html>
