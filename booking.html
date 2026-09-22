@@ -253,9 +253,7 @@ const LOOP_TIMEOUT = 30 * 60 * 1000;
 const LOOP_NOSHOW = 1 * 60 * 60 * 1000;
 const MAX_CANCEL_PER_DAY = 3;
 const TRACK_INTERVAL = 5000;
-/* ✅ 新增：班次結束後多久清理舊 pending */
 const PENDING_TIMEOUT_MS = 5 * 60 * 1000;
-/* ✅ 新增：狀態鎖，避免重複點擊 */
 const inflightActions = new Set();
 
 function toast(m, d = 3000) {
@@ -299,14 +297,11 @@ function isLoopHour() {
   const h = new Date().getHours();
   return isWeekday() && h >= LS && h < LE;
 }
-/* ✅ 新增：安全取得時間字串 */
 function fmtBookTime(ts) {
   if (!ts) return '';
-  try {
-    return new Date(ts).toLocaleString('zh-HK', {hour:'2-digit',minute:'2-digit',hour12:false});
-  } catch (e) { return ''; }
+  try { return new Date(ts).toLocaleString('zh-HK', {hour:'2-digit',minute:'2-digit',hour12:false}); }
+  catch (e) { return ''; }
 }
-/* ✅ 新增：狀態機鎖包裝 */
 async function withLock(key, fn) {
   if (inflightActions.has(key)) { toast('⏳ 處理中，請稍候...'); return; }
   inflightActions.add(key);
@@ -399,18 +394,15 @@ const DL = {
   async clearPassengerLocation(date, bookingId) {
     return db.ref('booking/' + date + '/' + bookingId + '/passengerLocation').remove();
   },
-  /* ✅ 修復 B2：原子扣減/增加 passengerCount，避免競態 */
   async adjustBusCount(plate, delta) {
     if (!plate) return null;
     const ref = db.ref('van/active_buses/' + plate + '/passengerCount');
     const result = await ref.transaction(c => {
       const cur = c || 0;
-      const next = Math.max(0, cur + delta);
-      return next;
+      return Math.max(0, cur + delta);
     });
     return result;
   },
-  /* ✅ 新增：依 scheduleId 找出綁定車牌（在 booking_seats 中設定） */
   async resolvePlateForBooking(date, time) {
     try {
       const cfg = await DL.getSeatConfig(date, time);
@@ -441,10 +433,8 @@ let loopPassengerHandler = null;
 let currentTrackingBookingId = null;
 let currentTrackingDate = null;
 let currentLoopCache = null;
-/* ✅ 修復 B3：倒數計時器改用單一 timeout id */
 let countdownTimerId = null;
 let countdownBookingKey = null;
-/* ✅ 修復 B1：固定班次 listener 單獨追蹤 */
 let fixedBookingsRef = null;
 let fixedBookingsHandler = null;
 let loopQueueRef = null;
@@ -508,7 +498,6 @@ async function updateHomeStats() {
 /* ============ 乘客端 ============ */
 async function renderPassengerHome() {
   const c = document.getElementById('booking-content');
-  /* ✅ 修復 B4：同時清理 waitingRoomListener + loop 監聽 */
   if (waitingRoomListener) { try { waitingRoomListener.off(); } catch (e) {} waitingRoomListener = null; }
   if (loopPassengerRef && loopPassengerHandler) {
     try { loopPassengerRef.off('value', loopPassengerHandler); } catch (e) {}
@@ -521,23 +510,27 @@ async function renderPassengerHome() {
     const cs = pd.creditScore != null ? pd.creditScore : 100;
     const su = pd.suspendedUntil || 0;
     const t = getToday();
+    const accountCard = '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:15px;font-weight:600;">👤 ' + esc(pd.name || currentPassenger.name) + '</div><div style="font-size:12px;color:#64748b;margin-top:2px;">' + esc(currentPassenger.phone) + '</div></div><div style="text-align:right;"><div style="font-size:20px;font-weight:700;color:' + (cs >= 80 ? '#22c55e' : cs >= 50 ? '#f59e0b' : '#ef4444') + ';">' + cs + '</div><div style="font-size:10px;color:#64748b;">信用分</div></div></div></div>';
+
     if (!isWeekday()) {
-      c.innerHTML = '<div class="card"><div class="card-title">📅 今日不設留座</div><div style="font-size:13px;color:#64748b;line-height:1.8;">星期六、日及公眾假期採循環線運作，不設留座。</div></div><button class="btn btn-outline" onclick="passengerLogout()">登出</button>';
+      let wh = accountCard;
+      wh += '<div class="card"><div class="card-title">📅 今日不設留座</div><div style="font-size:13px;color:#64748b;line-height:1.8;">星期六、日及公眾假期採循環線運作，不設留座。<br>請直接到站頭排隊上車。</div></div>';
+      wh += '<div class="loop-card" style="background:linear-gradient(135deg,#1e293b,#334155);border-color:#64748b;"><div class="title" style="color:#94a3b8;">🔄 循環線留位</div><div class="sub" style="color:#cbd5e1;line-height:1.8;">🚫 週末及公眾假期不設網上留位<br>🚐 採循環線運作，到站直接上車<br>📅 留位服務將於下一個工作日 07:00 恢復</div></div>';
+      wh += '<button class="btn btn-outline" style="margin-top:20px;" onclick="passengerLogout()">登出</button>';
+      c.innerHTML = wh;
       return;
     }
     if (su > now()) {
       const r = Math.ceil((su - now()) / (24 * 60 * 60 * 1000));
-      c.innerHTML = '<div class="card" style="border-color:#ef4444;background:#450a0a;"><div style="font-size:14px;font-weight:600;color:#f87171;">⛔ 預約資格已暫停</div><div style="font-size:12px;color:#fca5a5;margin-top:6px;">剩餘 ' + r + ' 日。</div></div><button class="btn btn-outline" onclick="passengerLogout()">登出</button>';
+      c.innerHTML = accountCard + '<div class="card" style="border-color:#ef4444;background:#450a0a;"><div style="font-size:14px;font-weight:600;color:#f87171;">⛔ 預約資格已暫停</div><div style="font-size:12px;color:#fca5a5;margin-top:6px;">剩餘 ' + r + ' 日。</div></div><button class="btn btn-outline" onclick="passengerLogout()">登出</button>';
       return;
     }
-    let h = '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:15px;font-weight:600;">👤 ' + esc(pd.name || currentPassenger.name) + '</div><div style="font-size:12px;color:#64748b;margin-top:2px;">' + esc(currentPassenger.phone) + '</div></div><div style="text-align:right;"><div style="font-size:20px;font-weight:700;color:' + (cs >= 80 ? '#22c55e' : cs >= 50 ? '#f59e0b' : '#ef4444') + ';">' + cs + '</div><div style="font-size:10px;color:#64748b;">信用分</div></div></div></div>';
+    let h = accountCard;
     const tb = await DL.getBookings(t);
     const sc = await DL.getAllSeatConfigs(t);
     h += '<div class="card-title" style="margin-bottom:10px;">🌅 早上固定班次 · 大棠黃泥墩開出</div>';
     for (const tm of SM) h += renderShiftCard(t, tm, tb, sc);
-    if (isLoopHour()) {
-      h += '<div class="loop-card"><div class="title">🔄 循環線留位（07:00 - 18:00）</div><div class="sub">冇固定班次，留位後司機確認，有位就上車</div></div><div id="loop-section"></div>';
-    }
+    h += renderLoopCardByTime();
     h += '<div class="card-title" style="margin:16px 0 10px;">🌆 傍晚固定班次 · 元朗港鐵站 H 出口開出</div>';
     for (const tm of SE) h += renderShiftCard(t, tm, tb, sc);
     const mb = Object.values(tb).filter(b => b.passengerPhone === currentPassenger.phone && b.status !== 'cancelled' && b.status !== 'rejected');
@@ -565,6 +558,23 @@ async function renderPassengerHome() {
   }
 }
 
+function renderLoopCardByTime() {
+  const h = new Date().getHours();
+  const active = isLoopHour();
+  if (active) {
+    return '<div class="loop-card"><div class="title">🔄 循環線留位（07:00 - 18:00）</div><div class="sub">冇固定班次，留位後司機確認，有位就上車</div></div><div id="loop-section"></div>';
+  }
+  if (isWeekday()) {
+    if (h < LS) {
+      const mNow = new Date().getMinutes();
+      const mins = (LS - h) * 60 - mNow;
+      return '<div class="loop-card" style="background:linear-gradient(135deg,#1e293b,#334155);border-color:#64748b;"><div class="title" style="color:#94a3b8;">🔄 循環線留位</div><div class="sub" style="color:#cbd5e1;line-height:1.8;">⏰ 循環線時段：星期一至五 <strong style="color:#7dd3fc;">07:00 - 18:00</strong><br>🕗 距離開放仲有 <strong style="color:#fbbf24;">' + Math.max(0, Math.ceil(mins / 60)) + '</strong> 小時<br>📋 開放後可即時留位</div></div>';
+    }
+    return '<div class="loop-card" style="background:linear-gradient(135deg,#1e293b,#334155);border-color:#64748b;"><div class="title" style="color:#94a3b8;">🔄 循環線留位</div><div class="sub" style="color:#cbd5e1;line-height:1.8;">🌙 今日循環線時段已結束（07:00 - 18:00）<br>📅 明日 07:00 恢復留位服務<br>🚐 如需乘車，請直接到站頭排隊</div></div>';
+  }
+  return '<div class="loop-card" style="background:linear-gradient(135deg,#1e293b,#334155);border-color:#64748b;"><div class="title" style="color:#94a3b8;">🔄 循環線留位</div><div class="sub" style="color:#cbd5e1;line-height:1.8;">🚫 週末及公眾假期不設網上留位<br>🚐 採循環線運作，到站直接上車</div></div>';
+}
+
 async function loadLoopSection() {
   const s = document.getElementById('loop-section');
   if (!s) return;
@@ -572,7 +582,6 @@ async function loadLoopSection() {
   const t = getToday();
   if (loopPassengerRef && loopPassengerHandler) { try { loopPassengerRef.off('value', loopPassengerHandler); } catch (e) {} loopPassengerRef = null; loopPassengerHandler = null; }
   const r = db.ref('booking_loop/' + t);
-  /* ✅ 修復 B7：availSeats 動態計算，每次 snapshot 都重算 */
   const h = async (snap) => {
     const all = snap.val() || {};
     const my = Object.values(all).find(x => x.phone === currentPassenger.phone && (x.status === 'pending' || x.status === 'reserved'));
@@ -652,7 +661,6 @@ async function loopCancel() {
   });
 }
 
-/* ✅ 修復 B8：循環線乘客上車時，綁定到指定車牌（從 localStorage 或第一台當值車） */
 async function loopBoarded() {
   if (!confirm('確定你已上車？')) return;
   return withLock('loop_boarded', async () => {
@@ -684,7 +692,6 @@ function renderShiftCard(d, t, ab, sc) {
   const used = Object.values(ab).filter(b => b.scheduleId === sid && ['pending', 'reserved', 'arrived', 'boarded'].includes(b.status)).reduce((s, b) => s + (b.seats || 0), 0);
   const rem = quota - used;
   const full = rem <= 0;
-  /* ✅ 修復 B11：明確排除 cancelled / rejected，保留 no-show 顯示（讓乘客知道之前缺席） */
   const my = Object.values(ab).find(b => b.scheduleId === sid && b.passengerPhone === currentPassenger.phone && b.status !== 'cancelled' && b.status !== 'rejected');
   let bg = '';
   if (my) {
@@ -736,7 +743,6 @@ async function passengerLogin() {
   }
 }
 
-/* ✅ 修復 B12：登出時完整清理所有狀態 */
 function passengerLogout() {
   currentPassenger = null;
   clearPassengerSession();
@@ -829,7 +835,6 @@ async function renderWaitingRoom(id, d, t) {
   renderWaitingRoomUI(b, d, id);
 }
 
-/* ✅ 修復 B13：只在 tracking booking id 變更時才重啟 GPS */
 function renderWaitingRoomUI(b, d, id) {
   const c = document.getElementById('booking-content');
   let sb = '';
@@ -875,7 +880,6 @@ function renderWaitingRoomUI(b, d, id) {
       startGPS(b.id, b.date, b.time);
     }
   } else {
-    /* 狀態離開 reserved/arrived，停 GPS */
     if (currentTrackingBookingId === b.id) {
       stopGPS();
       currentTrackingBookingId = null;
@@ -885,7 +889,6 @@ function renderWaitingRoomUI(b, d, id) {
   }
 }
 
-/* ✅ 修復 B9：上車後完整清理 tracking 狀態 */
 async function passengerBoardFixed(id, d) {
   if (!confirm('確定你已上車？')) return;
   return withLock('board_fixed_' + id, async () => {
@@ -896,7 +899,6 @@ async function passengerBoardFixed(id, d) {
       if (b.status !== 'reserved' && b.status !== 'arrived') { toast('狀態已變更'); return; }
       await DL.updateBooking(d, id, { status: 'boarded', boardedAt: now() });
       await DL.clearPassengerLocation(d, id);
-      /* 乘客自己上車，仍要從車牌扣減（reserved 已佔用座位）— 已佔用不需再動 */
       stopGPS();
       currentTrackingBookingId = null;
       currentTrackingDate = null;
@@ -908,7 +910,6 @@ async function passengerBoardFixed(id, d) {
   });
 }
 
-/* ✅ 修復 B3：單一倒數計時器，不重複建立 */
 function updateCountdown(d, t, id) {
   const key = id + '|' + d + '|' + t;
   if (countdownBookingKey !== key) {
@@ -922,19 +923,13 @@ function updateCountdown(d, t, id) {
     return;
   }
   const diff = getShiftTime(d, t) - now();
-  if (diff <= 0) {
-    el.textContent = '班次已發車';
-    countdownTimerId = null;
-    countdownBookingKey = null;
-    return;
-  }
+  if (diff <= 0) { el.textContent = '班次已發車'; countdownTimerId = null; countdownBookingKey = null; return; }
   const m = Math.floor(diff / 60000);
   const s = Math.floor((diff % 60000) / 1000);
   el.textContent = '距離發車：' + m + ':' + String(s).padStart(2, '0');
   countdownTimerId = setTimeout(() => updateCountdown(d, t, id), 1000);
 }
 
-/* ✅ 修復 B5：取消時從當前班次設定找車牌，若找不到則不動計數（保留原邏輯但更穩） */
 async function cancelBooking(id, d) {
   if (!confirm('確定取消預約？')) return;
   return withLock('cancel_booking_' + id, async () => {
@@ -1048,7 +1043,6 @@ async function markArrived(id, d, lat, lng, accuracy) {
   } catch (e) {}
 }
 /* ============ 司機端 ============ */
-/* ✅ 修復 B1 & B6：統一清理所有 listener */
 function clearDriverListeners() {
   driverListeners.forEach(({ ref, handler }) => { try { ref.off('value', handler); } catch (e) {} });
   driverListeners = [];
@@ -1182,7 +1176,6 @@ function startPassengerTracking(t) {
 async function renderDriverFixedList() {
   const c = document.getElementById('driver-tab-fixed');
   if (!c) return;
-  /* ✅ 修復 B1：切到 fixed tab 時，先清掉舊 fixed listener */
   if (fixedBookingsRef && fixedBookingsHandler) {
     try { fixedBookingsRef.off('value', fixedBookingsHandler); } catch (e) {}
     fixedBookingsRef = null; fixedBookingsHandler = null;
@@ -1279,7 +1272,6 @@ function renderConfirmedPassenger(b) {
 async function renderDriverLoopList() {
   const c = document.getElementById('driver-tab-loop');
   if (!c) return;
-  /* ✅ 修復 B1：切到 loop tab 時，先清掉舊 loop listener */
   if (loopQueueRef && loopQueueHandler) {
     try { loopQueueRef.off('value', loopQueueHandler); } catch (e) {}
     loopQueueRef = null; loopQueueHandler = null;
@@ -1381,7 +1373,6 @@ async function driverRejectLoop(id) {
   });
 }
 
-/* ✅ 修復 B2：確認時檢查狀態 + 使用原子交易，避免重複累加 */
 async function driverConfirm(d, id, p) {
   return withLock('driver_confirm_' + id, async () => {
     try {
@@ -1396,7 +1387,6 @@ async function driverConfirm(d, id, p) {
   });
 }
 
-/* ✅ 修復 B2：拒絕時檢查狀態，避免重複扣減 */
 async function driverReject(d, id, p) {
   const r = prompt('拒絕原因（可以留空）：', '') || '';
   return withLock('driver_reject_' + id, async () => {
@@ -1408,7 +1398,6 @@ async function driverReject(d, id, p) {
       const wasReserved = (b.status === 'reserved' || b.status === 'arrived');
       await DL.updateBooking(d, id, { status: 'rejected', rejectedAt: now(), rejectedBy: p, rejectReason: r });
       if (wasReserved) {
-        /* 從原設定取車牌；若找不到則從當前當值車牌扣減 */
         const plate = (await DL.resolvePlateForBooking(d, b.time)) || p;
         await DL.adjustBusCount(plate, -(b.seats || 1));
       }
@@ -1443,7 +1432,6 @@ function renderInfo() {
 }
 
 /* ============ 自動清理 ============ */
-/* ✅ 修復 B10：即使 cs >= 100 也累積 streak，只是不加分 */
 async function awardCreditForGoodBehavior() {
   try {
     const t = getToday();
