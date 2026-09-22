@@ -367,12 +367,13 @@ const DL = {
     else patch.suspendedUntil = null;
     return DL.savePassenger(phone, patch);
   },
+  /* ✅ 修復：取消次數改用 booking_passengers/{phone}/cancels/{date}（已有權限） */
   async incrCancelCount(phone, date) {
     const cur = await DL.getCancelCount(phone, date);
-    return db.ref('booking_cancel_count/' + date + '/' + phone).set(cur + 1);
+    return db.ref('booking_passengers/' + phone + '/cancels/' + date).set(cur + 1);
   },
   async getCancelCount(phone, date) {
-    const s = await db.ref('booking_cancel_count/' + date + '/' + phone).once('value');
+    const s = await db.ref('booking_passengers/' + phone + '/cancels/' + date).once('value');
     return s.val() || 0;
   },
   async writePassengerLocation(date, bookingId, data) {
@@ -750,7 +751,6 @@ async function renderWaitingRoom(id, d, t) {
   renderWaitingRoomUI(b, d, id);
 }
 
-/* ★★★ 已修復：arrived 狀態保留 GPS 框 + 顯示按鈕 ★★★ */
 function renderWaitingRoomUI(b, d, id) {
   const c = document.getElementById('booking-content');
   let sb = '';
@@ -771,18 +771,14 @@ function renderWaitingRoomUI(b, d, id) {
   }
   const bookTime = b.createdAt ? new Date(b.createdAt).toLocaleString('zh-HK', {hour:'2-digit',minute:'2-digit',hour12:false}) : '';
   let h = '<div style="display:flex;align-items:center;margin-bottom:16px;"><button class="btn btn-outline btn-sm" onclick="renderPassengerHome()">← 返回</button></div>' + sb + '<div class="card" style="text-align:center;"><div style="font-size:14px;color:#64748b;">預約編號</div><div style="font-size:20px;font-weight:700;color:#38bdf8;letter-spacing:2px;margin:8px 0;">' + esc(b.id.substring(0, 8).toUpperCase()) + '</div><div style="font-size:13px;color:#94a3b8;">' + esc(b.time) + ' 班次 · ' + b.seats + ' 人</div><div style="font-size:13px;margin-top:6px;font-weight:600;color:' + (getDir(b.time) === 'morning' ? '#4ade80' : '#fdba74') + ';">' + esc(getOrigL(b.time)) + '</div>' + (b.pickupLocation ? '<div style="font-size:14px;color:#4ade80;margin-top:6px;font-weight:600;">📍 上車地點：' + esc(b.pickupLocation) + '</div>' : '') + (bookTime ? '<div style="font-size:12px;color:#64748b;margin-top:6px;">⏰ 留位時間：' + bookTime + '</div>' : '') + '<div style="font-size:12px;color:#64748b;margin-top:4px;">乘客：' + esc(b.passengerName) + '</div></div>';
-  /* ✅ 修復：reserved 同 arrived 都顯示 GPS 框 */
   if (b.status === 'reserved' || b.status === 'arrived') {
-    const gpsBoxBg = b.status === 'arrived' ? '#052e16' : '#052e16';
-    const gpsBoxBorder = b.status === 'arrived' ? '#22c55e' : '#22c55e';
     const gpsText = b.status === 'arrived' ? '✅ 已到站！' : 'GPS 定位啟動中...';
     const gpsSub = b.status === 'arrived' ? '司機已收到通知，請等候上車' : '司機已收到你嘅位置';
-    h += '<div class="card" style="text-align:center;padding:16px;border:2px dashed ' + gpsBoxBorder + ';background:' + gpsBoxBg + ';" id="gps-box"><div style="font-size:40px;">📡</div><div style="font-size:14px;font-weight:600;color:#4ade80;" id="gps-text">' + gpsText + '</div><div style="font-size:12px;color:#86efac;margin-top:4px;" id="gps-sub">' + gpsSub + '</div></div>';
+    h += '<div class="card" style="text-align:center;padding:16px;border:2px dashed #22c55e;background:#052e16;" id="gps-box"><div style="font-size:40px;">📡</div><div style="font-size:14px;font-weight:600;color:#4ade80;" id="gps-text">' + gpsText + '</div><div style="font-size:12px;color:#86efac;margin-top:4px;" id="gps-sub">' + gpsSub + '</div></div>';
     if (b.status === 'reserved') {
       h += '<div class="card" style="text-align:center;"><div style="font-size:13px;color:#f59e0b;font-weight:600;" id="countdown">距離發車：--:--</div></div>';
     }
   }
-  /* ✅ 修復：reserved 同 arrived 都有「我已上車」按鈕 */
   if (b.status === 'reserved' || b.status === 'arrived') {
     h += '<button class="btn btn-success" style="margin-top:10px;" onclick="passengerBoardFixed(\'' + b.id + '\',\'' + b.date + '\')">🚐 我已上車</button>';
     h += '<button class="btn btn-primary" style="margin-top:10px;" onclick="renderPassengerHome()">返回主頁</button>';
@@ -791,7 +787,6 @@ function renderWaitingRoomUI(b, d, id) {
     h += '<button class="btn btn-outline" style="margin-top:10px;" onclick="cancelBooking(\'' + b.id + '\',\'' + b.date + '\')">取消預約</button>';
   }
   c.innerHTML = h;
-  /* ✅ 修復：reserved 同 arrived 都繼續追蹤 GPS */
   if (b.status === 'reserved' || b.status === 'arrived') {
     if (b.status === 'reserved') updateCountdown(b.date, b.time);
     if (currentTrackingBookingId !== b.id) {
@@ -1261,7 +1256,7 @@ async function renderAdmin() {
 
 function renderInfo() {
   const c = document.getElementById('info-content');
-  c.innerHTML = '<div class="card"><div class="card-title">🚐 服務資訊</div><div style="font-size:13px;line-height:1.8;"><strong style="color:#38bdf8;">路線：</strong>大棠黃泥墩 ↔ 元朗港鐵站 H 出口（途經大棠路）</div></div><div class="card"><div class="card-title">🕐 星期一至五</div><div style="font-size:13px;line-height:1.9;"><strong style="color:#22c55e;">🌅 早上固定班次（大棠黃泥墩開出）：</strong><br>06:20 ｜ 06:30 ｜ 06:40 ｜ 06:50<br><br><strong style="color:#0ea5e9;">🔄 循環線時段（07:00 - 18:00）：</strong><br>無固定班次，可使用「循環線留位」<br>留位後司機確認，有位就上車<br><br><strong style="color:#fdba74;">🌆 傍晚固定班次（元朗港鐵站 H 出口開出）：</strong><br>18:15 ｜ 18:30 ｜ 18:45 ｜ 19:00 ｜ 19:15<br>19:30 ｜ 19:45 ｜ 20:00 ｜ 20:20（尾班車）</div></div><div class="card"><div class="card-title">💡 留位點運作？</div><div style="font-size:13px;line-height:1.9;">1. 乘客填寫上車地點（可揀或自行輸入）<br>2. 司機確認留位 → 乘客手機 GPS 即時啟動<br>3. 乘客行到站頭（30 米內）→ 自動通知司機<br>4. 司機介面見到「🟢 已到站」<br>5. 上車後乘客撳「我已上車」</div></div><div class="card"><div class="card-title">📊 信用分制度</div><div style="font-size:13px;line-height:1.9;">• 初始 100 分<br>• 未到站（no-show）-20 分<br>• 連續 5 次準時 +5 分<br>• 低於 60 分：暫停 7 日<br>• 低於 30 分：暫停 30 日<br>• 每日最多取消 3 次</div></div><div class="card" style="text-align:center;font-size:12px;color:#64748b;">© 浚鍵管理有限公司<br>小巴留座系統 v8.1</div>';
+  c.innerHTML = '<div class="card"><div class="card-title">🚐 服務資訊</div><div style="font-size:13px;line-height:1.8;"><strong style="color:#38bdf8;">路線：</strong>大棠黃泥墩 ↔ 元朗港鐵站 H 出口（途經大棠路）</div></div><div class="card"><div class="card-title">🕐 星期一至五</div><div style="font-size:13px;line-height:1.9;"><strong style="color:#22c55e;">🌅 早上固定班次（大棠黃泥墩開出）：</strong><br>06:20 ｜ 06:30 ｜ 06:40 ｜ 06:50<br><br><strong style="color:#0ea5e9;">🔄 循環線時段（07:00 - 18:00）：</strong><br>無固定班次，可使用「循環線留位」<br>留位後司機確認，有位就上車<br><br><strong style="color:#fdba74;">🌆 傍晚固定班次（元朗港鐵站 H 出口開出）：</strong><br>18:15 ｜ 18:30 ｜ 18:45 ｜ 19:00 ｜ 19:15<br>19:30 ｜ 19:45 ｜ 20:00 ｜ 20:20（尾班車）</div></div><div class="card"><div class="card-title">💡 留位點運作？</div><div style="font-size:13px;line-height:1.9;">1. 乘客填寫上車地點（可揀或自行輸入）<br>2. 司機確認留位 → 乘客手機 GPS 即時啟動<br>3. 乘客行到站頭（30 米內）→ 自動通知司機<br>4. 司機介面見到「🟢 已到站」<br>5. 上車後乘客撳「我已上車」</div></div><div class="card"><div class="card-title">📊 信用分制度</div><div style="font-size:13px;line-height:1.9;">• 初始 100 分<br>• 未到站（no-show）-20 分<br>• 連續 5 次準時 +5 分<br>• 低於 60 分：暫停 7 日<br>• 低於 30 分：暫停 30 日<br>• 每日最多取消 3 次</div></div><div class="card" style="text-align:center;font-size:12px;color:#64748b;">© 浚鍵管理有限公司<br>小巴留座系統 v8.2</div>';
 }
 
 /* ============ 自動清理 ============ */
@@ -1341,7 +1336,7 @@ db.ref('.info/connected').on('value', snap => {
 });
 
 (async function init() {
-  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v8.1 啟動');
+  console.log('🚐 浚鍵管理有限公司 · 小巴留座系統 v8.2 啟動');
   currentPassenger = loadPassengerSession();
   try { await ensureAuth(); } catch (e) { console.warn(e); }
   updateHomeStats();
