@@ -1,0 +1,2501 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>西鐵小巴系統</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:#0f0f0f;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:16px}
+.header{padding:12px;text-align:center;border-bottom:1px solid #333;flex-shrink:0;position:relative}
+.header .title{font-size:28px;font-weight:800;color:#fc0}
+.header .dev{font-size:13px;color:#888;margin-top:2px}
+.voice-btn{position:absolute;top:10px;right:10px;width:48px;height:48px;border-radius:50%;background:#30d158;border:none;color:#fff;font-size:24px;cursor:pointer}
+.voice-btn.muted{background:#ff453a}
+.view{display:none;flex:1;overflow-y:auto;padding:12px}
+.view.active{display:block}
+.card{background:#1c1c1e;border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid #333}
+.card-title{font-size:15px;font-weight:700;color:#fc0;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #333}
+.btn{width:100%;padding:16px;border-radius:14px;font-size:17px;font-weight:700;border:none;cursor:pointer;color:#fff;margin-bottom:8px;display:block;text-align:center}
+.btn:active{opacity:.8;transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:#0a84ff}
+.btn-portal{background:linear-gradient(135deg,#0a84ff,#0066cc)}
+.btn-driver{background:linear-gradient(135deg,#ff453a,#c62828)}
+.btn-success{background:#30d158}
+.btn-danger{background:#ff453a}
+.btn-warn{background:#ff9f0a;color:#000}
+.btn-secondary{background:#3a3a3c}
+.btn-outline{background:transparent;border:1px solid #555;color:#aaa}
+.btn-purple{background:#bf5af2}
+.btn-sm{padding:8px 14px;font-size:13px;width:auto;display:inline-block;margin:0 4px 0 0}
+.row{display:flex;gap:8px;margin-bottom:8px}
+.row>*{flex:1}
+input,select,textarea{width:100%;padding:12px;border-radius:10px;border:1px solid #444;font-size:16px;background:#2c2c2e;color:#fff;margin-bottom:10px;font-family:inherit;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#0a84ff}
+label{display:block;font-size:13px;color:#aaa;margin-bottom:4px;font-weight:600}
+.badge{display:inline-block;padding:6px 14px;border-radius:20px;font-weight:700;font-size:13px;margin:2px}
+.badge-purple{background:#bf5af2;color:#fff}
+.badge-red{background:#ff453a;color:#fff}
+.badge-green{background:#30d158;color:#fff}
+.badge-yellow{background:#fc0;color:#000}
+.badge-blue{background:#0a84ff;color:#fff}
+.badge-orange{background:#ff9f0a;color:#000}
+.big-number{font-size:52px;font-weight:800;text-align:center;color:#fc0;margin:6px 0}
+.station-name{font-size:26px;font-weight:700;text-align:center;color:#fc0;margin:6px 0}
+.msg-area{background:#1a1a1a;border-radius:12px;padding:10px;margin-top:8px}
+.msg-list{max-height:180px;overflow-y:auto;margin-bottom:8px;font-size:14px}
+.msg-row{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #333}
+.msg-row:last-child{border-bottom:none}
+.msg-input{flex:1;padding:12px;border-radius:10px;border:none;font-size:15px;background:#2c2c2e;color:#fff;margin:0}
+.send-btn{width:52px;height:52px;border-radius:12px;border:none;background:#0a84ff;color:#fff;font-size:16px;font-weight:700;cursor:pointer;flex-shrink:0}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 24px;border-radius:30px;font-size:16px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.toast.show{opacity:1}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);z-index:50;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.active{display:flex}
+.modal-card{background:#1c1c1e;border:2px solid #fc0;border-radius:20px;padding:22px;max-width:400px;width:100%;max-height:90vh;overflow-y:auto}
+.modal-card h2{color:#fc0;margin-bottom:14px;font-size:22px;text-align:center}
+.route-strip{display:flex;overflow-x:auto;gap:12px;padding:12px 8px;border-top:2px solid #555;margin-top:10px;background:rgba(255,255,255,.05);border-radius:12px;min-height:70px;align-items:center}
+.dot-node{flex:0 0 150px;text-align:center;font-size:15px;white-space:nowrap;padding:4px 0}
+.dot{width:28px;height:28px;border-radius:50%;background:#444;margin:0 auto 4px;border:3px solid #666;transition:all .3s}
+.dot-node.current .dot{background:#00ff66;border-color:#fff;box-shadow:0 0 20px #00ff66;transform:scale(1.15)}
+.dot-node.current span{color:#fff;font-weight:800;font-size:17px}
+.dot-node.next .dot{background:#00ff66;border-color:#fff;animation:blink .8s infinite}
+.dot-node.next span{color:#00ff66;font-weight:700}
+.dot-node.passed .dot{background:#666;opacity:.4}
+.dot-node.passed span{color:#666}
+@keyframes blink{50%{opacity:.4;transform:scale(.9)}}
+.play-audio{background:#0a84ff;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:13px}
+.tab-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tab-btn{flex:1;min-width:80px;padding:12px 6px;background:#2c2c2e;border:none;color:#888;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;transition:.2s}
+.tab-btn.active{background:#0a84ff;color:#fff}
+.rec-controls{display:none;gap:6px;margin-top:8px}
+.rec-controls button{flex:1;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
+.rec-stop{background:#30d158;color:#fff}
+.rec-cancel{background:#ff453a;color:#fff}
+.rec-status{display:none;align-items:center;gap:8px;padding:8px;background:#1a1a1a;border-radius:8px;margin-top:8px;font-size:14px;color:#fc0}
+.rec-dot{width:10px;height:10px;border-radius:50%;background:red;animation:pulse .6s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.booking-card{background:#1e293b;border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #334155}
+.booking-card.full{border-color:#ef4444;background:#450a0a}
+.booking-card .time{font-size:24px;font-weight:900;color:#38bdf8}
+.booking-card .info{font-size:12px;color:#94a3b8;margin-top:2px}
+.booking-card .pickup{font-size:13px;color:#4ade80;margin-top:4px;font-weight:600}
+.booking-card .counts{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.booking-card .seat-num{font-size:26px;font-weight:900;color:#22c55e}
+.booking-card .seat-num.zero{color:#ef4444}
+.pending-item{background:#0f172a;border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid #fb923c}
+.pending-item .name{font-size:15px;font-weight:700}
+.pending-item .actions{display:flex;gap:6px;margin-top:8px}
+.pending-item .actions button{flex:1;padding:8px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-confirm{background:#22c55e;color:#fff}
+.btn-reject{background:#ef4444;color:#fff}
+.pax-card{background:#1e293b;border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #334155;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.pax-card.full{opacity:.5}
+.pax-card .time{font-size:20px;font-weight:700}
+.pax-card .info{font-size:12px;color:#94a3b8;margin-top:2px}
+.pax-card .num{font-size:22px;font-weight:700;color:#22c55e}
+.pax-card .num.zero{color:#ef4444}
+.wake-lock-status{position:fixed;bottom:12px;left:12px;font-size:12px;color:#666;z-index:5;background:rgba(0,0,0,.6);padding:4px 10px;border-radius:10px}
+.connection-status{position:fixed;top:60px;left:50%;transform:translateX(-50%);padding:6px 20px;border-radius:20px;font-size:14px;z-index:100;display:none}
+.connection-status.online{background:#30d158;color:#fff;display:block}
+.connection-status.offline{background:#ff453a;color:#fff;display:block}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px}
+.admin-stat{background:#2c2c2e;border-radius:10px;padding:10px;text-align:center}
+.admin-stat .label{font-size:12px;color:#888}
+.admin-stat .value{font-size:22px;font-weight:800;color:#fc0}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="title">🚐 西鐵小巴系統</div>
+  <div class="dev">開發者-大輝</div>
+  <button class="voice-btn" id="global-voice-btn">🔊</button>
+</div>
+<div class="connection-status" id="connection-status"></div>
+
+<div class="modal" id="login-modal">
+  <div class="modal-card">
+    <h2>🔐 登入</h2>
+    <div id="login-choice">
+      <button class="btn btn-primary" id="login-google">🅶 管理員 Google 登入</button>
+      <button class="btn btn-driver" id="login-driver">🚏 司機登入</button>
+      <button class="btn btn-portal" id="login-passenger">🧍 乘客登入</button>
+    </div>
+    <div id="driver-login-form" style="display:none">
+      <label>司機電郵 / 電話</label>
+      <input type="text" id="driver-identifier" placeholder="例如：91234567">
+      <button class="btn btn-success" id="driver-login-btn">確認登入</button>
+      <button class="btn btn-secondary" id="driver-login-back">返回</button>
+      <div id="driver-login-error" style="color:#ff453a;font-size:14px;margin-top:8px;text-align:center"></div>
+    </div>
+    <div id="passenger-login-form" style="display:none">
+      <label>電話號碼（8 位數字）</label>
+      <input type="tel" id="passenger-phone" placeholder="例如：91234567" maxlength="8" inputmode="numeric">
+      <label>姓名</label>
+      <input type="text" id="passenger-name" placeholder="例如：陳先生" maxlength="20">
+      <button class="btn btn-portal" id="passenger-login-btn">確認登入</button>
+      <button class="btn btn-secondary" id="passenger-login-back">返回</button>
+      <div id="passenger-login-error" style="color:#ff453a;font-size:14px;margin-top:8px;text-align:center"></div>
+    </div>
+    <button class="btn btn-secondary" id="login-cancel">取消</button>
+  </div>
+</div>
+
+<div id="view-lobby" class="view active">
+  <div class="card">
+    <div class="card-title">📋 使用說明</div>
+    <div style="font-size:14px;line-height:1.8;color:#ccc">
+      🚏 司機：登入→輸入車牌→開始當值→自動報站→留位確認<br>
+      🧍 乘客：登入→追蹤小巴或留位<br>
+      🎙️ 對講機：司機之間／管理員與司機通話
+    </div>
+  </div>
+  <button class="btn btn-portal" id="btn-passenger">🧍 乘客入口</button>
+  <button class="btn btn-driver" id="btn-driver">🚏 司機入口</button>
+  <button class="btn btn-warn" id="btn-admin-panel" style="display:none">👑 總管後台</button>
+  <button class="btn btn-secondary" id="btn-logout" style="display:none">🚪 登出</button>
+  <div class="card" style="text-align:center">
+    <div style="font-size:16px;font-weight:700;color:#fc0;margin-bottom:8px">☕ 支持開發者</div>
+    <div id="fps-code" style="background:#000;padding:10px;border-radius:10px;display:inline-block;font-size:18px;color:#fc0;cursor:pointer">轉數快：122891914</div>
+  </div>
+</div>
+
+<div id="view-passenger-list" class="view">
+  <div class="card-title">🚐 線上小巴</div>
+  <button class="btn btn-secondary btn-sm" id="btn-refresh-buslist" style="margin-bottom:10px">🔄 重新整理</button>
+  <div id="bus-list-container">載入中…</div>
+  <button class="btn btn-secondary" id="btn-back-list" style="margin-top:12px">← 返回大堂</button>
+</div>
+
+<div id="view-passenger" class="view">
+  <div class="tab-bar">
+    <button class="tab-btn active" id="pax-tab-track">🚐 追蹤小巴</button>
+    <button class="tab-btn" id="pax-tab-booking">🎫 留位</button>
+  </div>
+  <div id="pax-panel-track">
+    <div class="card" id="pass-data-card">讀取中…</div>
+    <div class="route-strip" id="pass-route-strip"></div>
+    <div class="msg-area">
+      <div class="msg-list" id="pass-msg-list"></div>
+      <div class="msg-row">
+        <input id="pass-msg-input" class="msg-input" placeholder="訊息…">
+        <button class="send-btn" id="btn-pass-send">發</button>
+      </div>
+    </div>
+    <button class="btn btn-secondary" id="btn-back-track" style="margin-top:10px">← 返回列表</button>
+  </div>
+  <div id="pax-panel-booking" style="display:none">
+    <div id="passenger-booking-content"></div>
+  </div>
+</div>
+
+<div id="view-driver" class="view">
+  <div class="card" style="text-align:center">
+    <div style="font-size:16px;color:#aaa" id="d-info">🚐 未登入</div>
+    <div style="margin:8px 0">
+      <span class="badge badge-purple" id="d-mode-badge">西鐵快線</span>
+      <span class="badge badge-red" id="d-dir-badge">往元朗</span>
+    </div>
+    <div class="station-name" id="d-station">大棠黃泥墩</div>
+    <div id="d-target" style="font-size:18px;color:#fc0">下一站：--</div>
+    <div id="d-gps-status" style="font-size:14px;color:#888;margin-top:6px">📍 GPS 定位中...</div>
+  </div>
+  <div class="card" style="text-align:center">
+    <div style="font-size:18px;color:#aaa">目前乘客</div>
+    <div class="big-number" id="d-pass-count">0</div>
+    <div class="row">
+      <button class="btn btn-success" id="btn-add-pass">＋ 乘客</button>
+      <button class="btn btn-danger" id="btn-sub-pass">－ 乘客</button>
+    </div>
+  </div>
+  <div class="row">
+    <button class="btn btn-primary" id="btn-prev">◀ 上一站</button>
+    <button class="btn btn-primary" id="btn-next">下一站 ▶</button>
+  </div>
+  <div class="row">
+    <button class="btn btn-success" id="d-full-btn">🚫 滿座</button>
+    <button class="btn btn-secondary" id="d-car-btn">16座</button>
+  </div>
+  <div class="row">
+    <button class="btn btn-secondary" id="btn-switch-dir">🔄 調頭</button>
+    <button class="btn btn-purple" id="btn-mode-toggle">🔄 切換路線</button>
+  </div>
+  <div class="row">
+    <input id="driver-plate-input" placeholder="輸入車牌" style="margin:0">
+    <button class="btn btn-success" id="btn-set-plate" style="width:auto;flex:0 0 auto;padding:12px 20px">設定</button>
+  </div>
+  <button class="btn btn-success" id="start-gps">🟢 開始當值 (GPS)</button>
+  <button class="btn btn-danger" id="stop-gps" style="display:none">🔴 停止當值</button>
+  <div class="route-strip" id="d-route-strip"></div>
+  <div class="tab-bar" style="margin-top:12px">
+    <button class="tab-btn active" id="driver-tab-booking">🎫 留位確認</button>
+    <button class="tab-btn" id="driver-tab-walkie">🎙️ 對講機</button>
+    <button class="tab-btn" id="driver-tab-msg">💬 訊息</button>
+  </div>
+  <div id="driver-panel-booking">
+    <div id="driver-booking-content"></div>
+  </div>
+  <div id="driver-panel-walkie" style="display:none">
+    <div class="card">
+      <label>廣播目標</label>
+      <div class="row">
+        <select id="walkie-target"><option value="all">📢 全部司機</option></select>
+        <button class="btn btn-secondary btn-sm" id="walkie-refresh-targets" style="flex:0 0 auto">🔄</button>
+      </div>
+      <button class="btn btn-warn" id="btn-walkie-record">🎤 撳一下開始錄音</button>
+      <div id="walkie-record-controls" class="rec-controls">
+        <button class="rec-stop" id="walkie-stop">✅ 發送</button>
+        <button class="rec-cancel" id="walkie-cancel">❌ 取消</button>
+      </div>
+      <div id="walkie-rec-status" class="rec-status"><div class="rec-dot"></div><span>錄音中... <span id="walkie-rec-time">0</span>s</span></div>
+      <div id="walkie-messages" style="max-height:200px;overflow-y:auto;background:#1a1a1a;border-radius:10px;padding:8px;margin-top:8px"></div>
+    </div>
+  </div>
+  <div id="driver-panel-msg" style="display:none">
+    <div class="msg-area">
+      <div class="msg-list" id="driver-msg-list"></div>
+      <div class="msg-row">
+        <input id="driver-msg-input" class="msg-input" placeholder="訊息…">
+        <button class="send-btn" id="btn-driver-send">發</button>
+      </div>
+      <button class="btn btn-warn" id="btn-driver-record" style="margin-top:8px">🎤 撳一下開始錄音</button>
+      <div id="driver-record-controls" class="rec-controls">
+        <button class="rec-stop" id="driver-stop">✅ 發送</button>
+        <button class="rec-cancel" id="driver-cancel">❌ 取消</button>
+      </div>
+      <div id="driver-rec-status" class="rec-status"><div class="rec-dot"></div><span>錄音中... <span id="driver-rec-time">0</span>s</span></div>
+    </div>
+  </div>
+  <button class="btn btn-secondary" id="btn-driver-back" style="margin-top:12px">← 返回大堂</button>
+</div>
+
+<div id="view-admin" class="view">
+  <div class="card">
+    <div class="card-title">🛡️ 總管後台</div>
+    <div class="admin-grid">
+      <div class="admin-stat"><div class="label">🚐 在線</div><div class="value" id="admin-active-count">0</div></div>
+      <div class="admin-stat"><div class="label">👥 乘客</div><div class="value" id="admin-passenger-count">0</div></div>
+      <div class="admin-stat"><div class="label">💬 訊息</div><div class="value" id="admin-msg-count">0</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 今日留位概況</div>
+    <div id="admin-booking-stats" style="font-size:14px;line-height:1.8"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📢 系統公告</div>
+    <div id="admin-announce-list" style="max-height:200px;overflow-y:auto;margin-bottom:8px"></div>
+    <input id="admin-announce-text" placeholder="輸入公告內容">
+    <button class="btn btn-primary btn-sm" id="btn-publish-announce">發佈公告</button>
+  </div>
+  <button class="btn btn-secondary" id="btn-back-admin">← 返回大堂</button>
+</div>
+
+<div id="toast" class="toast"></div>
+<div class="wake-lock-status" id="wake-lock-status">🔋 屏幕鎖: 未啟用</div>
+<script>
+/* ============================================================
+   西鐵小巴系統 v4.0 - 完全獨立版
+   零依賴：無 config.js、無 routes.js
+   ============================================================ */
+console.log('🔵 西鐵小巴系統 v4.0 啟動');
+
+/* ---------- Firebase 配置 ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyAX7Zy5br1ozGOGxHvDeFNY-Ldcjjw8Qgc",
+  authDomain: "triple-login-version.firebaseapp.com",
+  databaseURL: "https://triple-login-version-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "triple-login-version",
+  storageBucket: "triple-login-version.firebasestorage.app",
+  messagingSenderId: "66459706459",
+  appId: "1:66459706459:web:28f99a455652f393da0b7e"
+};
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const auth = firebase.auth();
+const db = firebase.database();
+
+/* ---------- 全局常量 ---------- */
+const SUPER_ADMIN_EMAILS = [
+  'cheungyiufai1810@gmail.com',
+  'hujiaboy@gmail.com',
+  'chunkin892@gmail.com',
+  'zhangyaohuifai@gmail.com',
+  'cheungyiufai01@gmail.com'
+];
+
+const VOICE_TEXTS = {
+  startDuty: '開始當值',
+  stopDuty: '已停止當值',
+  arrived: '到達 ',
+  nextStation: '下一站 ',
+  lastStation: '已到達總站',
+  arrivedTerminus: '已到達總站，清客完畢，現已調頭',
+  turnAround: '已調頭',
+  welcomeAdmin: '管理員登入成功',
+  welcomeDriver: '司機登入成功',
+  welcomePassenger: '乘客登入成功',
+  loggedOut: '已登出，下次見',
+  permissionDenied: '權限不足',
+  passengerPage: '乘客頁面',
+  driverPage: '司機頁面',
+  adminPage: '管理後台',
+  backToLobby: '返回大堂',
+  backToList: '返回列表',
+  sent: '已發送',
+  announce: '自動報站已開啟',
+  announceOff: '自動報站已關閉',
+  modeBusy: '西鐵快線',
+  modeNormal: '市中心循環線',
+  switchedTo: '已切換至 ',
+  carPlateSet: '車牌已設定'
+};
+
+const CONFIG = {
+  TRIGGER_DISTANCE: 100,
+  GPS_TIMEOUT: 20000,
+  GPS_ACCURACY_THRESHOLD: 50,
+  GPS_RETRY_DELAY: 5000,
+  MIN_SPEED_FOR_TRIGGER: 1.0,
+  SMOOTHING_WINDOW: 3,
+  VOICE_BITRATE: 24000,
+  RECORD_MAX_SECONDS: 30,
+  ACTIVE_BUS_TIMEOUT: 300000,
+  MESSAGE_LIMIT: 100,
+  VOICE_MSG_BOOST: 7,
+  VOICE_ANNOUNCE_BOOST: 7,
+  GPS_R: 30
+};
+
+/* ---------- 路線資料（內嵌，不依賴 routes.js）---------- */
+const ROUTES = {
+  busy: {
+    go: {
+      name: ["大棠黃泥墩","大棠山路巴士站","大棠村迴旋處","群潤花園","曉門","南坑排巴士站","南坑村","紅棗田","水喉頭","崇正公立學校","崇正新村","天龍花園","深涌村","禮修村巴士站","蝶翠峰巴士站","大旗嶺浸信會教堂","富達廣場巴士站","合益路","鳳翔路","大馬路燈位","元朗港鐵站"],
+      coords: [{lat:22.416313,lng:114.022155},{lat:22.416332,lng:114.023058},{lat:22.417982,lng:114.025327},{lat:22.421638,lng:114.027892},{lat:22.422562,lng:114.02959},{lat:22.422692,lng:114.030617},{lat:22.424852,lng:114.031972},{lat:22.42511,lng:114.03174},{lat:22.429618,lng:114.02862},{lat:22.429303,lng:114.028623},{lat:22.431183,lng:114.028508},{lat:22.433085,lng:114.02856},{lat:22.433853,lng:114.028602},{lat:22.434793,lng:114.028578},{lat:22.436858,lng:114.029397},{lat:22.438265,lng:114.02953},{lat:22.4406,lng:114.029515},{lat:22.441503,lng:114.029297},{lat:22.441865,lng:114.03208},{lat:22.444148,lng:114.032273},{lat:22.445758,lng:114.037078}]
+    },
+    back: {
+      name: ["元朗港鐵站","朗和路","鳳翔路","合益路","富達廣場","蝶翠峰","禮修村","深涌村","天龍花園","田寮村","崇正新村","水喉頭","菜站","麥園","老圍","新路口","南坑村","棠景花園","南坑排","新樓","教堂","振南苑","山咀","大棠村","金龍花園","大棠山路","巴士站","宏基","大棠黃泥墩"],
+      coords: [{lat:22.445758,lng:114.037078},{lat:22.444707,lng:114.034928},{lat:22.444185,lng:114.032277},{lat:22.44185,lng:114.032307},{lat:22.441973,lng:114.029638},{lat:22.438012,lng:114.029683},{lat:22.435922,lng:114.028992},{lat:22.433853,lng:114.028602},{lat:22.433085,lng:114.02856},{lat:22.431565,lng:114.028508},{lat:22.431183,lng:114.028508},{lat:22.429618,lng:114.02862},{lat:22.427947,lng:114.028982},{lat:22.427143,lng:114.029783},{lat:22.426547,lng:114.030365},{lat:22.4254,lng:114.031478},{lat:22.424852,lng:114.031972},{lat:22.423538,lng:114.032115},{lat:22.423063,lng:114.031763},{lat:22.4226,lng:114.030215},{lat:22.422075,lng:114.02837},{lat:22.421735,lng:114.028007},{lat:22.420233,lng:114.027247},{lat:22.418555,lng:114.026047},{lat:22.417378,lng:114.025125},{lat:22.416193,lng:114.024142},{lat:22.416197,lng:114.023803},{lat:22.41629,lng:114.023028},{lat:22.416313,lng:114.022155}]
+    }
+  },
+  normal: {
+    go: {
+      name: ["大棠黃泥墩","大棠山路巴士站","大棠村迴旋處","群潤花園","曉門","南坑排巴士站","南坑村","紅棗田","水喉頭","崇正公立學校","崇正新村","天龍花園","深涌村","禮修村巴士站","蝶翠峰巴士站","大旗嶺浸信會教堂","富達廣場巴士站","教育路麥當勞","鄉議局中學","大球場","元朗廣場","余仁生（大馬路）","家居站","元朗港鐵站"],
+      coords: [{lat:22.416313,lng:114.022155},{lat:22.416332,lng:114.023058},{lat:22.417982,lng:114.025327},{lat:22.421638,lng:114.027892},{lat:22.422562,lng:114.02959},{lat:22.422692,lng:114.030617},{lat:22.424852,lng:114.031972},{lat:22.42511,lng:114.03174},{lat:22.429618,lng:114.02862},{lat:22.429303,lng:114.028623},{lat:22.431183,lng:114.028508},{lat:22.433085,lng:114.02856},{lat:22.433853,lng:114.028602},{lat:22.434793,lng:114.028578},{lat:22.436858,lng:114.029397},{lat:22.438265,lng:114.02953},{lat:22.4406,lng:114.029515},{lat:22.44303,lng:114.027818},{lat:22.443048,lng:114.025135},{lat:22.443182,lng:114.022137},{lat:22.444632,lng:114.023758},{lat:22.444547,lng:114.027602},{lat:22.44452,lng:114.030492},{lat:22.445847,lng:114.037022}]
+    },
+    back: {
+      name: ["元朗港鐵站","朗和路","鳳翔路","合益路","富達廣場","蝶翠峰","禮修村","深涌村","天龍花園","田寮村","崇正新村","水喉頭","菜站","麥園","老圍","新路口","南坑村","棠景花園","南坑排","新樓","教堂","振南苑","山咀","大棠村","金龍花園","大棠山路","巴士站","宏基","大棠黃泥墩"],
+      coords: [{lat:22.445758,lng:114.037078},{lat:22.444707,lng:114.034928},{lat:22.444185,lng:114.032277},{lat:22.44185,lng:114.032307},{lat:22.441973,lng:114.029638},{lat:22.438012,lng:114.029683},{lat:22.435922,lng:114.028992},{lat:22.433853,lng:114.028602},{lat:22.433085,lng:114.02856},{lat:22.431565,lng:114.028508},{lat:22.431183,lng:114.028508},{lat:22.429618,lng:114.02862},{lat:22.427947,lng:114.028982},{lat:22.427143,lng:114.029783},{lat:22.426547,lng:114.030365},{lat:22.4254,lng:114.031478},{lat:22.424852,lng:114.031972},{lat:22.423538,lng:114.032115},{lat:22.423063,lng:114.031763},{lat:22.4226,lng:114.030215},{lat:22.422075,lng:114.02837},{lat:22.421735,lng:114.028007},{lat:22.420233,lng:114.027247},{lat:22.418555,lng:114.026047},{lat:22.417378,lng:114.025125},{lat:22.416193,lng:114.024142},{lat:22.416197,lng:114.023803},{lat:22.41629,lng:114.023028},{lat:22.416313,lng:114.022155}]
+    }
+  }
+};
+
+const SM = ['06:20','06:30','06:40','06:50'];
+const SE = ['18:15','18:30','18:45','19:00','19:15','19:30','19:45','20:00','20:20'];
+const GPS_WONG = { lat: 22.416313, lng: 114.022155 };
+const GPS_YUEN = { lat: 22.445758, lng: 114.037078 };
+const LOOP_TIMEOUT = 30 * 60 * 1000;
+const LOOP_NOSHOW = 60 * 60 * 1000;
+const MAX_CANCEL_PER_DAY = 3;
+const TRACK_INTERVAL = 5000;
+
+/* ---------- 全局狀態變數（只宣告一次）---------- */
+let currentUser = { uid: null, identifier: null, role: 'passenger', loginTime: null };
+let isSuperAdmin = false;
+let isAdmin = false;
+let driverData = { mode: 'busy', direction: 0, stationIndex: 0, passengerCount: 0, isActive: false, plate: null, carSeats: 16, isFull: false };
+let currentPassenger = null;
+let currentBusId = null;
+let voiceEnabled = true;
+let wakeLock = null;
+let voiceLock = false;
+let gpsWatchId = null;
+let gpsRetryTimer = null;
+let gpsFirstFix = false;
+let gpsRestartNeeded = false;
+let lastPos = null;
+let lastPosTime = 0;
+let lastGpsProcessTime = 0;
+let lastReportedIndex = -1;
+let lastDriverScrollIndex = -1;
+let positionBuffer = [];
+let pendingStationIdx = -1;
+let pendingStationCount = 0;
+let isLoggingIn = false;
+let notificationTimer = null;
+let _speakQueue = [];
+let _speakBusy = false;
+let busListRef = null;
+let passengerMsgRef = null;
+let driverMsgRef = null;
+let driverBusRef = null;
+let adminMsgRef = null;
+let adminBusesRef = null;
+let adminAnnounceRef = null;
+let driverActiveTab = 'booking';
+let driverBookingListener = null;
+let driverLoopListener = null;
+let driverKnownBookingIds = new Set();
+let driverKnownLoopIds = new Set();
+let driverFirstLoad = true;
+let loopFirstLoad = true;
+let currentPassengerTracking = {};
+let currentCachedBookings = {};
+let currentCachedLoop = {};
+let paxActiveTab = 'track';
+let paxBookingListener = null;
+let gpsPaxLastWrite = 0;
+let gpsPaxMarkedBookingId = null;
+let passengerTrackingRef = null;
+
+/* ---------- 工具函數 ---------- */
+function showToast(msg, duration) {
+  if (!duration) duration = 3000;
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(function() { el.classList.remove('show'); }, duration);
+}
+
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function nowMs() { return Date.now(); }
+
+function getToday() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function getSid(date, time) { return date + '_' + time.replace(':', ''); }
+function getDir(time) { return parseInt(time.split(':')[0]) < 12 ? 'morning' : 'evening'; }
+function getOrig(time) { return getDir(time) === 'morning' ? '大棠黃泥墩' : '元朗港鐵站 H 出口'; }
+function getOrigL(time) { return getDir(time) === 'morning' ? '🌅 大棠黃泥墩開出' : '🌆 元朗港鐵站 H 出口開出'; }
+function getDest(time) { return getDir(time) === 'morning' ? '元朗港鐵站 H 出口' : '大棠黃泥墩'; }
+function getGPS(time) { return getDir(time) === 'morning' ? GPS_WONG : GPS_YUEN; }
+function isWeekday() { const d = new Date().getDay(); return d >= 1 && d <= 5; }
+function isLoopHour() { const h = new Date().getHours(); return isWeekday() && h >= 7 && h < 18; }
+
+function getShiftTime(date, time) {
+  const parts = time.split(':');
+  const h = parseInt(parts[0]);
+  const m = parseInt(parts[1]);
+  const x = new Date(date + 'T00:00:00');
+  x.setHours(h, m, 0, 0);
+  return x.getTime();
+}
+
+function calcDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function showView(id) {
+  const views = document.querySelectorAll('.view');
+  views.forEach(function(v) { v.classList.remove('active'); });
+  const target = document.getElementById(id);
+  if (target) target.classList.add('active');
+}
+
+function vibrate(ms) {
+  try { if (navigator.vibrate) navigator.vibrate(ms || 30); } catch (e) {}
+}
+
+/* ---------- 路線函數（內嵌，不依賴外部）---------- */
+function getRouteByMode(mode, direction) {
+  const r = ROUTES[mode];
+  if (!r) return [];
+  return direction === 0 ? r.go.name : r.back.name;
+}
+
+function getCoordsByMode(mode, direction) {
+  const r = ROUTES[mode];
+  if (!r) return [];
+  return direction === 0 ? r.go.coords : r.back.coords;
+}
+
+function getRoute() { return getRouteByMode(driverData.mode, driverData.direction); }
+function getCoords() { return getCoordsByMode(driverData.mode, driverData.direction); }
+
+/* ---------- 音頻播放（音量降低 30%）---------- */
+function playBoostedAudio(base64, boost) {
+  if (!base64) return;
+  const actualBoost = boost || CONFIG.VOICE_MSG_BOOST;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const bytes = Uint8Array.from(atob(base64), function(c) { return c.charCodeAt(0); });
+    ctx.decodeAudioData(bytes.buffer, function(buf) {
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const gain = ctx.createGain();
+      gain.gain.value = actualBoost;
+      src.connect(gain);
+      gain.connect(ctx.destination);
+      src.start(0);
+    }, function() {
+      const a = new Audio('data:audio/webm;base64,' + base64);
+      a.volume = 0.7;
+      a.play().catch(function() {});
+    });
+  } catch (e) {
+    const a = new Audio('data:audio/webm;base64,' + base64);
+    a.volume = 0.7;
+    a.play().catch(function() {});
+  }
+}
+
+/* ---------- 語音合成 ---------- */
+function speakCantonese(text) {
+  if (!voiceEnabled || !window.speechSynthesis) return Promise.resolve();
+  return new Promise(function(resolve) {
+    if (_speakQueue.length > 3) _speakQueue.shift();
+    _speakQueue.push({ text: text, resolve: resolve });
+    _processSpeakQueue();
+  });
+}
+
+function _processSpeakQueue() {
+  if (_speakBusy || _speakQueue.length === 0) return;
+  _speakBusy = true;
+  const item = _speakQueue.shift();
+  const text = item.text;
+  const resolve = item.resolve;
+  if (!voiceEnabled || !window.speechSynthesis) {
+    _speakBusy = false;
+    resolve();
+    setTimeout(_processSpeakQueue, 0);
+    return;
+  }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-HK';
+  u.volume = 1;
+  u.rate = 0.9;
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    const v = voices.find(function(x) { return x.lang === 'zh-HK'; }) || voices.find(function(x) { return x.lang.indexOf('zh') === 0; });
+    if (v) u.voice = v;
+  }
+  let resolved = false;
+  const done = function() {
+    if (!resolved) {
+      resolved = true;
+      resolve();
+      _speakBusy = false;
+      setTimeout(_processSpeakQueue, 0);
+    }
+  };
+  const timer = setTimeout(done, 6000);
+  u.onend = function() { clearTimeout(timer); done(); };
+  u.onerror = function() { clearTimeout(timer); done(); };
+  window.speechSynthesis.speak(u);
+}
+
+async function speakWithDelay(p1, p2) {
+  voiceLock = false;
+  try {
+    await speakCantonese(p1);
+    await new Promise(function(r) { setTimeout(r, 2000); });
+    if (p2) await speakCantonese(p2);
+  } finally {
+    voiceLock = false;
+  }
+}
+
+/* ---------- 錄音管理器（撳一下開始、撳一下發送、中途可取消）---------- */
+const RecorderManager = {
+  instances: {},
+  create: function(id, onSend) {
+    if (this.instances[id]) return this.instances[id];
+    let mediaRecorder = null;
+    let mediaStream = null;
+    let chunks = [];
+    let timer = null;
+    let seconds = 0;
+    let isRecording = false;
+    const self = { id: id };
+    self.start = function() {
+      if (isRecording) return;
+      isRecording = true;
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+        mediaStream = stream;
+        let recorder;
+        try {
+          recorder = new MediaRecorder(stream, { audioBitsPerSecond: CONFIG.VOICE_BITRATE, mimeType: 'audio/webm;codecs=opus' });
+        } catch (e) {
+          recorder = new MediaRecorder(stream, { audioBitsPerSecond: CONFIG.VOICE_BITRATE });
+        }
+        mediaRecorder = recorder;
+        chunks = [];
+        mediaRecorder.ondataavailable = function(e) { chunks.push(e.data); };
+        mediaRecorder.onstop = function() {
+          if (mediaStream) {
+            mediaStream.getTracks().forEach(function(t) { t.stop(); });
+            mediaStream = null;
+          }
+        };
+        mediaRecorder.start();
+        seconds = 0;
+        const st = document.getElementById(id + '-rec-status');
+        if (st) st.style.display = 'flex';
+        const tm = document.getElementById(id + '-rec-time');
+        if (tm) tm.textContent = '0';
+        timer = setInterval(function() {
+          seconds++;
+          if (tm) tm.textContent = seconds;
+          if (seconds >= CONFIG.RECORD_MAX_SECONDS) { self.stop(); }
+        }, 1000);
+      }).catch(function() {
+        showToast('❌ 無法開啟咪高峰');
+        isRecording = false;
+      });
+    };
+    self.stop = function() {
+      if (!isRecording) return;
+      isRecording = false;
+      if (timer) { clearInterval(timer); timer = null; }
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.onstop = function() {
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.onload = function() {
+            const base64 = reader.result.split(',')[1];
+            if (onSend) onSend(base64);
+            if (mediaStream) {
+              mediaStream.getTracks().forEach(function(t) { t.stop(); });
+              mediaStream = null;
+            }
+          };
+          reader.readAsDataURL(blob);
+        };
+        mediaRecorder.stop();
+      }
+      const st = document.getElementById(id + '-rec-status');
+      if (st) st.style.display = 'none';
+    };
+    self.cancel = function() {
+      if (!isRecording) return;
+      isRecording = false;
+      if (timer) { clearInterval(timer); timer = null; }
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.onstop = function() {
+          if (mediaStream) {
+            mediaStream.getTracks().forEach(function(t) { t.stop(); });
+            mediaStream = null;
+          }
+        };
+        mediaRecorder.stop();
+      }
+      const st = document.getElementById(id + '-rec-status');
+      if (st) st.style.display = 'none';
+      showToast('❌ 錄音已取消');
+    };
+    self.isRecording = function() { return isRecording; };
+    this.instances[id] = self;
+    return self;
+  },
+  get: function(id) { return this.instances[id]; }
+};
+
+function setupRecorderUI(id, onSend) {
+  const btn = document.getElementById('btn-' + id + '-record');
+  const controls = document.getElementById(id + '-record-controls');
+  const stopBtn = document.getElementById(id + '-stop');
+  const cancelBtn = document.getElementById(id + '-cancel');
+  if (!btn) return;
+  RecorderManager.create(id, onSend);
+  btn.addEventListener('click', function() {
+    const rec = RecorderManager.get(id);
+    if (rec.isRecording()) return;
+    rec.start();
+    if (controls) controls.style.display = 'flex';
+    btn.style.display = 'none';
+  });
+  if (stopBtn) {
+    stopBtn.addEventListener('click', function() {
+      const rec = RecorderManager.get(id);
+      if (rec && rec.isRecording()) rec.stop();
+      if (controls) controls.style.display = 'none';
+      btn.style.display = 'block';
+    });
+  }
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function() {
+      const rec = RecorderManager.get(id);
+      if (rec && rec.isRecording()) rec.cancel();
+      if (controls) controls.style.display = 'none';
+      btn.style.display = 'block';
+    });
+  }
+}
+
+/* ---------- 權限判斷 ---------- */
+function isSuperAdminEmail(email) {
+  return SUPER_ADMIN_EMAILS.some(function(x) { return x.toLowerCase() === (email || '').toLowerCase(); });
+}
+
+function isBanned(id) {
+  if (!id) return Promise.resolve(false);
+  return db.ref('bans/' + id).once('value').then(function(s) { return !!s.val(); }).catch(function() { return false; });
+}
+
+async function checkSuperAdmin(uid) {
+  if (!uid) return false;
+  try {
+    const cu = auth.currentUser;
+    if (cu && cu.uid === uid && cu.email && isSuperAdminEmail(cu.email)) return true;
+    const s = await db.ref('admins/' + uid + '/super').once('value');
+    if (s.val() === true) return true;
+    const u = await db.ref('users/' + uid + '/identifier').once('value');
+    if (isSuperAdminEmail(u.val())) return true;
+    return false;
+  } catch (e) { return false; }
+}
+
+async function checkRole(identifier, uid) {
+  let role = 'passenger';
+  try {
+    if (uid) {
+      const a = await db.ref('admins/' + uid).once('value');
+      if (a.exists()) return 'admin';
+    }
+    const adminSnap = await db.ref('admins').orderByChild('identifier').equalTo(identifier).once('value');
+    if (adminSnap.exists()) return 'admin';
+    const driverSnap = await db.ref('drivers').orderByChild('identifier').equalTo(identifier).once('value');
+    if (driverSnap.exists()) return 'driver';
+  } catch (e) { console.warn('檢查角色失敗:', e); }
+  return role;
+}
+
+async function ensureAuth() {
+  if (auth.currentUser) return auth.currentUser;
+  const r = await auth.signInAnonymously();
+  return r.user;
+}
+
+function safeClick(el, cb) {
+  if (!el) return;
+  el.addEventListener('click', function(e) {
+    if (this.disabled) return;
+    this.disabled = true;
+    try { cb(e); } catch (err) { console.error(err); showToast('操作錯誤'); }
+    const self = this;
+    setTimeout(function() { self.disabled = false; }, 300);
+  });
+}
+
+/* ---------- 資料層 ---------- */
+const DataLayer = {
+  getActiveBuses: async function() {
+    const s = await db.ref('van/active_buses').once('value');
+    const all = s.val() || {};
+    const n = nowMs();
+    const r = [];
+    Object.keys(all).forEach(function(plate) {
+      const b = all[plate];
+      if (b && b.isActive && (n - (b.lastUpdate || 0) < CONFIG.ACTIVE_BUS_TIMEOUT)) {
+        r.push(Object.assign({ plate: plate }, b));
+      }
+    });
+    return r;
+  },
+  getBookings: async function(date) {
+    const s = await db.ref('booking/' + date).once('value');
+    return s.val() || {};
+  },
+  addBooking: async function(date, b) {
+    const r = db.ref('booking/' + date).push();
+    b.id = r.key;
+    b.createdAt = nowMs();
+    await r.set(b);
+    return b;
+  },
+  updateBooking: async function(date, id, patch) {
+    return db.ref('booking/' + date + '/' + id).update(patch);
+  },
+  getPassenger: async function(phone) {
+    const s = await db.ref('booking_passengers/' + phone).once('value');
+    return s.val();
+  },
+  savePassenger: async function(phone, patch) {
+    return db.ref('booking_passengers/' + phone).update(patch);
+  },
+  getSeatConfig: async function(date, time) {
+    const s = await db.ref('booking_seats/' + date + '/' + time.replace(':', '')).once('value');
+    return s.val();
+  },
+  getAllSeatConfigs: async function(date) {
+    const s = await db.ref('booking_seats/' + date).once('value');
+    return s.val() || {};
+  },
+  getLoopQueue: async function(date) {
+    const s = await db.ref('booking_loop/' + date).once('value');
+    return s.val() || {};
+  },
+  addLoopQueue: async function(date, item) {
+    const r = db.ref('booking_loop/' + date).push();
+    item.id = r.key;
+    item.createdAt = nowMs();
+    await r.set(item);
+    return item;
+  },
+  updateLoopQueue: async function(date, id, patch) {
+    return db.ref('booking_loop/' + date + '/' + id).update(patch);
+  },
+  removeLoopQueue: async function(date, id) {
+    return db.ref('booking_loop/' + date + '/' + id).remove();
+  },
+  getCancelCount: async function(phone, date) {
+    const s = await db.ref('booking_passengers/' + phone + '/cancels/' + date).once('value');
+    return s.val() || 0;
+  },
+  incrCancelCount: async function(phone, date) {
+    const cur = await DataLayer.getCancelCount(phone, date);
+    return db.ref('booking_passengers/' + phone + '/cancels/' + date).set(cur + 1);
+  },
+  writePassengerLocation: async function(date, id, data) {
+    return db.ref('booking/' + date + '/' + id + '/passengerLocation').update(data);
+  },
+  clearPassengerLocation: async function(date, id) {
+    return db.ref('booking/' + date + '/' + id + '/passengerLocation').remove();
+  }
+};
+
+/* ---------- 司機 UI ---------- */
+function updateDriverUI() {
+  const route = getRoute();
+  const idx = driverData.stationIndex || 0;
+  const station = route[idx] || '未知';
+  const nextIdx = idx + 1 < route.length ? idx + 1 : 0;
+  const nextStation = route[nextIdx] || '終點';
+  const plateDisplay = driverData.plate || '未設定';
+  const infoEl = document.getElementById('d-info');
+  if (infoEl) infoEl.textContent = '🚐 ' + plateDisplay + ' | 司機: ' + (currentUser.identifier || '未登入');
+  const stationEl = document.getElementById('d-station');
+  if (stationEl) stationEl.textContent = station;
+  const targetEl = document.getElementById('d-target');
+  if (targetEl) targetEl.textContent = '下一站：' + nextStation;
+  const passEl = document.getElementById('d-pass-count');
+  if (passEl) passEl.textContent = driverData.passengerCount;
+  const modeEl = document.getElementById('d-mode-badge');
+  if (modeEl) modeEl.textContent = driverData.mode === 'busy' ? '西鐵快線' : '市中心循環線';
+  const dirEl = document.getElementById('d-dir-badge');
+  if (dirEl) dirEl.textContent = driverData.direction === 0 ? '往元朗' : '往大棠';
+  const fullBtn = document.getElementById('d-full-btn');
+  if (fullBtn) {
+    fullBtn.style.background = driverData.isFull ? '#ff453a' : '#30d158';
+    fullBtn.textContent = driverData.isFull ? '✅ 滿座' : '🚫 滿座';
+  }
+  const carBtn = document.getElementById('d-car-btn');
+  if (carBtn) carBtn.textContent = driverData.carSeats + '座';
+  renderDriverRouteStrip();
+}
+
+function renderDriverRouteStrip() {
+  const strip = document.getElementById('d-route-strip');
+  if (!strip) return;
+  const route = getRoute();
+  const idx = driverData.stationIndex || 0;
+  const children = strip.children;
+  if (children.length === route.length) {
+    for (let i = 0; i < route.length; i++) {
+      const node = children[i];
+      node.className = 'dot-node';
+      if (i < idx) node.classList.add('passed');
+      else if (i === idx) node.classList.add('current');
+      else if (i === idx + 1) node.classList.add('next');
+      const span = node.querySelector('span');
+      if (span && span.textContent !== route[i]) span.textContent = route[i];
+    }
+  } else {
+    strip.innerHTML = '';
+    route.forEach(function(name, i) {
+      const node = document.createElement('div');
+      node.className = 'dot-node';
+      if (i < idx) node.classList.add('passed');
+      else if (i === idx) node.classList.add('current');
+      else if (i === idx + 1) node.classList.add('next');
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      const span = document.createElement('span');
+      span.textContent = name;
+      node.appendChild(dot);
+      node.appendChild(span);
+      strip.appendChild(node);
+    });
+  }
+  if (idx !== lastDriverScrollIndex) {
+    const current = strip.querySelector('.dot-node.current');
+    if (current) {
+      const sr = strip.getBoundingClientRect();
+      const nr = current.getBoundingClientRect();
+      const offset = nr.left - sr.left - (sr.width / 2) + (nr.width / 2);
+      strip.scrollLeft += offset;
+    }
+    lastDriverScrollIndex = idx;
+  }
+}
+
+function updateDriverDB() {
+  const route = getRoute();
+  const idx = driverData.stationIndex || 0;
+  const currentStation = route[idx] || '未知';
+  const nextIdx = idx + 1 < route.length ? idx + 1 : 0;
+  const nextStation = route[nextIdx] || '終點';
+  const data = {
+    plate: driverData.plate,
+    mode: driverData.mode,
+    direction: driverData.direction,
+    stationIndex: idx,
+    currentStation: currentStation,
+    nextStation: nextStation,
+    passengerCount: driverData.passengerCount,
+    isActive: driverData.isActive,
+    carSeats: driverData.carSeats,
+    isFull: driverData.isFull,
+    lastUpdate: nowMs(),
+    driverUid: currentUser.uid,
+    driverIdentifier: currentUser.identifier
+  };
+  if (driverData.plate) {
+    db.ref('van/active_buses/' + driverData.plate).update(data).catch(function() {});
+  }
+  updateDriverUI();
+}
+
+function resetDriverData(keepPlate) {
+  driverData.stationIndex = 0;
+  driverData.passengerCount = 0;
+  driverData.isFull = false;
+  driverData.isActive = false;
+  if (!keepPlate) driverData.plate = null;
+  lastReportedIndex = -1;
+  lastDriverScrollIndex = -1;
+  pendingStationIdx = -1;
+  pendingStationCount = 0;
+  if (gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+  if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
+  releaseWakeLock();
+  updateDriverUI();
+  if (driverData.plate) db.ref('van/active_buses/' + driverData.plate).remove().catch(function() {});
+  const gs = document.getElementById('d-gps-status');
+  if (gs) gs.textContent = '📍 GPS 已停止';
+  const sg = document.getElementById('start-gps');
+  if (sg) sg.style.display = 'block';
+  const stg = document.getElementById('stop-gps');
+  if (stg) stg.style.display = 'none';
+}
+
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      if (wakeLock) { try { await wakeLock.release(); } catch (e) {} wakeLock = null; }
+      wakeLock = await navigator.wakeLock.request('screen');
+      const e = document.getElementById('wake-lock-status');
+      if (e) e.textContent = '🔋 屏幕鎖: 已啟用 ✅';
+      return true;
+    }
+    return false;
+  } catch (e) { return false; }
+}
+
+async function releaseWakeLock() {
+  try { if (wakeLock) { await wakeLock.release(); wakeLock = null; } } catch (e) {}
+}
+
+function startGpsWatch() {
+  if (gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+  if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
+  const gs = document.getElementById('d-gps-status');
+  if (gs) gs.textContent = '📍 GPS 定位中⋯';
+  let firstFix = false;
+  gpsFirstFix = false;
+  lastPos = null;
+  lastPosTime = 0;
+  positionBuffer = [];
+  pendingStationIdx = -1;
+  pendingStationCount = 0;
+  gpsWatchId = navigator.geolocation.watchPosition(function(pos) {
+    if (pos.coords.accuracy > CONFIG.GPS_ACCURACY_THRESHOLD) {
+      if (gs) gs.textContent = '⚠️ GPS 精度不足 (' + Math.round(pos.coords.accuracy) + 'm)';
+      return;
+    }
+    if (!firstFix) {
+      firstFix = true;
+      gpsFirstFix = true;
+      if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
+      showToast('✅ GPS 已定位');
+      if (gs) gs.textContent = '📍 GPS 已定位';
+    }
+    if (!driverData.isActive || !driverData.plate) return;
+    const n = nowMs();
+    if (n - lastGpsProcessTime < 1000) return;
+    lastGpsProcessTime = n;
+    positionBuffer.push({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+    if (positionBuffer.length > CONFIG.SMOOTHING_WINDOW) positionBuffer.shift();
+    let avgLat = 0, avgLng = 0;
+    positionBuffer.forEach(function(p) { avgLat += p.lat; avgLng += p.lng; });
+    avgLat /= positionBuffer.length;
+    avgLng /= positionBuffer.length;
+    let speed = 0;
+    if (lastPos) {
+      const dt = (n - lastPosTime) / 1000;
+      if (dt > 0) speed = calcDistance(lastPos.lat, lastPos.lng, pos.coords.latitude, pos.coords.longitude) / dt;
+    }
+    lastPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    lastPosTime = n;
+    const coords = getCoords();
+    const route = getRoute();
+    if (!coords || !coords.length) return;
+    let minDist = Infinity, nearestIdx = 0;
+    for (let i = 0; i < coords.length; i++) {
+      const d = calcDistance(avgLat, avgLng, coords[i].lat, coords[i].lng);
+      if (d < minDist) { minDist = d; nearestIdx = i; }
+    }
+    if (gs) gs.textContent = '📍 ' + route[nearestIdx] + ' (' + Math.round(minDist) + 'm) · ' + speed.toFixed(1) + 'm/s';
+    if (minDist < CONFIG.TRIGGER_DISTANCE && nearestIdx > lastReportedIndex) {
+      if (speed < CONFIG.MIN_SPEED_FOR_TRIGGER) return;
+      if (pendingStationIdx === nearestIdx) { pendingStationCount++; }
+      else { pendingStationIdx = nearestIdx; pendingStationCount = 1; }
+      if (pendingStationCount < 2) return;
+      pendingStationIdx = -1;
+      pendingStationCount = 0;
+      lastReportedIndex = nearestIdx;
+      driverData.stationIndex = nearestIdx;
+      updateDriverDB();
+      renderDriverRouteStrip();
+      const stationName = route[nearestIdx];
+      const nextIdx = nearestIdx + 1;
+      const nextStationName = nextIdx < route.length ? route[nextIdx] : null;
+      if (voiceEnabled) {
+        if (nextStationName) {
+          speakWithDelay(VOICE_TEXTS.arrived + stationName, VOICE_TEXTS.nextStation + nextStationName);
+        } else {
+          speakCantonese(VOICE_TEXTS.arrived + stationName).then(function() {
+            setTimeout(function() { speakCantonese(VOICE_TEXTS.lastStation); }, 2000);
+          });
+        }
+      }
+      if (nearestIdx === route.length - 1 && driverData.isActive) {
+        setTimeout(function() {
+          if (!driverData.isActive) return;
+          driverData.direction = driverData.direction === 0 ? 1 : 0;
+          driverData.stationIndex = 0;
+          driverData.passengerCount = 0;
+          driverData.isFull = false;
+          lastReportedIndex = 0;
+          lastDriverScrollIndex = -1;
+          updateDriverDB();
+          renderDriverRouteStrip();
+          showToast('🔄 已到總站，自動掉頭');
+        }, 3000);
+      }
+    }
+  }, function(err) {
+    console.error('GPS 錯誤:', err);
+    if (gs) gs.textContent = '📍 GPS 定位失敗';
+    if (err.code === 3 || err.code === 1) {
+      if (gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+      setTimeout(function() { if (driverData.isActive) startGpsWatch(); }, CONFIG.GPS_RETRY_DELAY);
+    }
+  }, { enableHighAccuracy: true, timeout: CONFIG.GPS_TIMEOUT, maximumAge: 0 });
+  gpsRetryTimer = setTimeout(function() {
+    if (!gpsFirstFix && driverData.isActive) {
+      if (gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+      startGpsWatch();
+    }
+  }, 10000);
+}
+
+function startDuty() {
+  if (!driverData.plate) { showToast('請先設定車牌'); return; }
+  if (!navigator.geolocation) showToast('瀏覽器不支援 GPS');
+  gpsFirstFix = false;
+  if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
+  voiceLock = false;
+  lastPos = null;
+  lastPosTime = 0;
+  gpsRestartNeeded = false;
+  positionBuffer = [];
+  pendingStationIdx = -1;
+  pendingStationCount = 0;
+  requestWakeLock();
+  driverData.isActive = true;
+  driverData.stationIndex = 0;
+  driverData.direction = 0;
+  driverData.passengerCount = 0;
+  driverData.isFull = false;
+  lastReportedIndex = -1;
+  lastDriverScrollIndex = -1;
+  updateDriverDB();
+  updateDriverUI();
+  showToast('🟢 已開始當值');
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.startDuty);
+  vibrate(50);
+  if (navigator.geolocation) {
+    setTimeout(function() { if (driverData.isActive) startGpsWatch(); }, 1500);
+  }
+  const sg = document.getElementById('start-gps');
+  if (sg) sg.style.display = 'none';
+  const stg = document.getElementById('stop-gps');
+  if (stg) stg.style.display = 'block';
+}
+
+function stopDuty() {
+  if (!confirm('確定停止當值？')) return;
+  driverData.isActive = false;
+  if (gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+  if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
+  releaseWakeLock();
+  if (driverData.plate) db.ref('van/active_buses/' + driverData.plate).remove().catch(function() {});
+  resetDriverData(true);
+  const sg = document.getElementById('start-gps');
+  if (sg) sg.style.display = 'block';
+  const stg = document.getElementById('stop-gps');
+  if (stg) stg.style.display = 'none';
+  showToast('🔴 已停止當值');
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.stopDuty);
+}
+
+async function goToNextStation() {
+  if (!driverData.isActive) { showToast('請先開始當值'); return; }
+  const route = getRoute();
+  if (driverData.stationIndex < route.length - 1) {
+    driverData.stationIndex++;
+  } else {
+    driverData.direction = driverData.direction === 0 ? 1 : 0;
+    driverData.stationIndex = 0;
+    driverData.passengerCount = 0;
+    driverData.isFull = false;
+    lastReportedIndex = 0;
+    lastDriverScrollIndex = -1;
+    showToast('🔄 已到總站，調頭清客');
+    if (voiceEnabled) speakCantonese(VOICE_TEXTS.arrivedTerminus);
+    updateDriverDB();
+    renderDriverRouteStrip();
+    return;
+  }
+  lastReportedIndex = driverData.stationIndex;
+  updateDriverDB();
+  renderDriverRouteStrip();
+  const newRoute = getRoute();
+  const currentStation = newRoute[driverData.stationIndex];
+  const nextIdx = driverData.stationIndex + 1;
+  const nextStationName = nextIdx < newRoute.length ? newRoute[nextIdx] : null;
+  if (voiceEnabled) {
+    if (nextStationName) {
+      await speakWithDelay(VOICE_TEXTS.arrived + currentStation, VOICE_TEXTS.nextStation + nextStationName);
+    } else {
+      await speakCantonese(VOICE_TEXTS.arrived + currentStation);
+      setTimeout(function() { speakCantonese(VOICE_TEXTS.lastStation); }, 2000);
+    }
+  }
+}
+
+async function goToPrevStation() {
+  if (!driverData.isActive) { showToast('請先開始當值'); return; }
+  const route = getRoute();
+  if (driverData.stationIndex > 0) {
+    driverData.stationIndex--;
+  } else {
+    driverData.direction = driverData.direction === 0 ? 1 : 0;
+    const newRoute = getRoute();
+    driverData.stationIndex = newRoute.length - 1;
+    lastReportedIndex = -1;
+    lastDriverScrollIndex = -1;
+    showToast('🔄 已調頭至總站');
+    if (voiceEnabled) speakCantonese(VOICE_TEXTS.turnAround);
+    updateDriverDB();
+    renderDriverRouteStrip();
+    return;
+  }
+  lastReportedIndex = driverData.stationIndex;
+  updateDriverDB();
+  renderDriverRouteStrip();
+  const newRoute = getRoute();
+  const currentStation = newRoute[driverData.stationIndex];
+  const nextIdx = driverData.stationIndex + 1;
+  const nextStationName = nextIdx < newRoute.length ? newRoute[nextIdx] : null;
+  if (voiceEnabled) {
+    if (nextStationName) {
+      await speakWithDelay(VOICE_TEXTS.arrived + currentStation, VOICE_TEXTS.nextStation + nextStationName);
+    } else {
+      await speakCantonese(VOICE_TEXTS.arrived + currentStation);
+      setTimeout(function() { speakCantonese(VOICE_TEXTS.lastStation); }, 2000);
+    }
+  }
+}
+
+/* ---------- 司機留位確認面板 ---------- */
+function switchDriverTab(tab) {
+  driverActiveTab = tab;
+  const btns = {
+    booking: document.getElementById('driver-tab-booking'),
+    walkie: document.getElementById('driver-tab-walkie'),
+    msg: document.getElementById('driver-tab-msg')
+  };
+  const panels = {
+    booking: document.getElementById('driver-panel-booking'),
+    walkie: document.getElementById('driver-panel-walkie'),
+    msg: document.getElementById('driver-panel-msg')
+  };
+  Object.keys(btns).forEach(function(k) {
+    if (btns[k]) btns[k].className = 'tab-btn' + (k === tab ? ' active' : '');
+    if (panels[k]) panels[k].style.display = k === tab ? 'block' : 'none';
+  });
+  if (tab === 'booking') startDriverBookingListeners();
+  if (tab === 'walkie') initWalkieTalkie();
+}
+
+function renderDriverBookingContent() {
+  const c = document.getElementById('driver-booking-content');
+  if (!c) return;
+  const t = getToday();
+  const bookings = currentCachedBookings;
+  const seatsConfig = currentCachedBookings._sc || {};
+  let h = '';
+  h += '<button class="btn btn-outline btn-sm" onclick="renderDriverBookingContent()" style="margin-bottom:10px">🔄 重新整理</button>';
+  h += '<div class="card-title">📋 固定班次</div>';
+  const allS = SM.concat(SE);
+  let hasAny = false;
+  allS.forEach(function(tm) {
+    const sid = getSid(t, tm);
+    const cfg = seatsConfig[tm.replace(':', '')];
+    const quota = (cfg && (cfg.quota || cfg.seats)) || 16;
+    const dir = getDir(tm);
+    const sb = Object.keys(bookings).filter(function(k) { return k !== '_sc'; }).map(function(k) { return bookings[k]; }).filter(function(b) { return b && b.scheduleId === sid && b.status !== 'cancelled'; });
+    const used = sb.filter(function(b) { return ['pending', 'reserved', 'arrived', 'boarded'].indexOf(b.status) >= 0; }).reduce(function(s, b) { return s + (b.seats || 0); }, 0);
+    const rem = quota - used;
+    const full = rem <= 0;
+    const pl = sb.filter(function(b) { return b.status === 'pending'; });
+    const cl = sb.filter(function(b) { return b.status === 'reserved'; });
+    const al = sb.filter(function(b) { return b.status === 'arrived' || b.status === 'boarded'; });
+    if (pl.length === 0 && cl.length === 0 && al.length === 0) return;
+    hasAny = true;
+    h += '<div class="booking-card' + (full ? ' full' : '') + '">';
+    h += '<div class="time">' + esc(tm) + '</div>';
+    h += '<div class="info" style="color:' + (dir === 'morning' ? '#4ade80' : '#fdba74') + ';font-weight:700">' + esc(getOrigL(tm)) + '</div>';
+    h += '<div class="counts"><div><div style="font-size:13px;color:#fdba74">⏳ ' + pl.length + ' 待確認</div><div style="font-size:13px;color:#4ade80;margin-top:2px">🔴 ' + al.length + ' 已到 · ✅ ' + cl.length + ' 已確認</div></div><div style="text-align:right"><div class="seat-num' + (rem <= 0 ? ' zero' : '') + '">' + rem + '</div><div style="font-size:11px;color:#64748b">剩餘 / ' + quota + '</div></div></div>';
+    if (pl.length > 0) {
+      h += '<div style="background:#1c1917;border:2px solid #fb923c;border-radius:10px;padding:10px;margin-top:10px">';
+      h += '<div style="font-size:13px;font-weight:700;color:#fdba74;margin-bottom:6px">🔔 待確認（' + pl.length + '）</div>';
+      pl.forEach(function(b) {
+        const bt = b.createdAt ? new Date(b.createdAt).toLocaleString('zh-HK', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+        h += '<div class="pending-item"><div class="name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div>';
+        h += '<div style="font-size:12px;color:#94a3b8;margin-top:2px">📞 ' + esc(b.passengerPhone) + '</div>';
+        h += b.pickupLocation ? '<div class="pickup">📍 ' + esc(b.pickupLocation) + '</div>' : '<div class="pickup" style="color:#f87171">📍 未填</div>';
+        h += bt ? '<div style="font-size:11px;color:#64748b;margin-top:4px">⏰ ' + bt + '</div>' : '';
+        h += '<div class="actions"><button class="btn-confirm" onclick="driverConfirm(\'' + b.date + '\',\'' + b.id + '\',\'' + esc(driverData.plate || '') + '\')">✅ 確認</button><button class="btn-reject" onclick="driverReject(\'' + b.date + '\',\'' + b.id + '\')">❌ 拒絕</button></div></div>';
+      });
+      h += '</div>';
+    }
+    const confirmedAll = al.concat(cl);
+    if (confirmedAll.length > 0) {
+      h += '<div style="margin-top:10px">';
+      confirmedAll.forEach(function(b) {
+        const tr = currentPassengerTracking[b.id];
+        let gpsLine = '';
+        if (tr && tr.updatedAt && (nowMs() - tr.updatedAt < 120000)) {
+          gpsLine = tr.arrived ? '<div style="font-size:12px;color:#4ade80;margin-top:4px;font-weight:600">🟢 已到站（' + Math.round(tr.distance) + ' 米）</div>' : '<div style="font-size:12px;color:#fbbf24;margin-top:4px;font-weight:600">🟡 前往中（' + Math.round(tr.distance) + ' 米）</div>';
+        } else if (b.arrivedAuto || b.arrivedAt) {
+          gpsLine = '<div style="font-size:12px;color:#4ade80;margin-top:4px;font-weight:600">🟢 已到站</div>';
+        } else {
+          gpsLine = '<div style="font-size:12px;color:#94a3b8;margin-top:4px;font-weight:600">⚪ 等待 GPS...</div>';
+        }
+        h += '<div style="background:#0f172a;border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid #22c55e"><div class="name">' + esc(b.passengerName) + (b.seats > 1 ? ' ×' + b.seats : '') + '</div><div style="font-size:12px;color:#94a3b8;margin-top:2px">📞 ' + esc(b.passengerPhone) + '</div>' + (b.pickupLocation ? '<div class="pickup">📍 ' + esc(b.pickupLocation) + '</div>' : '') + gpsLine + '</div>';
+      });
+      h += '</div>';
+    }
+    h += '</div>';
+  });
+  if (!hasAny) h += '<div style="text-align:center;color:#64748b;padding:16px">暫無預約</div>';
+  h += '<div class="card-title" style="margin-top:14px">🔄 循環線留位</div>';
+  const lp = Object.keys(currentCachedLoop).map(function(k) { return currentCachedLoop[k]; }).filter(function(x) { return x && x.status === 'pending'; });
+  const lr = Object.keys(currentCachedLoop).map(function(k) { return currentCachedLoop[k]; }).filter(function(x) { return x && x.status === 'reserved'; });
+  if (lp.length === 0 && lr.length === 0) {
+    h += '<div style="text-align:center;color:#64748b;padding:16px;font-size:14px">暫無循環線留位</div>';
+  } else {
+    if (lp.length > 0) {
+      h += '<div style="background:#1c1917;border:2px solid #fb923c;border-radius:10px;padding:10px">';
+      h += '<div style="font-size:13px;font-weight:700;color:#fdba74;margin-bottom:6px">🔔 待確認（' + lp.length + '）</div>';
+      lp.forEach(function(x) {
+        const bt = x.createdAt ? new Date(x.createdAt).toLocaleString('zh-HK', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+        h += '<div class="pending-item"><div class="name">' + esc(x.name) + '</div><div style="font-size:12px;color:#94a3b8;margin-top:2px">📞 ' + esc(x.phone) + '</div>' + (x.pickupLocation ? '<div class="pickup">📍 ' + esc(x.pickupLocation) + '</div>' : '') + (bt ? '<div style="font-size:11px;color:#64748b;margin-top:4px">⏰ ' + bt + '</div>' : '') + '<div class="actions"><button class="btn-confirm" onclick="driverConfirmLoop(\'' + x.id + '\')">✅ 確認</button><button class="btn-reject" onclick="driverRejectLoop(\'' + x.id + '\')">❌ 拒絕</button></div></div>';
+      });
+      h += '</div>';
+    }
+    if (lr.length > 0) {
+      h += '<div style="margin-top:10px">';
+      lr.forEach(function(x) {
+        h += '<div style="background:#0f172a;border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid #22c55e"><div class="name">' + esc(x.name) + '</div><div style="font-size:12px;color:#94a3b8;margin-top:2px">📞 ' + esc(x.phone) + '</div>' + (x.pickupLocation ? '<div class="pickup">📍 ' + esc(x.pickupLocation) + '</div>' : '') + '</div>';
+      });
+      h += '</div>';
+    }
+  }
+  c.innerHTML = h;
+}
+
+async function startDriverBookingListeners() {
+  const t = getToday();
+  if (driverBookingListener) { try { driverBookingListener.off(); } catch (e) {} }
+  if (driverLoopListener) { try { driverLoopListener.off(); } catch (e) {} }
+  const sc = await DataLayer.getAllSeatConfigs(t);
+  currentCachedBookings._sc = sc;
+  const init = await DataLayer.getBookings(t);
+  Object.keys(init).forEach(function(k) { currentCachedBookings[k] = init[k]; driverKnownBookingIds.add(k); });
+  const loopInit = await DataLayer.getLoopQueue(t);
+  Object.keys(loopInit).forEach(function(k) { currentCachedLoop[k] = loopInit[k]; driverKnownLoopIds.add(k); });
+  driverFirstLoad = false;
+  loopFirstLoad = false;
+  renderDriverBookingContent();
+  const r = db.ref('booking/' + t);
+  driverBookingListener = r.on('value', function(snap) {
+    const ab = snap.val() || {};
+    currentPassengerTracking = {};
+    Object.keys(ab).forEach(function(k) {
+      const b = ab[k];
+      if (b && b.passengerLocation) currentPassengerTracking[k] = b.passengerLocation;
+    });
+    if (!driverFirstLoad) {
+      let np = 0;
+      Object.keys(ab).forEach(function(k) {
+        if (!driverKnownBookingIds.has(k)) {
+          const b = ab[k];
+          if (b && b.status === 'pending') np++;
+        }
+      });
+      if (np > 0) {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.frequency.value = 880;
+          g.gain.value = 0.3;
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.start();
+          o.stop(ctx.currentTime + 0.15);
+          setTimeout(function() {
+            const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+            o2.frequency.value = 1320;
+            g2.gain.value = 0.3;
+            o2.connect(g2);
+            g2.connect(ctx.destination);
+            o2.start();
+            o2.stop(ctx.currentTime + 0.15);
+          }, 200);
+        } catch (e) {}
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+        showToast('🔔 有 ' + np + ' 個新預約！', 4000);
+      }
+    }
+    driverKnownBookingIds = new Set(Object.keys(ab));
+    driverFirstLoad = false;
+    const sc2 = currentCachedBookings._sc;
+    currentCachedBookings = Object.assign({}, ab, { _sc: sc2 });
+    renderDriverBookingContent();
+  });
+  const rl = db.ref('booking_loop/' + t);
+  driverLoopListener = rl.on('value', function(snap) {
+    const all = snap.val() || {};
+    currentCachedLoop = all;
+    renderDriverBookingContent();
+  });
+}
+
+async function driverConfirm(date, id, plate) {
+  try {
+    const bs = await DataLayer.getBookings(date);
+    const b = bs[id];
+    if (!b) { showToast('預約唔存在'); return; }
+    await DataLayer.updateBooking(date, id, { status: 'reserved', confirmedAt: nowMs(), confirmedBy: plate });
+    if (plate) {
+      await db.ref('van/active_buses/' + plate + '/passengerCount').transaction(function(c) { return (c || 0) + (b.seats || 1); });
+    }
+    showToast('✅ 已確認留位', 2000);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function driverReject(date, id) {
+  const reason = prompt('拒絕原因（可留空）：', '') || '';
+  try {
+    await DataLayer.updateBooking(date, id, { status: 'rejected', rejectedAt: nowMs(), rejectReason: reason });
+    await DataLayer.clearPassengerLocation(date, id);
+    showToast('❌ 已拒絕', 2000);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function driverConfirmLoop(id) {
+  try {
+    const t = getToday();
+    await DataLayer.updateLoopQueue(t, id, { status: 'reserved', confirmedAt: nowMs() });
+    showToast('✅ 已確認留位', 2000);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function driverRejectLoop(id) {
+  if (!confirm('確定拒絕？')) return;
+  try {
+    const t = getToday();
+    await DataLayer.removeLoopQueue(t, id);
+    showToast('❌ 已拒絕', 2000);
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+/* ---------- 對講機 ---------- */
+function initWalkieTalkie() {
+  if (!driverData.plate) return;
+  updateWalkieTargets();
+  if (window._walkieRef) { try { window._walkieRef.off(); } catch (e) {} }
+  window._walkieRef = db.ref('van/walkie_talkie').orderByChild('timestamp').limitToLast(50);
+  window._walkieRef.on('value', async function(s) {
+    const c = document.getElementById('walkie-messages');
+    if (!c) return;
+    c.innerHTML = '';
+    const banned = await isBanned(currentUser.uid);
+    const items = [];
+    s.forEach(function(ch) {
+      const m = ch.val();
+      if (m.hidden || banned) return;
+      if (m.target === 'all' || m.target === driverData.plate || m.senderPlate === driverData.plate) {
+        items.push({ key: ch.key, msg: m });
+      }
+    });
+    items.sort(function(a, b) { return b.msg.timestamp - a.msg.timestamp; });
+    items.forEach(function(it) {
+      const m = it.msg;
+      const div = document.createElement('div');
+      div.style.cssText = 'padding:4px 0;border-bottom:1px solid #333;font-size:14px';
+      const tS = document.createElement('span');
+      tS.style.color = '#888';
+      tS.textContent = '[' + new Date(m.timestamp).toLocaleTimeString('zh-HK') + '] ';
+      div.appendChild(tS);
+      const strong = document.createElement('strong');
+      strong.textContent = (m.senderPlate || '未知') + ': ';
+      div.appendChild(strong);
+      if (m.audio) {
+        const b = document.createElement('button');
+        b.className = 'play-audio';
+        b.textContent = '▶ 語音';
+        b.addEventListener('click', function() { playBoostedAudio(m.audio); });
+        div.appendChild(b);
+      } else {
+        div.appendChild(document.createTextNode(m.text || ''));
+      }
+      c.appendChild(div);
+    });
+  });
+}
+
+function updateWalkieTargets() {
+  const s = document.getElementById('walkie-target');
+  if (!s) return;
+  db.ref('van/active_buses').once('value', function(snap) {
+    const d = snap.val() || {};
+    let h = '<option value="all">📢 全部司機</option>';
+    Object.keys(d).forEach(function(p) {
+      if (p !== driverData.plate && nowMs() - d[p].lastUpdate < CONFIG.ACTIVE_BUS_TIMEOUT) {
+        h += '<option value="' + esc(p) + '">🚐 ' + esc(p) + '</option>';
+      }
+    });
+    s.innerHTML = h;
+  });
+}
+
+/* ---------- 司機面板初始化 ---------- */
+async function initDriverPanel() {
+  const savedPlate = (function() {
+    try {
+      const d = JSON.parse(localStorage.getItem('savedPlates') || '{}');
+      return d[currentUser.identifier] || null;
+    } catch (e) { return null; }
+  })();
+  if (savedPlate && !driverData.plate) {
+    driverData.plate = savedPlate;
+    const inp = document.getElementById('driver-plate-input');
+    if (inp) inp.value = savedPlate;
+  }
+  if (driverMsgRef) { try { driverMsgRef.off(); } catch (e) {} driverMsgRef = null; }
+  if (driverBusRef) { try { driverBusRef.off(); } catch (e) {} driverBusRef = null; }
+  if (driverData.plate) {
+    driverBusRef = db.ref('van/active_buses/' + driverData.plate);
+    driverBusRef.on('value', function(s) {
+      const d = s.val();
+      if (d) {
+        driverData.mode = d.mode || 'busy';
+        driverData.direction = d.direction || 0;
+        driverData.stationIndex = d.stationIndex || 0;
+        driverData.passengerCount = d.passengerCount || 0;
+        driverData.isActive = d.isActive || false;
+        driverData.carSeats = d.carSeats || 16;
+        driverData.isFull = d.isFull || false;
+        updateDriverUI();
+      }
+    });
+  }
+  driverMsgRef = db.ref('van/messages').orderByChild('busId').equalTo(driverData.plate || '');
+  driverMsgRef.on('value', async function(s) {
+    const banned = await isBanned(currentUser.uid);
+    const el = document.getElementById('driver-msg-list');
+    if (!el) return;
+    el.innerHTML = '';
+    const items = [];
+    s.forEach(function(c) {
+      const m = c.val();
+      if (m.hidden || banned) return;
+      items.push({ key: c.key, msg: m });
+    });
+    items.sort(function(a, b) { return b.msg.timestamp - a.msg.timestamp; });
+    items.forEach(function(it) {
+      const m = it.msg;
+      const div = document.createElement('div');
+      div.className = 'msg-row';
+      const tS = document.createElement('span');
+      tS.style.color = '#888';
+      tS.style.fontSize = '12px';
+      tS.textContent = m.timestamp ? '[' + new Date(m.timestamp).toLocaleTimeString('zh-HK') + '] ' : '';
+      div.appendChild(tS);
+      if (m.audio) {
+        const b = document.createElement('button');
+        b.className = 'play-audio';
+        b.textContent = '▶ 語音';
+        b.addEventListener('click', function() { playBoostedAudio(m.audio); });
+        div.appendChild(b);
+        const sp = document.createElement('span');
+        sp.textContent = '🎤 語音訊息';
+        div.appendChild(sp);
+      } else {
+        div.appendChild(document.createTextNode((m.senderIdentifier || '') + ': ' + (m.text || '(訊息)')));
+      }
+      el.appendChild(div);
+    });
+  });
+  updateDriverUI();
+  const sg = document.getElementById('start-gps');
+  if (sg) sg.style.display = driverData.isActive ? 'none' : 'block';
+  const stg = document.getElementById('stop-gps');
+  if (stg) stg.style.display = driverData.isActive ? 'block' : 'none';
+  if (driverData.isActive && driverData.plate && !gpsWatchId) startGpsWatch();
+  switchDriverTab('booking');
+}
+
+/* ---------- 乘客追蹤 ---------- */
+function loadBusList() {
+  const c = document.getElementById('bus-list-container');
+  if (!c) return;
+  c.textContent = '載入中…';
+  if (busListRef) { try { busListRef.off(); } catch (e) {} }
+  busListRef = db.ref('van/active_buses');
+  busListRef.on('value', function(snap) {
+    const d = snap.val() || {};
+    let cnt = 0;
+    const nw = nowMs();
+    const frag = document.createDocumentFragment();
+    Object.keys(d).forEach(function(p) {
+      const b = d[p];
+      if (nw - (b.lastUpdate || 0) > CONFIG.ACTIVE_BUS_TIMEOUT) return;
+      cnt++;
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.padding = '14px';
+      const tt = document.createElement('div');
+      tt.style.cssText = 'font-size:22px;font-weight:bold;color:#fc0';
+      tt.textContent = '🚐 ' + p;
+      card.appendChild(tt);
+      const info = document.createElement('div');
+      info.style.cssText = 'font-size:16px;color:#ccc;margin-top:6px';
+      info.textContent = (b.currentStation || '未知') + ' · 👥 ' + (b.passengerCount || 0) + '人';
+      card.appendChild(info);
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-primary';
+      btn.style.cssText = 'margin-top:10px;font-size:16px;padding:12px';
+      btn.textContent = '追蹤';
+      btn.addEventListener('click', function() { trackBus(p); });
+      card.appendChild(btn);
+      frag.appendChild(card);
+    });
+    c.innerHTML = '';
+    if (cnt === 0) {
+      const e = document.createElement('div');
+      e.style.cssText = 'text-align:center;color:#888;font-size:16px;padding:20px';
+      e.textContent = '沒有活躍車輛';
+      c.appendChild(e);
+    } else {
+      c.appendChild(frag);
+    }
+  });
+}
+
+function trackBus(plate) {
+  currentBusId = plate;
+  showView('view-passenger');
+  switchPaxTab('track');
+  const card = document.getElementById('pass-data-card');
+  if (!card) return;
+  card.textContent = '讀取中…';
+  if (passengerMsgRef) { try { passengerMsgRef.off(); } catch (e) {} }
+  const busRef = db.ref('van/active_buses/' + plate);
+  busRef.on('value', function(snap) {
+    if (!document.getElementById('view-passenger').classList.contains('active')) return;
+    const bus = snap.val();
+    if (!bus) { card.textContent = '車輛已離線'; return; }
+    const ci = bus.stationIndex || 0;
+    const rt = bus.mode === 'busy' ? ROUTES.busy : ROUTES.normal;
+    const routeArr = bus.direction === 0 ? rt.go.name : rt.back.name;
+    const cs = routeArr[ci] || '未知';
+    const ni = ci + 1 < routeArr.length ? ci + 1 : 0;
+    const ns = routeArr[ni] || '終點';
+    card.innerHTML = '';
+    const t1 = document.createElement('div');
+    t1.style.cssText = 'font-size:22px;font-weight:bold;color:#fc0';
+    t1.textContent = '🚐 ' + plate;
+    card.appendChild(t1);
+    const t2 = document.createElement('div');
+    t2.className = 'station-name';
+    t2.textContent = cs;
+    card.appendChild(t2);
+    const t3 = document.createElement('div');
+    t3.style.cssText = 'font-size:44px;font-weight:800;color:#fc0;text-align:center;margin:6px 0';
+    t3.textContent = bus.isFull ? '🚫 滿座' : ((bus.passengerCount || 0) + ' 人');
+    card.appendChild(t3);
+    const t4 = document.createElement('div');
+    t4.style.cssText = 'font-size:16px;color:#aaa;text-align:center';
+    t4.textContent = '下一站：' + ns + ' · 方向：' + (bus.direction === 0 ? '往元朗' : '往大棠');
+    card.appendChild(t4);
+    renderPassRouteStrip(bus, routeArr);
+  });
+  passengerMsgRef = db.ref('van/messages').orderByChild('busId').equalTo(plate);
+  passengerMsgRef.on('value', async function(snap) {
+    const list = document.getElementById('pass-msg-list');
+    if (!list) return;
+    list.innerHTML = '';
+    const banned = await isBanned(currentUser.uid);
+    const items = [];
+    snap.forEach(function(ch) {
+      const m = ch.val();
+      if (m.hidden || banned) return;
+      items.push({ key: ch.key, msg: m });
+    });
+    items.sort(function(a, b) { return b.msg.timestamp - a.msg.timestamp; });
+    items.forEach(function(it) {
+      const m = it.msg;
+      const div = document.createElement('div');
+      div.className = 'msg-row';
+      const tS = document.createElement('span');
+      tS.style.color = '#888';
+      tS.style.fontSize = '12px';
+      tS.textContent = m.timestamp ? '[' + new Date(m.timestamp).toLocaleTimeString('zh-HK') + '] ' : '';
+      div.appendChild(tS);
+      if (m.audio) {
+        const b = document.createElement('button');
+        b.className = 'play-audio';
+        b.textContent = '▶ 語音';
+        b.addEventListener('click', function() { playBoostedAudio(m.audio); });
+        div.appendChild(b);
+      } else {
+        div.appendChild(document.createTextNode((m.senderIdentifier || '') + ': ' + (m.text || '(訊息)')));
+      }
+      list.appendChild(div);
+    });
+  });
+}
+
+function renderPassRouteStrip(bus, routeArr) {
+  const strip = document.getElementById('pass-route-strip');
+  if (!strip) return;
+  strip.innerHTML = '';
+  const current = bus.stationIndex || 0;
+  routeArr.forEach(function(name, idx) {
+    const node = document.createElement('div');
+    node.className = 'dot-node';
+    if (idx < current) node.classList.add('passed');
+    else if (idx === current) node.classList.add('current');
+    else if (idx === current + 1) node.classList.add('next');
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    const span = document.createElement('span');
+    span.textContent = name;
+    node.appendChild(dot);
+    node.appendChild(span);
+    strip.appendChild(node);
+  });
+  const currentDot = strip.querySelector('.dot-node.current');
+  if (currentDot) {
+    setTimeout(function() {
+      currentDot.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }, 100);
+  }
+}
+
+/* ---------- 乘客留位面板 ---------- */
+function switchPaxTab(tab) {
+  paxActiveTab = tab;
+  const tt = document.getElementById('pax-tab-track');
+  const tb = document.getElementById('pax-tab-booking');
+  const pt = document.getElementById('pax-panel-track');
+  const pb = document.getElementById('pax-panel-booking');
+  if (tt) tt.className = 'tab-btn' + (tab === 'track' ? ' active' : '');
+  if (tb) tb.className = 'tab-btn' + (tab === 'booking' ? ' active' : '');
+  if (pt) pt.style.display = tab === 'track' ? 'block' : 'none';
+  if (pb) pb.style.display = tab === 'booking' ? 'block' : 'none';
+  if (tab === 'booking') renderPassengerBookingPanel();
+}
+
+async function renderPassengerBookingPanel() {
+  const c = document.getElementById('passenger-booking-content');
+  if (!c) return;
+  if (!currentUser || !currentUser.uid || currentUser.role !== 'passenger') {
+    c.innerHTML = '<div class="card" style="text-align:center;color:#888;padding:20px">請先登入乘客帳號</div>';
+    return;
+  }
+  c.innerHTML = '<div class="card" style="text-align:center;color:#888;padding:20px">載入中...</div>';
+  const phone = currentUser.identifier;
+  const pd = (await DataLayer.getPassenger(phone)) || {};
+  const cs = pd.creditScore !== undefined && pd.creditScore !== null ? pd.creditScore : 100;
+  const su = pd.suspendedUntil || 0;
+  const t = getToday();
+  if (!isWeekday()) {
+    c.innerHTML = '<div class="card"><div style="font-size:14px;font-weight:600">📅 今日不設留座</div><div style="font-size:13px;color:#64748b;margin-top:6px">星期六、日及公眾假期採循環線運作。</div></div>';
+    return;
+  }
+  if (su > nowMs()) {
+    const r = Math.ceil((su - nowMs()) / (24 * 60 * 60 * 1000));
+    c.innerHTML = '<div class="card" style="border-color:#ef4444;background:#450a0a"><div style="font-size:14px;font-weight:600;color:#f87171">⛔ 預約資格已暫停，剩餘 ' + r + ' 日</div></div>';
+    return;
+  }
+  let h = '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:15px;font-weight:600">👤 ' + esc(pd.name || currentUser.identifier) + '</div><div style="font-size:12px;color:#64748b">' + esc(phone) + '</div></div><div style="text-align:right"><div style="font-size:20px;font-weight:700;color:' + (cs >= 80 ? '#22c55e' : cs >= 50 ? '#f59e0b' : '#ef4444') + '">' + cs + '</div><div style="font-size:10px;color:#64748b">信用分</div></div></div></div>';
+  const tb = await DataLayer.getBookings(t);
+  const sc = await DataLayer.getAllSeatConfigs(t);
+  h += '<div class="card-title">🌅 早上固定班次</div>';
+  SM.forEach(function(tm) { h += renderPaxShiftCard(t, tm, tb, sc); });
+  if (isLoopHour()) {
+    h += '<div class="card-title">🔄 循環線時段（07:00 - 18:00）</div>';
+    h += await renderPaxLoopCard();
+  }
+  h += '<div class="card-title" style="margin-top:14px">🌆 傍晚固定班次</div>';
+  SE.forEach(function(tm) { h += renderPaxShiftCard(t, tm, tb, sc); });
+  const mb = Object.keys(tb).map(function(k) { return tb[k]; }).filter(function(b) { return b.passengerPhone === phone && b.status !== 'cancelled' && b.status !== 'rejected'; });
+  if (mb.length > 0) {
+    h += '<div class="card-title" style="margin-top:14px">🎫 我的預約</div>';
+    mb.sort(function(a, b) { return a.time.localeCompare(b.time); });
+    mb.forEach(function(b) {
+      const m = {
+        'pending': { text: '⏳ 待確認', color: '#fdba74', border: '#fb923c' },
+        'reserved': { text: '✅ 已確認', color: '#4ade80', border: '#22c55e' },
+        'arrived': { text: '✅ 已到站', color: '#4ade80', border: '#22c55e' },
+        'boarded': { text: '🚐 已上車', color: '#7dd3fc', border: '#38bdf8' },
+        'no-show': { text: '❌ 未到站', color: '#f87171', border: '#ef4444' }
+      };
+      const s = m[b.status] || { text: b.status, color: '#94a3b8', border: '#334155' };
+      const pl = b.pickupLocation ? '<div style="font-size:12px;color:#4ade80;margin-top:2px">📍 ' + esc(b.pickupLocation) + '</div>' : '';
+      h += '<div class="card" style="padding:12px;border-color:' + s.border + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:15px;font-weight:600">' + esc(b.time) + ' 班次</div><div style="font-size:12px;color:#64748b">' + esc(getOrig(b.time)) + ' · ' + b.seats + ' 人</div>' + pl + '</div><div style="font-size:13px;color:' + s.color + ';font-weight:700">' + s.text + '</div></div>';
+      if (b.status === 'pending' || b.status === 'reserved' || b.status === 'arrived') {
+        h += '<div style="display:flex;gap:6px;margin-top:8px">';
+        if (b.status === 'reserved' || b.status === 'arrived') {
+          h += '<button class="btn btn-success btn-sm" style="flex:1" onclick="paxBoarded(\'' + b.id + '\',\'' + b.date + '\')">🚐 我已上車</button>';
+        }
+        h += '<button class="btn btn-outline btn-sm" style="flex:1" onclick="paxCancelBooking(\'' + b.id + '\',\'' + b.date + '\')">取消</button>';
+        h += '</div>';
+      }
+      h += '</div>';
+    });
+  }
+  c.innerHTML = h;
+}
+
+function renderPaxShiftCard(d, t, ab, sc) {
+  const sid = getSid(d, t);
+  const cfg = sc[t.replace(':', '')];
+  const dir = getDir(t);
+  if (!cfg || !cfg.seats) {
+    return '<div class="pax-card full"><div><div class="time">' + esc(t) + '</div><div class="info">' + esc(getOrigL(t)) + '</div><div style="margin-top:4px;font-size:11px;color:#ef4444">未開放</div></div><div><div class="num zero">—</div><div style="font-size:11px;color:#64748b">未開放</div></div></div>';
+  }
+  const quota = cfg.quota || cfg.seats;
+  const used = Object.keys(ab).map(function(k) { return ab[k]; }).filter(function(b) { return b.scheduleId === sid && ['pending', 'reserved', 'arrived', 'boarded'].indexOf(b.status) >= 0; }).reduce(function(s, b) { return s + (b.seats || 0); }, 0);
+  const rem = quota - used;
+  const full = rem <= 0;
+  const my = Object.keys(ab).map(function(k) { return ab[k]; }).find(function(b) { return b.scheduleId === sid && b.passengerPhone === currentUser.identifier && b.status !== 'cancelled' && b.status !== 'rejected' && b.status !== 'no-show'; });
+  let bg = '';
+  if (my) {
+    if (my.status === 'pending') bg = '⏳ 待確認';
+    else if (my.status === 'reserved') bg = '✅ 已確認';
+    else if (my.status === 'arrived') bg = '已到站';
+    else if (my.status === 'boarded') bg = '已上車';
+  }
+  const clk = !full || my;
+  return '<div class="pax-card' + (full && !my ? ' full' : '') + '" ' + (clk ? 'onclick="paxSelectShift(\'' + d + '\',\'' + t + '\')"' : '') + '><div><div class="time">' + esc(t) + '</div><div class="info">' + esc(getOrigL(t)) + '</div>' + (bg ? '<div style="margin-top:4px;font-size:12px;color:#fdba74;font-weight:600">' + bg + '</div>' : '') + '<div style="font-size:10px;color:#64748b;margin-top:4px">留位額：' + quota + ' 個</div></div><div style="text-align:right"><div class="num' + (rem <= 0 ? ' zero' : '') + '">' + rem + '</div><div style="font-size:11px;color:#64748b">剩餘</div></div></div>';
+}
+
+async function renderPaxLoopCard() {
+  const t = getToday();
+  const buses = await DataLayer.getActiveBuses();
+  let totalSeats = 0, currentPax = 0;
+  buses.forEach(function(b) { totalSeats += (b.carSeats || 16); currentPax += (b.passengerCount || 0); });
+  const availSeats = Math.max(0, totalSeats - currentPax);
+  const all = await DataLayer.getLoopQueue(t);
+  const my = Object.keys(all).map(function(k) { return all[k]; }).find(function(x) { return x.phone === currentUser.identifier && (x.status === 'pending' || x.status === 'reserved'); });
+  const wc = Object.keys(all).map(function(k) { return all[k]; }).filter(function(x) { return x.status === 'pending'; }).length;
+  const rc = Object.keys(all).map(function(k) { return all[k]; }).filter(function(x) { return x.status === 'reserved'; }).length;
+  if (my) {
+    const bt = my.createdAt ? new Date(my.createdAt).toLocaleString('zh-HK', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+    if (my.status === 'pending') {
+      return '<div class="card" style="background:linear-gradient(135deg,#431407,#7c2d12);border-color:#fb923c"><div style="font-size:16px;font-weight:900;color:#fdba74">⏳ 等待司機確認</div><div style="font-size:12px;color:#fed7aa;margin-top:6px;line-height:1.6">' + (my.pickupLocation ? '📍 ' + esc(my.pickupLocation) + '<br>' : '') + (bt ? '⏰ ' + bt + '<br>' : '') + '前面仲有 <strong>' + Math.max(0, wc - 1) + '</strong> 位</div><button class="btn btn-danger" style="margin-top:12px;font-size:14px;padding:12px" onclick="paxLoopCancel()">取消留位</button></div>';
+    }
+    if (my.status === 'reserved') {
+      return '<div class="card" style="background:linear-gradient(135deg,#052e16,#065f46);border-color:#22c55e"><div style="font-size:16px;font-weight:900;color:#4ade80">✅ 已確認留位</div><div style="font-size:12px;color:#86efac;margin-top:6px;line-height:1.6">' + (my.pickupLocation ? '📍 ' + esc(my.pickupLocation) + '<br>' : '') + (bt ? '⏰ ' + bt + '<br>' : '') + '請到站頭等候</div><button class="btn btn-success" style="margin-top:12px;font-size:14px;padding:12px" onclick="paxLoopBoarded()">🚐 我已上車</button><button class="btn btn-outline" style="margin-top:8px;font-size:14px;padding:12px" onclick="paxLoopCancel()">取消</button></div>';
+    }
+  }
+  return '<div class="card" style="background:linear-gradient(135deg,#0c4a6e,#075985);border-color:#0ea5e9"><div style="font-size:16px;font-weight:900;color:#7dd3fc">🔄 循環線留位</div><div style="font-size:12px;color:#bae6fd;margin-top:6px;line-height:1.6">可留位座位：<strong style="font-size:18px;color:#4ade80">' + availSeats + '</strong> 個<br>候補中：<strong>' + wc + '</strong> · 已確認：<strong>' + rc + '</strong></div><label style="color:#bae6fd;margin-top:10px">📍 上車地點</label><input type="text" id="pax-loop-pickup" placeholder="可揀或自行輸入" maxlength="40" style="background:#0f172a;border-color:#0ea5e9"><button class="btn btn-primary" style="padding:12px;font-size:14px" onclick="paxLoopJoin()" ' + (availSeats <= 0 ? 'disabled' : '') + '>' + (availSeats <= 0 ? '❌ 暫無座位' : '✅ 立即留位') + '</button></div>';
+}
+
+async function paxSelectShift(d, t) {
+  const cfg = await DataLayer.getSeatConfig(d, t);
+  if (!cfg || !cfg.seats) { showToast('此班次未開放'); return; }
+  const phone = currentUser.identifier;
+  const tb = await DataLayer.getBookings(d);
+  const sid = getSid(d, t);
+  const my = Object.keys(tb).map(function(k) { return tb[k]; }).find(function(b) { return b.scheduleId === sid && b.passengerPhone === phone && b.status !== 'cancelled' && b.status !== 'rejected' && b.status !== 'no-show'; });
+  if (my) { showToast('你已經預約咗呢個班次'); return; }
+  const pd = (await DataLayer.getPassenger(phone)) || {};
+  const isMorning = getDir(t) === 'morning';
+  const c = document.getElementById('passenger-booking-content');
+  c.innerHTML = '<div style="margin-bottom:12px"><button class="btn btn-outline btn-sm" onclick="renderPassengerBookingPanel()">← 返回</button></div><div class="card"><div style="font-size:26px;font-weight:700;color:#38bdf8">' + esc(t) + '</div><div style="font-size:13px;margin-top:6px;font-weight:600;color:' + (isMorning ? '#4ade80' : '#fdba74') + '">' + esc(getOrigL(t)) + '</div><div style="font-size:13px;color:#94a3b8;margin-top:4px">→ ' + esc(getDest(t)) + '</div></div><div class="card"><label>姓名</label><input type="text" id="pax-book-name" value="' + esc(pd.name || '') + '" maxlength="20"><label>人數</label><select id="pax-book-seats"><option value="1">1 人</option><option value="2">2 人</option></select><label>📍 上車地點</label><input type="text" id="pax-book-pickup" placeholder="可揀或自行輸入" maxlength="40"><button class="btn btn-primary" id="pax-confirm-btn" onclick="paxConfirmBooking(\'' + d + '\',\'' + t + '\')">送出預約</button></div>';
+}
+
+async function paxConfirmBooking(d, t) {
+  const btn = document.getElementById('pax-confirm-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '處理中...'; }
+  const name = document.getElementById('pax-book-name').value.trim();
+  const seats = parseInt(document.getElementById('pax-book-seats').value);
+  const pickup = document.getElementById('pax-book-pickup').value.trim();
+  if (!name || !pickup) { showToast('請填寫姓名同上車地點'); if (btn) { btn.disabled = false; btn.textContent = '送出預約'; } return; }
+  try {
+    await ensureAuth();
+    const cfg = await DataLayer.getSeatConfig(d, t);
+    if (!cfg || !cfg.seats) throw new Error('此班次未開放');
+    const quota = cfg.quota || cfg.seats;
+    const sid = getSid(d, t);
+    const tb = await DataLayer.getBookings(d);
+    const used = Object.keys(tb).map(function(k) { return tb[k]; }).filter(function(b) { return b.scheduleId === sid && ['pending', 'reserved', 'arrived', 'boarded'].indexOf(b.status) >= 0; }).reduce(function(s, b) { return s + (b.seats || 0); }, 0);
+    if (used + seats > quota) throw new Error('剩餘留位額不足');
+    const today = getToday();
+    const cc = await DataLayer.getCancelCount(currentUser.identifier, today);
+    if (cc >= MAX_CANCEL_PER_DAY) throw new Error('今日取消次數已達上限');
+    const b = { scheduleId: sid, date: d, time: t, passengerName: name, passengerPhone: currentUser.identifier, seats: seats, pickupLocation: pickup, status: 'pending', direction: getDir(t) };
+    await DataLayer.addBooking(d, b);
+    showToast('✅ 已送出，等待司機確認', 3000);
+    renderPassengerBookingPanel();
+  } catch (e) {
+    showToast('❌ ' + e.message, 5000);
+    if (btn) { btn.disabled = false; btn.textContent = '送出預約'; }
+  }
+}
+
+async function paxLoopJoin() {
+  try {
+    await ensureAuth();
+    const t = getToday();
+    const all = await DataLayer.getLoopQueue(t);
+    const ex = Object.keys(all).map(function(k) { return all[k]; }).find(function(x) { return x.phone === currentUser.identifier && (x.status === 'pending' || x.status === 'reserved'); });
+    if (ex) { showToast('⚠️ 你已經留咗位'); return; }
+    const pickup = document.getElementById('pax-loop-pickup') ? document.getElementById('pax-loop-pickup').value.trim() : '';
+    if (!pickup) { showToast('請輸入上車地點'); return; }
+    const pd = (await DataLayer.getPassenger(currentUser.identifier)) || {};
+    if ((pd.creditScore || 100) < 50) { showToast('⚠️ 信用分不足'); return; }
+    await DataLayer.addLoopQueue(t, { phone: currentUser.identifier, name: pd.name || currentUser.identifier, seats: 1, status: 'pending', date: t, pickupLocation: pickup });
+    showToast('✅ 已送出，等待司機確認', 3000);
+    renderPassengerBookingPanel();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function paxLoopCancel() {
+  if (!confirm('確定取消留位？')) return;
+  try {
+    const t = getToday();
+    const all = await DataLayer.getLoopQueue(t);
+    const my = Object.keys(all).map(function(k) { return all[k]; }).find(function(x) { return x.phone === currentUser.identifier && (x.status === 'pending' || x.status === 'reserved'); });
+    if (my) {
+      await DataLayer.removeLoopQueue(t, my.id);
+      await DataLayer.incrCancelCount(currentUser.identifier, t);
+    }
+    showToast('已取消留位');
+    renderPassengerBookingPanel();
+  } catch (e) { showToast('取消失敗：' + e.message); }
+}
+
+async function paxLoopBoarded() {
+  if (!confirm('確定你已上車？')) return;
+  try {
+    const t = getToday();
+    const all = await DataLayer.getLoopQueue(t);
+    const my = Object.keys(all).map(function(k) { return all[k]; }).find(function(x) { return x.phone === currentUser.identifier && x.status === 'reserved'; });
+    if (!my) { showToast('搵唔到留位記錄'); return; }
+    await DataLayer.updateLoopQueue(t, my.id, { status: 'boarded', boardedAt: nowMs() });
+    showToast('✅ 已上車');
+    renderPassengerBookingPanel();
+  } catch (e) { showToast('❌ ' + e.message); }
+}
+
+async function paxBoarded(id, d) {
+  if (!confirm('確定你已上車？')) return;
+  try {
+    await DataLayer.updateBooking(d, id, { status: 'boarded', boardedAt: nowMs() });
+    await DataLayer.clearPassengerLocation(d, id);
+    showToast('✅ 已上車');
+    renderPassengerBookingPanel();
+  } catch (e) { showToast('失敗：' + e.message); }
+}
+
+async function paxCancelBooking(id, d) {
+  if (!confirm('確定取消預約？')) return;
+  try {
+    const b = (await DataLayer.getBookings(d))[id];
+    await DataLayer.updateBooking(d, id, { status: 'cancelled', cancelledAt: nowMs() });
+    if (b && b.status === 'reserved') {
+      const cfg = await DataLayer.getSeatConfig(d, b.time);
+      if (cfg && cfg.plate) {
+        await db.ref('van/active_buses/' + cfg.plate + '/passengerCount').transaction(function(c) { return Math.max(0, (c || 0) - (b.seats || 1)); });
+      }
+      await DataLayer.clearPassengerLocation(d, id);
+    }
+    await DataLayer.incrCancelCount(currentUser.identifier, d);
+    showToast('已取消預約');
+    renderPassengerBookingPanel();
+  } catch (e) { showToast('取消失敗：' + e.message); }
+}
+
+/* ---------- 管理員後台 ---------- */
+async function loadAdminPanel() {
+  try {
+    if (adminBusesRef) { try { adminBusesRef.off(); } catch (e) {} }
+    adminBusesRef = db.ref('van/active_buses');
+    adminBusesRef.on('value', function(snap) {
+      const d = snap.val() || {};
+      let cnt = 0, tot = 0;
+      const nw = nowMs();
+      Object.keys(d).forEach(function(p) {
+        if (nw - (d[p].lastUpdate || 0) < CONFIG.ACTIVE_BUS_TIMEOUT) { cnt++; tot += d[p].passengerCount || 0; }
+      });
+      const ac = document.getElementById('admin-active-count');
+      if (ac) ac.textContent = cnt;
+      const pc = document.getElementById('admin-passenger-count');
+      if (pc) pc.textContent = tot;
+    });
+    if (adminMsgRef) { try { adminMsgRef.off(); } catch (e) {} }
+    adminMsgRef = db.ref('van/messages').orderByChild('timestamp').limitToLast(CONFIG.MESSAGE_LIMIT);
+    adminMsgRef.on('value', function(snap) {
+      const mc = document.getElementById('admin-msg-count');
+      if (mc) mc.textContent = snap.numChildren();
+    });
+    const t = getToday();
+    const bs = await DataLayer.getBookings(t);
+    const lq = await DataLayer.getLoopQueue(t);
+    const statsEl = document.getElementById('admin-booking-stats');
+    if (statsEl) {
+      const bookingsArr = Object.keys(bs).map(function(k) { return bs[k]; });
+      const loopArr = Object.keys(lq).map(function(k) { return lq[k]; });
+      statsEl.innerHTML = '📋 固定班次預約：' + bookingsArr.length + ' 筆<br>🔄 循環線留位：' + loopArr.length + ' 筆<br>⏳ 待確認：' + bookingsArr.filter(function(b) { return b.status === 'pending'; }).length + ' 筆<br>✅ 已確認：' + bookingsArr.filter(function(b) { return b.status === 'reserved'; }).length + ' 筆';
+    }
+    loadAdminAnnounce();
+  } catch (e) { console.error('載入後台失敗:', e); }
+}
+
+function loadAdminAnnounce() {
+  try {
+    if (adminAnnounceRef) { try { adminAnnounceRef.off(); } catch (e) {} }
+    adminAnnounceRef = db.ref('van/announcements').orderByChild('timestamp').limitToLast(20);
+    adminAnnounceRef.on('value', function(snap) {
+      const container = document.getElementById('admin-announce-list');
+      if (!container) return;
+      let html = '';
+      snap.forEach(function(ch) {
+        const a = ch.val();
+        html += '<div class="card" style="padding:8px 10px;margin-bottom:6px;border-left:3px solid #fc0"><div style="font-size:12px;color:#888">' + new Date(a.timestamp).toLocaleString('zh-HK') + '</div><div style="font-size:14px">' + (a.audio ? '🎤 語音公告' : esc(a.text || '')) + '</div></div>';
+      });
+      container.innerHTML = html || '<div style="color:#888;padding:8px">暫無公告</div>';
+    });
+  } catch (e) {}
+}
+
+/* ---------- 登入 / 登出 ---------- */
+document.getElementById('login-google').addEventListener('click', function() {
+  if (isLoggingIn) { showToast('⏳ 登入處理中'); return; }
+  isLoggingIn = true;
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).then(async function(result) {
+    const user = result.user;
+    const email = user.email;
+    const role = await checkRole(email, user.uid);
+    if (role !== 'admin') { showToast('此 Google 帳戶不是管理員'); auth.signOut(); isLoggingIn = false; return; }
+    currentUser.uid = user.uid;
+    currentUser.identifier = email;
+    currentUser.role = role;
+    currentUser.loginTime = nowMs();
+    isSuperAdmin = isSuperAdminEmail(email);
+    isAdmin = true;
+    await db.ref('users/' + user.uid).set({ identifier: email, email: email, role: role, lastLogin: nowMs() });
+    if (isSuperAdminEmail(email)) {
+      await db.ref('admins/' + user.uid).update({ super: true, identifier: email, email: email, lastLogin: nowMs() });
+    }
+    document.getElementById('login-modal').classList.remove('active');
+    document.getElementById('btn-admin-panel').style.display = 'block';
+    document.getElementById('btn-logout').style.display = 'block';
+    loadAdminPanel();
+    showToast('管理員登入成功，歡迎 ' + email + (isSuperAdmin ? ' (超級管理員)' : ''));
+    if (voiceEnabled) speakCantonese(VOICE_TEXTS.welcomeAdmin);
+    showView('view-lobby');
+    isLoggingIn = false;
+  }).catch(function(e) {
+    isLoggingIn = false;
+    if (e.code === 'auth/popup-closed-by-user') showToast('登入視窗已關閉');
+    else showToast('登入失敗：' + e.message);
+  });
+});
+
+document.getElementById('login-driver').addEventListener('click', function() {
+  document.getElementById('login-choice').style.display = 'none';
+  document.getElementById('driver-login-form').style.display = 'block';
+});
+
+document.getElementById('driver-login-back').addEventListener('click', function() {
+  document.getElementById('driver-login-form').style.display = 'none';
+  document.getElementById('login-choice').style.display = 'block';
+});
+
+document.getElementById('driver-login-btn').addEventListener('click', async function() {
+  const id = document.getElementById('driver-identifier').value.trim();
+  const er = document.getElementById('driver-login-error');
+  if (!id) { er.textContent = '請輸入電郵或電話號碼'; return; }
+  try {
+    await auth.signInAnonymously();
+    const uid = auth.currentUser.uid;
+    const role = await checkRole(id, uid);
+    if (role !== 'driver' && role !== 'admin') { er.textContent = '此帳戶不是司機'; return; }
+    currentUser.uid = uid;
+    currentUser.identifier = id;
+    currentUser.role = role;
+    currentUser.loginTime = nowMs();
+    if (role === 'admin') { isSuperAdmin = isSuperAdminEmail(id); isAdmin = true; }
+    else { isSuperAdmin = false; isAdmin = false; }
+    await db.ref('users/' + currentUser.uid).set({ identifier: id, role: role, lastLogin: nowMs() });
+    document.getElementById('login-modal').classList.remove('active');
+    document.getElementById('btn-logout').style.display = 'block';
+    if (role === 'admin') {
+      document.getElementById('btn-admin-panel').style.display = 'block';
+      loadAdminPanel();
+    } else {
+      document.getElementById('btn-admin-panel').style.display = 'none';
+    }
+    showToast((role === 'admin' ? '管理員' : '司機') + '登入成功：' + id);
+    if (voiceEnabled) speakCantonese((role === 'admin' ? '管理員' : '司機') + '登入成功');
+    showView('view-lobby');
+  } catch (e) { er.textContent = '登入失敗：' + e.message; }
+});
+
+document.getElementById('login-passenger').addEventListener('click', function() {
+  document.getElementById('login-choice').style.display = 'none';
+  document.getElementById('passenger-login-form').style.display = 'block';
+});
+
+document.getElementById('passenger-login-back').addEventListener('click', function() {
+  document.getElementById('passenger-login-form').style.display = 'none';
+  document.getElementById('login-choice').style.display = 'block';
+});
+
+document.getElementById('passenger-login-btn').addEventListener('click', async function() {
+  const ph = document.getElementById('passenger-phone').value.trim();
+  const nm = document.getElementById('passenger-name').value.trim();
+  const er = document.getElementById('passenger-login-error');
+  if (!ph || !/^\d{8,}$/.test(ph)) { er.textContent = '請輸入 8 位數字電話號碼'; return; }
+  if (!nm || nm.length > 20) { er.textContent = '請輸入姓名（20字內）'; return; }
+  try {
+    await auth.signInAnonymously();
+    const uid = auth.currentUser.uid;
+    const role = await checkRole(ph, uid);
+    currentUser.uid = uid;
+    currentUser.identifier = ph;
+    currentUser.role = role;
+    currentUser.loginTime = nowMs();
+    await db.ref('users/' + currentUser.uid).set({ identifier: ph, role: role, lastLogin: nowMs() });
+    const ex = (await DataLayer.getPassenger(ph)) || {};
+    if (ex.suspendedUntil && ex.suspendedUntil > nowMs()) {
+      const r = Math.ceil((ex.suspendedUntil - nowMs()) / (24 * 60 * 60 * 1000));
+      er.textContent = '預約資格暫停中，剩餘 ' + r + ' 日';
+      return;
+    }
+    await DataLayer.savePassenger(ph, { name: nm, phone: ph, creditScore: ex.creditScore !== undefined && ex.creditScore !== null ? ex.creditScore : 100, totalBookings: ex.totalBookings || 0, totalNoShows: ex.totalNoShows || 0, streakCount: ex.streakCount || 0, lastLogin: nowMs() });
+    document.getElementById('login-modal').classList.remove('active');
+    document.getElementById('btn-logout').style.display = 'block';
+    if (role === 'admin') {
+      isAdmin = true;
+      isSuperAdmin = isSuperAdminEmail(ph);
+      document.getElementById('btn-admin-panel').style.display = 'block';
+      loadAdminPanel();
+    } else {
+      document.getElementById('btn-admin-panel').style.display = 'none';
+    }
+    showToast('乘客登入成功，歡迎 ' + nm);
+    if (voiceEnabled) speakCantonese(VOICE_TEXTS.welcomePassenger);
+    showView('view-lobby');
+  } catch (e) { er.textContent = '登入失敗：' + e.message; }
+});
+
+document.getElementById('login-cancel').addEventListener('click', function() {
+  document.getElementById('login-modal').classList.remove('active');
+});
+
+document.getElementById('btn-logout').addEventListener('click', function() {
+  if (gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+  if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
+  releaseWakeLock();
+  try {
+    if (busListRef) busListRef.off();
+    if (passengerMsgRef) passengerMsgRef.off();
+    if (driverMsgRef) driverMsgRef.off();
+    if (adminMsgRef) adminMsgRef.off();
+    if (driverBusRef) driverBusRef.off();
+    if (adminBusesRef) adminBusesRef.off();
+    if (adminAnnounceRef) adminAnnounceRef.off();
+    if (window._walkieRef) window._walkieRef.off();
+  } catch (e) {}
+  auth.signOut().catch(function() {});
+  currentUser = { uid: null, identifier: null, role: 'passenger', loginTime: null };
+  isSuperAdmin = false;
+  isAdmin = false;
+  document.getElementById('btn-admin-panel').style.display = 'none';
+  document.getElementById('btn-logout').style.display = 'none';
+  if (driverData.plate) db.ref('van/active_buses/' + driverData.plate).remove().catch(function() {});
+  resetDriverData(false);
+  showToast('已登出');
+  showView('view-lobby');
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.loggedOut);
+});
+
+/* ---------- 主按鈕綁定 ---------- */
+safeClick(document.getElementById('btn-passenger'), function() {
+  if (!currentUser.uid) { document.getElementById('login-modal').classList.add('active'); return; }
+  showView('view-passenger-list');
+  loadBusList();
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.passengerPage);
+});
+
+safeClick(document.getElementById('btn-driver'), function() {
+  if (!currentUser.uid) { document.getElementById('login-modal').classList.add('active'); return; }
+  if (currentUser.role !== 'driver' && currentUser.role !== 'admin') {
+    showToast('只有司機或管理員可以進入');
+    if (voiceEnabled) speakCantonese(VOICE_TEXTS.permissionDenied);
+    return;
+  }
+  showView('view-driver');
+  initDriverPanel();
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.driverPage);
+});
+
+safeClick(document.getElementById('btn-admin-panel'), function() {
+  if (!isAdmin) { showToast('權限不足'); return; }
+  showView('view-admin');
+  loadAdminPanel();
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.adminPage);
+});
+
+safeClick(document.getElementById('btn-refresh-buslist'), function() {
+  showToast('🔄 重新整理中...');
+  if (busListRef) { try { busListRef.off(); } catch (e) {} }
+  loadBusList();
+});
+
+safeClick(document.getElementById('btn-back-list'), function() {
+  if (busListRef) { try { busListRef.off(); } catch (e) {} }
+  showView('view-lobby');
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.backToLobby);
+});
+
+safeClick(document.getElementById('btn-back-track'), function() {
+  if (passengerMsgRef) { try { passengerMsgRef.off(); } catch (e) {} }
+  showView('view-passenger-list');
+  loadBusList();
+});
+
+safeClick(document.getElementById('btn-pass-send'), function() {
+  const input = document.getElementById('pass-msg-input');
+  const text = input ? input.value.trim() : '';
+  if (!text || !currentBusId) return;
+  db.ref('van/messages').push({ busId: currentBusId, senderUid: currentUser.uid, senderIdentifier: currentUser.identifier, text: text, timestamp: nowMs(), type: 'text' }).then(function() { input.value = ''; showToast('已發送'); });
+});
+
+safeClick(document.getElementById('btn-prev'), goToPrevStation);
+safeClick(document.getElementById('btn-next'), goToNextStation);
+
+safeClick(document.getElementById('btn-add-pass'), function() {
+  if (!driverData.isActive) { showToast('請先開始當值'); return; }
+  if (driverData.passengerCount >= driverData.carSeats) { showToast('已達 ' + driverData.carSeats + ' 座上限'); return; }
+  driverData.passengerCount++;
+  if (driverData.passengerCount === driverData.carSeats) driverData.isFull = true;
+  updateDriverDB();
+});
+
+safeClick(document.getElementById('btn-sub-pass'), function() {
+  if (!driverData.isActive) { showToast('請先開始當值'); return; }
+  if (driverData.passengerCount > 0) {
+    driverData.passengerCount--;
+    if (driverData.passengerCount < driverData.carSeats) driverData.isFull = false;
+    updateDriverDB();
+  }
+});
+
+safeClick(document.getElementById('d-full-btn'), function() {
+  if (!driverData.isActive) { showToast('請先開始當值'); return; }
+  driverData.isFull = !driverData.isFull;
+  if (driverData.isFull) driverData.passengerCount = driverData.carSeats;
+  else driverData.passengerCount = Math.max(0, driverData.carSeats - 1);
+  updateDriverDB();
+});
+
+safeClick(document.getElementById('d-car-btn'), function() {
+  driverData.carSeats = driverData.carSeats === 16 ? 19 : 16;
+  if (driverData.passengerCount > driverData.carSeats) driverData.passengerCount = driverData.carSeats;
+  driverData.isFull = driverData.passengerCount === driverData.carSeats;
+  updateDriverDB();
+});
+
+safeClick(document.getElementById('btn-switch-dir'), function() {
+  if (!driverData.isActive) { showToast('請先開始當值'); return; }
+  driverData.direction = driverData.direction === 0 ? 1 : 0;
+  driverData.stationIndex = 0;
+  lastReportedIndex = -1;
+  lastDriverScrollIndex = -1;
+  if (gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+  startGpsWatch();
+  updateDriverDB();
+  renderDriverRouteStrip();
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.turnAround);
+});
+
+safeClick(document.getElementById('btn-mode-toggle'), function() {
+  if (!driverData.isActive) { showToast('請先開始當值'); return; }
+  driverData.mode = driverData.mode === 'busy' ? 'normal' : 'busy';
+  driverData.stationIndex = 0;
+  lastReportedIndex = -1;
+  lastDriverScrollIndex = -1;
+  updateDriverDB();
+  renderDriverRouteStrip();
+  const mn = driverData.mode === 'busy' ? '西鐵快線' : '市中心循環線';
+  showToast('已切換至 ' + mn);
+  if (voiceEnabled) speakCantonese('已切換至 ' + mn);
+});
+
+safeClick(document.getElementById('btn-set-plate'), function() {
+  const i = document.getElementById('driver-plate-input');
+  const p = i.value.trim().toUpperCase();
+  if (!p) { showToast('請輸入車牌'); return; }
+  if (driverData.isActive) {
+    if (!confirm('更改車牌會停止當值，確定？')) return;
+    stopDuty();
+  }
+  driverData.plate = p;
+  try {
+    const d = JSON.parse(localStorage.getItem('savedPlates') || '{}');
+    d[currentUser.identifier] = p;
+    localStorage.setItem('savedPlates', JSON.stringify(d));
+  } catch (e) {}
+  updateDriverDB();
+  i.value = '';
+  showToast('✅ 車牌已設定：' + p);
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.carPlateSet);
+});
+
+safeClick(document.getElementById('start-gps'), startDuty);
+safeClick(document.getElementById('stop-gps'), stopDuty);
+
+safeClick(document.getElementById('btn-driver-send'), function() {
+  const input = document.getElementById('driver-msg-input');
+  const text = input ? input.value.trim() : '';
+  if (!text || !driverData.plate) return;
+  db.ref('van/messages').push({ busId: driverData.plate, senderUid: currentUser.uid, senderIdentifier: currentUser.identifier, text: text, timestamp: nowMs(), type: 'text' }).then(function() { input.value = ''; showToast('已廣播'); });
+});
+
+safeClick(document.getElementById('btn-driver-back'), function() {
+  if (gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+  if (gpsRetryTimer) { clearTimeout(gpsRetryTimer); gpsRetryTimer = null; }
+  releaseWakeLock();
+  showView('view-lobby');
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.backToLobby);
+});
+
+safeClick(document.getElementById('walkie-refresh-targets'), updateWalkieTargets);
+
+safeClick(document.getElementById('btn-back-admin'), function() {
+  showView('view-lobby');
+  if (voiceEnabled) speakCantonese(VOICE_TEXTS.backToLobby);
+});
+
+safeClick(document.getElementById('btn-publish-announce'), function() {
+  const input = document.getElementById('admin-announce-text');
+  const text = input ? input.value.trim() : '';
+  if (!text) { showToast('請輸入公告'); return; }
+  db.ref('van/announcements').push({ text: text, publisher: currentUser.identifier, timestamp: nowMs() }).then(function() {
+    input.value = '';
+    showToast('✅ 公告已發佈');
+  });
+});
+
+/* ---------- Tab 切換按鈕 ---------- */
+document.getElementById('pax-tab-track').addEventListener('click', function() { switchPaxTab('track'); });
+document.getElementById('pax-tab-booking').addEventListener('click', function() { switchPaxTab('booking'); });
+document.getElementById('driver-tab-booking').addEventListener('click', function() { switchDriverTab('booking'); });
+document.getElementById('driver-tab-walkie').addEventListener('click', function() { switchDriverTab('walkie'); });
+document.getElementById('driver-tab-msg').addEventListener('click', function() { switchDriverTab('msg'); });
+
+/* ---------- 錄音按鈕初始化 ---------- */
+setupRecorderUI('walkie', function(base64) {
+  const targetSel = document.getElementById('walkie-target');
+  const target = targetSel ? targetSel.value : 'all';
+  if (!driverData.plate) { showToast('請先設定車牌'); return; }
+  db.ref('van/walkie_talkie').push({ senderUid: currentUser.uid, senderIdentifier: currentUser.identifier, senderPlate: driverData.plate, target: target, audio: base64, timestamp: nowMs(), type: 'walkie_audio' }).then(function() { showToast('✅ 對講機已發送'); });
+});
+
+setupRecorderUI('driver', function(base64) {
+  if (!driverData.plate) return;
+  db.ref('van/messages').push({ busId: driverData.plate, senderUid: currentUser.uid, senderIdentifier: currentUser.identifier, audio: base64, timestamp: nowMs(), type: 'audio' }).then(function() { showToast('✅ 語音已發送'); });
+});
+
+/* ---------- 全站按鈕 ---------- */
+document.getElementById('global-voice-btn').addEventListener('click', function() {
+  voiceEnabled = !voiceEnabled;
+  this.textContent = voiceEnabled ? '🔊' : '🔇';
+  this.classList.toggle('muted', !voiceEnabled);
+  showToast(voiceEnabled ? '語音已開啟' : '語音已關閉');
+  try { localStorage.setItem('globalVoice', voiceEnabled ? 'on' : 'off'); } catch (e) {}
+  if (!voiceEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+});
+
+(function() {
+  try {
+    if (localStorage.getItem('globalVoice') === 'off') {
+      voiceEnabled = false;
+      const btn = document.getElementById('global-voice-btn');
+      if (btn) {
+        btn.textContent = '🔇';
+        btn.classList.add('muted');
+      }
+    }
+  } catch (e) {}
+})();
+
+document.getElementById('fps-code').addEventListener('click', function() {
+  const text = '122891914';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() { showToast('✅ 已複製：' + text); });
+  } else {
+    showToast('✅ 轉數快：' + text);
+  }
+});
+
+/* ---------- 連線狀態 ---------- */
+db.ref('.info/connected').on('value', function(snap) {
+  const s = document.getElementById('connection-status');
+  if (!s) return;
+  if (snap.val()) {
+    s.textContent = '🟢 已連線';
+    s.className = 'connection-status online';
+    setTimeout(function() { s.style.display = 'none'; }, 2500);
+  } else {
+    s.textContent = '🔴 網絡中斷';
+    s.className = 'connection-status offline';
+    s.style.display = 'block';
+  }
+});
+
+/* ---------- Auth 監聽 ---------- */
+auth.onAuthStateChanged(function(user) {
+  if (user) {
+    db.ref('users/' + user.uid).once('value').then(function(snap) {
+      const data = snap.val();
+      if (!data) return;
+      currentUser.uid = user.uid;
+      currentUser.identifier = data.identifier || '';
+      currentUser.role = data.role || 'passenger';
+      if (currentUser.role === 'admin') {
+        isAdmin = true;
+        isSuperAdmin = isSuperAdminEmail(currentUser.identifier);
+        document.getElementById('btn-admin-panel').style.display = 'block';
+        loadAdminPanel();
+      } else {
+        isAdmin = false;
+        isSuperAdmin = false;
+      }
+      document.getElementById('login-modal').classList.remove('active');
+    });
+  }
+});
+
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden && driverData.isActive) {
+    if (!gpsWatchId || gpsRestartNeeded) {
+      gpsRestartNeeded = false;
+      if (gpsWatchId) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+      startGpsWatch();
+    }
+  }
+});
+
+/* ---------- 自動清理過期資料 ---------- */
+async function autoCleanExpiredBookings() {
+  try {
+    const t = getToday();
+    const bs = await DataLayer.getBookings(t);
+    const keys = Object.keys(bs);
+    for (let i = 0; i < keys.length; i++) {
+      const id = keys[i];
+      const b = bs[id];
+      if (!b) continue;
+      if (b.status !== 'reserved' && b.status !== 'pending') continue;
+      const st = getShiftTime(b.date, b.time);
+      if (nowMs() > st + 5 * 60 * 1000) {
+        if (b.status === 'pending') {
+          await DataLayer.updateBooking(b.date, id, { status: 'cancelled', cancelledAt: nowMs(), autoCancelled: 'pending_timeout' });
+        } else if (b.status === 'reserved') {
+          await DataLayer.updateBooking(b.date, id, { status: 'no-show', noShowAt: nowMs() });
+          const cfg = await DataLayer.getSeatConfig(b.date, b.time);
+          if (cfg && cfg.plate) {
+            await db.ref('van/active_buses/' + cfg.plate + '/passengerCount').transaction(function(c) { return Math.max(0, (c || 0) - (b.seats || 1)); });
+          }
+          await DataLayer.clearPassengerLocation(b.date, id);
+        }
+      }
+    }
+    const lq = await DataLayer.getLoopQueue(t);
+    const lkeys = Object.keys(lq);
+    for (let j = 0; j < lkeys.length; j++) {
+      const id = lkeys[j];
+      const x = lq[id];
+      if (!x) continue;
+      if (x.status === 'pending' && nowMs() - (x.createdAt || 0) > LOOP_TIMEOUT) {
+        await DataLayer.updateLoopQueue(t, id, { status: 'expired', expiredAt: nowMs() });
+      } else if (x.status === 'expired' && nowMs() - (x.expiredAt || 0) > 2 * 60 * 60 * 1000) {
+        await DataLayer.removeLoopQueue(t, id);
+      }
+    }
+  } catch (e) { console.warn('自動清理失敗:', e); }
+}
+
+setInterval(autoCleanExpiredBookings, 60 * 1000);
+setTimeout(autoCleanExpiredBookings, 5000);
+
+console.log('✅ 西鐵小巴系統 v4.0 已就緒');
+</script>
+</body>
+</html>
